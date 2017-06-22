@@ -1,0 +1,13 @@
+{% extends 'analysis/base.html'%}
+{%block content%}
+
+{{students|safe}}
+
+<br>
+
+{{grades|safe}}
+
+<br>
+
+<a href='{%  url "analysis:index" %}'>BACK</a>
+{%endblock content%}

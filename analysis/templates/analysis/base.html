@@ -1,0 +1,22 @@
+<head>
+	<style>
+		table,td {
+			text-align: center;
+			border: 1px solid grey;
+			}
+		th {
+			border:1.5px solid grey;
+			text-align: left;
+			}
+	</style>
+</head>
+<body>
+	<p>
+		<a href="{% url 'analysis:index' %}">SCAPAS</a>
+		<br><br>
+		<a href="{% url 'analysis:yeargroups' %}"> Cohorts</a>
+		<hr>
+	</p>
+
+	{%block content%}{%endblock content%}
+</body>

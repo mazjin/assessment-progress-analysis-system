@@ -1,0 +1,33 @@
+{% extends 'analysis/base.html' %}
+{% block content %}
+
+<p> Yeargroups <p>
+
+<table>
+	<tr>
+		<th> Cohort </th>
+		<th> Current Year </th>
+		<th> # Students </th>
+		<!-- <th> Reg Groups </th> -->
+	</tr>
+	{% for yeargroup in yeargroups %}
+	<tr>
+		<td>
+			<a href="{% url 'analysis:yeargroupClasses' yeargroup.cohort %}">{{yeargroup}}</a>
+		</td>
+		<td>
+			{{yeargroup.current_year}}
+		</td>
+		<td>
+			{{yeargroup.student_set.count }}
+		</td>
+<!-- 		{% for reg in yeargroup.reggroups %}
+		<td>
+			{{reg}}
+		</td>
+		{%endfor%} -->
+	</tr>
+	{% endfor %}
+</table>
+
+{% endblock content %}

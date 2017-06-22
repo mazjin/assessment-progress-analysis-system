@@ -1,0 +1,10 @@
+{% extends 'base.html' %}
+{% load static %}
+{% load data_interrogator_tags %}
+
+{% block title %}Pivot Data Maker{% endblock %}
+
+{% block content %}
+    {% include "data_interrogator/lineup.html" %}
+    {% include 'data_interrogator/pivot_table.html' %}
+{% endblock %}

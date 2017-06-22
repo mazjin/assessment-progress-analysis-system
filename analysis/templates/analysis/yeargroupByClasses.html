@@ -1,0 +1,36 @@
+{% extends 'analysis/base.html' %}
+
+{% block content %}
+
+	<h2> Classes for {{cohort}} </h2>
+	
+	<table>
+		<tr>
+			<th>Class code</th>
+			<th>Staff Member(s)</th>
+			<th>Subject</th>
+			<th># Students</th>
+			<th>Avg. Progress</th>
+			
+			<th>Avg. Progress (Lower)</th>
+			<th>Avg. Progress (Middle)</th>
+			<th>Avg. Progress (Higher)</th>
+		{% for class in classes %}
+		<tr>
+			<th> {{class}}</th>
+			<td>{{class.staff}}</td>
+			<td> {%for subj in class.subject.all %} {{subj.name}} {% endfor %}</td>
+			<td>{{class.class_size}}</td>
+			<td>{{class.avg_progress}}</td>
+			
+			<td>{{class.avg_progress_lower}}</td>
+			<td>{{class.avg_progress_middle}}</td>
+			<td>{{class.avg_progress_higher}}</td>
+		</tr>
+		{% empty %}
+		<tr>
+			<td colspan=4>There are no classes or reg groups set up for this yeargroup yet.</td>
+		</tr>
+		{% endfor %}
+	</table>
+{% endblock content %}
