@@ -17,7 +17,7 @@ class gradeMethod(models.Model):
 	max_length=100,
 	help_text="The identifying label for the grading scheme.")
 	
-	values=models.ManyToManyField(gradeValue,related_name="gradeset",help_text="The set of grades used/included in the grading method.")
+	vals=models.ManyToManyField(gradeValue,related_name="gradeset",help_text="The set of grades used/included in the grading method.")
 	
 	pass_grade=models.ForeignKey(gradeValue,help_text="The grade considered a pass or strong pass for the purposes of headline measures (e.g. EnMa Basics, Ebacc).")
 	
@@ -92,6 +92,7 @@ class classgroup(models.Model):
 		
 	@property
 	def class_size(self):
+		"""returns integer number of pupils in the class"""
 		if self.subject.count()==0:
 			return student.objects.all().filter(reg=self).count()
 		else:
@@ -99,9 +100,11 @@ class classgroup(models.Model):
 	
 	@property
 	def students(self):
+		"""returns set of unique student records with a grade attached to the classgroup"""
 		return set(gr.upn for gr in self.grade_set.all())
 		
 	def avg_progress(self,band="",dd=""):
+		"""returns average progress score for selected band and datadrop - defaults to all bands and most recent datadrop for linked cohort"""
 		if dd=="":
 			dd=datadrop.objects.all().filter(cohort=self.cohort).order_by('-date')[0]
 		elif isinstance(dd,str):	
@@ -116,13 +119,17 @@ class classgroup(models.Model):
 		else:
 			return "-"
 	
+	
 	def avg_progress_higher(self,dd=""):
+		"""calls avg_progress for higher banding for templating"""
 		return self.avg_progress(band="H",dd=dd)
 
 	def avg_progress_middle(self,dd=""):
+		"""calls avg_progress for middle banding for templating"""
 		return self.avg_progress(band="M",dd=dd)
 
 	def avg_progress_lower(self,dd=""):
+		"""calls avg_progress for lower banding for templating"""
 		return self.avg_progress(band="L",dd=dd)		
 
 class student(models.Model):
