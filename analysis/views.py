@@ -34,7 +34,12 @@ def importPrompt(request):
 			username=form.cleaned_data.get('username')
 			pw=form.cleaned_data.get('pw')
 			cohort=form.cleaned_data.get('cohort').current_year
-			dd_name=form.cleaned_data.get('dd_name').name
+			dd_name=form.cleaned_data.get('dd_name').strip().upper()
+			dd_obj,dd_created=datadrop.objects.get_or_create(name=dd_name,cohort=form.cleaned_data.get('cohort'),defaults={'date':form.cleaned_data.get('dd_date')})
+			if dd_created:
+				print("<"+str(datetime.datetime.now()).split('.')[0]+">: "+"New data drop " + dd_name + " created for Year " + cohort +". Getting ready to import data...")
+			else:
+				print("<"+str(datetime.datetime.now()).split('.')[0]+">: "+"Data drop " + dd_name + " located for Year "+cohort+". Getting ready to update data...")
 			browser=webdriver.Chrome()
 			logIntoSISRA(username,pw,browser)
 			openStudentReports(browser,cohort,dd_name)
@@ -116,7 +121,7 @@ def importPrompt(request):
 			for i, gr in grades_df.iterrows():
 				if ii % grade_milestone==0:
 					print("<"+str(datetime.datetime.now()).split('.')[0]+">: "+  "Importing grade " + str(ii+1) +" of "+str(grade_number)+"...")
-				gr['datadrop']=form.cleaned_data.get('dd_name')
+				gr['datadrop']=dd_obj
 				gr['upn']=student.objects.get(upn=gr['upn'])
 				try:
 					gr['subject']=subject.objects.get(name=gr['Qualification Name'],cohort=form.cleaned_data.get('cohort'))
