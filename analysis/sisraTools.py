@@ -289,7 +289,7 @@ def openStudentReports(browser,year,dd):
 		print ("Can't find report button!")
 	time.sleep(.5)
 	
-	comparison_dd="Y10 DD1"
+	comparison_dd="Y9 DD1"
 	
 	try:
 		compareSelect=browser.find_element_by_id('compareSelect')
@@ -331,7 +331,7 @@ def openStudentReports(browser,year,dd):
 	
 def getStudentData(browser,year,dd):
 	"""loops through all students in a year, retrieves student and grade data and returns dataframe"""
-	comparison_dd="Y10 DD1"
+	comparison_dd="Y9 DD1"
 	#getting dictionary of student names & upns to value in dropdown selector
 	studentList=browser.find_element_by_css_selector('#ReportOptions_Stu_ID').find_elements_by_css_selector('*') #while this element is reused in the loop below, no point registering it as an object, as it will need reinitialising every loop
 	studentDict={}

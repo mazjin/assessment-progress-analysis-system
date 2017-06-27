@@ -8,18 +8,26 @@
 		<th> Cohort </th>
 		<th> Current Year </th>
 		<th> # Students </th>
+		<th> Classes </th>
+		<th>Subjects</th>
 		<!-- <th> Reg Groups </th> -->
 	</tr>
 	{% for yeargroup in yeargroups %}
 	<tr>
 		<td>
-			<a href="{% url 'analysis:yeargroupClasses' yeargroup.cohort %}">{{yeargroup}}</a>
+			{{yeargroup}}
 		</td>
 		<td>
 			{{yeargroup.current_year}}
 		</td>
 		<td>
 			{{yeargroup.student_set.count }}
+		</td>
+		<td>
+			<a href="{% url 'analysis:yeargroupClasses' yeargroup.cohort %}">Go!</a>
+		</td>
+		<td>
+			<a href="{% url 'analysis:yeargroupSubjects' yeargroup.cohort %}">Go!</a>
 		</td>
 <!-- 		{% for reg in yeargroup.reggroups %}
 		<td>

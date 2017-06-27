@@ -1,0 +1,33 @@
+{% extends 'analysis/base.html' %}
+
+{% block content %}
+
+Subject Average: {{subject.avg_progress}}
+
+<table>
+	<tr>
+		<th>Class</th>
+		<th>Staff</th>
+		<th>Avg. Progress - All</th>
+		<th>Avg. Progress - Non PP</th>
+		<th>Avg. Progress - PP</th>
+		<th>Gap</th>
+		<th>Residual vs. subject Avg.</th>
+	</tr>
+	{% for class in classes %}
+	<tr>
+		<td>{{class}}</td>
+		<td>{{class.staff}}</td>
+		<td>{{class.avg_progress}}</td>
+		<td>{{class.avg_progress_npp}}</td>
+		<td>{{class.avg_progress_pp}}</td>
+		<td>{{class.avg_progress_pp_gap}}</td>
+		<td>{{class.avg_progress_residual_subject}}</td>
+	</tr>
+	{%empty%}
+	<tr>
+		<td colspan=7>There are no classes set up for this yeargroup yet.</td>
+	</tr>
+	{%endfor%}
+</table>
+{%endblock content%}

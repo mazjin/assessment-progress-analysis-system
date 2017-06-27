@@ -24,6 +24,20 @@ def yeargroupClasses(request,cohort_string):
 	classes=selected_yeargroup.classgroup_set.order_by('subject','class_code')
 	context={'cohort':selected_yeargroup,'classes':classes}
 	return render(request,'analysis/yeargroupByClasses.html',context)
+
+def yeargroupSubjects(request,cohort_string):
+	"""lists all classgroups for a cohort"""
+	selected_yeargroup=yeargroup.objects.get(cohort=cohort_string)
+	subjects=selected_yeargroup.subject_set.order_by('name')
+	context={'cohort':selected_yeargroup,'subjects':subjects}
+	return render(request,'analysis/yeargroupBySubjects.html',context)
+	
+def subjAssessment(request,cohort_string,subject_string):
+	"""lists all classgroups for a cohort"""
+	selected_subject=subject.objects.get(name=subject_string,cohort=yeargroup.objects.get(cohort=cohort_string))
+	classes=selected_subject.classgroup_set.order_by('subject','class_code')
+	context={'subject':selected_subject,'classes':classes}
+	return render(request,'analysis/subjAssessment.html',context)
 	
 def importPrompt(request):
 	if request.method !="POST":
