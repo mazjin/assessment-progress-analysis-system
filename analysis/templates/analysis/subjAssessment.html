@@ -13,6 +13,8 @@ Subject Average: {{subject.avg_progress}}
 		<th>Avg. Progress - PP</th>
 		<th>Gap</th>
 		<th>Residual vs. subject Avg.</th>
+		<th>A8 Bkt Avg.</th>
+		<th>Residual vs. A8 Bkt Avg.</th>
 	</tr>
 	{% for class in classes %}
 	<tr>
@@ -23,10 +25,12 @@ Subject Average: {{subject.avg_progress}}
 		<td>{{class.avg_progress_pp}}</td>
 		<td>{{class.avg_progress_pp_gap}}</td>
 		<td>{{class.avg_progress_residual_subject}}</td>
+		<td>{{class.avg_progress_att8bucket}}</td>
+		<td>{{class.avg_progress_residual_att8bucket}}</td>
 	</tr>
 	{%empty%}
 	<tr>
-		<td colspan=7>There are no classes set up for this yeargroup yet.</td>
+		<td colspan=9>There are no classes set up for this yeargroup yet.</td>
 	</tr>
 	{%endfor%}
 </table>

@@ -98,6 +98,7 @@ class subject(models.Model):
 		staff_list=[]
 		for st in staff_tuple_list:
 			staff_list.append(st[0])
+		staff_list=set(staff_list)
 		return staff_list
 	def __str__(self):
 		return self.name + " (Y" + self.cohort.current_year+")"
@@ -151,51 +152,87 @@ class classgroup(models.Model):
 		"""returns set of unique student records with a grade attached to the classgroup"""
 		return set(gr.upn for gr in self.grade_set.all())
 		
-	def avg_progress(self,band="",dd="",pp="",subj=""):
-		"""returns average progress score for selected band and datadrop - defaults to all bands and most recent datadrop for linked cohort"""
-		if dd=="":
-			dd=datadrop.objects.all().filter(cohort=self.cohort).order_by('-date')[0]
-		elif isinstance(dd,str):	
-			dd=datadrop.objects.get(name=dd,cohort=self.cohort)
-		filters={'datadrop':dd}
-		if subj!="":
-			filters['subject']=subject.objects.get(name=subj,cohort=dd.cohort)
-		if isinstance(pp,bool):
-			filters['upn__pp']=pp
-		filters['upn__banding__contains']=band
-		progress_avg_set=self.grade_set.filter(**filters)
-		progress_avg=progress_avg_set.aggregate(models.Avg('progress'))['progress__avg']
+	# def avg_progress(self,band="",dd="",pp="",subj="",**filters):
+		# """returns average progress score for selected band and datadrop - defaults to all bands and most recent datadrop for linked cohort"""
+		# if dd=="":
+			# dd=datadrop.objects.all().filter(cohort=self.cohort).order_by('-date')[0]
+		# elif isinstance(dd,str):	
+			# dd=datadrop.objects.get(name=dd,cohort=self.cohort)
+		# filters['datadrop']=dd
+		# if subj!="":
+			# filters['subject']=subject.objects.get(name=subj,cohort=dd.cohort)
+		# if isinstance(pp,bool):
+			# filters['upn__pp']=pp
+		# filters['upn__banding__contains']=band
+		# progress_avg_set=self.grade_set.filter(**filters)
+		# progress_avg=progress_avg_set.aggregate(models.Avg('progress'))['progress__avg']
+		# if not progress_avg is None:
+			# return round(progress_avg,2)
+		# else:
+			# return "-"
+	
+	def avg_progress_pp(self,**filters):
+		filters['upn__pp']=True
+		filters['classgroup']=self
+		return self.avg_progress(**filters)
+		
+	def avg_progress_npp(self,**filters):
+		filters['upn__pp']=False
+		filters['classgroup']=self
+		return self.avg_progress(**filters)
+	
+	def avg_progress_pp_gap(self,**filters):
+		return round(self.avg_progress_pp()-self.avg_progress_npp(),2)
+		
+	def avg_progress_higher(self,**filters):
+		"""calls avg_progress for higher banding for templating"""
+		filters['upn__banding__contains']="H"
+		filters['classgroup']=self
+		return self.avg_progress(**filters)
+
+	def avg_progress_middle(self,**filters):
+		"""calls avg_progress for middle banding for templating"""
+		filters['upn__banding__contains']="M"
+		filters['classgroup']=self
+		return self.avg_progress(**filters)
+
+	def avg_progress_lower(self,**filters):
+		"""calls avg_progress for lower banding for templating"""
+		filters['upn__banding__contains']="L"
+		filters['classgroup']=self
+		return self.avg_progress(**filters)		
+
+	def avg_progress_residual_subject(self,subj=None,**filters):
+		if subj is None:
+			subj=self.subject.all()[0]
+		return round(self.avg_progress(**filters) - subj.avg_progress(),2)
+		
+	def avg_progress_att8bucket(self,**filters):
+		filters['upn__in']=self.students
+		filters['classgroup__class_code__contains']=""
+		if not "subject__attainment8bucket" in filters:
+			filters['subject__attainment8bucket']=self.subject.all()[0].attainment8bucket
+		return self.avg_progress(**filters)
+		
+	def avg_progress_residual_att8bucket(self,**filters):
+		try:
+			return round(self.avg_progress(**filters) - self.avg_progress_att8bucket(**filters),2)
+		except TypeError:
+			return "-"
+			
+	def avg_progress(self,**filters):
+		if not("datadrop" in filters or "datadrop_name" in filters or "datadrop_date" in filters):
+			filters['datadrop']=datadrop.objects.all().filter(cohort=self.cohort).order_by('-date')[0]
+		if (not 'classgroup__class_code__contains' in filters and not 'classgroup' in filters):
+			filters['classgroup']=self
+		grades_found=grade.objects.filter(**filters)
+		print(filters,grades_found.count())
+		progress_avg=grades_found.aggregate(models.Avg('progress'))['progress__avg']
 		if not progress_avg is None:
 			return round(progress_avg,2)
 		else:
 			return "-"
-	
-	def avg_progress_pp(self):
-		return self.avg_progress(pp=True)
-		
-	def avg_progress_npp(self):
-		return self.avg_progress(pp=False)
-	
-	def avg_progress_pp_gap(self):
-		return round(self.avg_progress_pp()-self.avg_progress_npp(),2)
-		
-	def avg_progress_higher(self,dd=""):
-		"""calls avg_progress for higher banding for templating"""
-		return self.avg_progress(band="H",dd=dd)
-
-	def avg_progress_middle(self,dd=""):
-		"""calls avg_progress for middle banding for templating"""
-		return self.avg_progress(band="M",dd=dd)
-
-	def avg_progress_lower(self,dd=""):
-		"""calls avg_progress for lower banding for templating"""
-		return self.avg_progress(band="L",dd=dd)		
-
-	def avg_progress_residual_subject(self,subj=None):
-		if subj is None:
-			subj=self.subject.all()[0]
-		return round(self.avg_progress() - subj.avg_progress(),2)
-	
+			
 class student(models.Model):
 	"""A pupil at the school"""
 	upn=models.CharField(max_length=13,primary_key=True,help_text="Unique 13-character identifier used in many school systems.")
