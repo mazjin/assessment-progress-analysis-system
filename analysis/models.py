@@ -1,6 +1,26 @@
 from django.db import models
 
 # Create your models here.
+
+class studentGrouping(models.Model):
+	
+	def avg_progress(self,**filters):
+		model_name=self.__class__.__name__
+		model_pk_field=self._meta.pk.name
+		if not("datadrop" in filters or "datadrop_name" in filters or "datadrop_date" in filters) and self.__class__.__name__ !="datadrop":
+			filters['datadrop']=datadrop.objects.all().filter(cohort=self.cohort).order_by('-date')[0]
+
+		if (not (model_name+"__"+model_pk_field+"__contains") in filters and not "classgroup" in filters):
+			filters[model_name]=self
+		grades_found=grade.objects.filter(**filters)
+		progress_avg=grades_found.aggregate(models.Avg('progress'))['progress__avg']
+		if not progress_avg is None:
+			return round(progress_avg,2)
+		else:
+			return "-"
+	class Meta:
+		abstract = True
+		
 class gradeValue(models.Model):
 	"""A definition of a grade for use in a grade method (NOT an instance of a grade, see  grade class instead)"""
 	name=models.CharField(max_length=5, help_text="The grade symbol, e.g. A+, 9=, 4.3, Pass")
@@ -24,7 +44,7 @@ class gradeMethod(models.Model):
 	def __str__(self):
 		return self.text
 	
-class yeargroup(models.Model):
+class yeargroup(studentGrouping):
 	"""A cohort of students"""
 	cohort_choices=(
 		("2017-2018","2017-2018"),
@@ -54,7 +74,7 @@ class yeargroup(models.Model):
 	def reggroups(self):
 		return self.classgroup_set.filter(subject=None)
 	
-class datadrop(models.Model):
+class datadrop(studentGrouping):
 	"""A scheduled collection of data; an individual dataset"""
 	name=models.CharField(max_length=30,help_text="The label identifying the datadrop, e.g. Y9 DD3")
 	date=models.DateField(help_text="The date the datadrop ended.")
@@ -63,7 +83,7 @@ class datadrop(models.Model):
 	def __str__(self):
 		return self.name
 	
-class subject(models.Model):
+class subject(studentGrouping):
 	"""A subject studied by students in a yeargroup"""
 	buckets=(
 	("en","English"),
@@ -129,7 +149,7 @@ class subject(models.Model):
 		"""calls avg_progress for lower banding for templating"""
 		return self.avg_progress(band="L",dd=dd)	
 	
-class classgroup(models.Model):
+class classgroup(studentGrouping):
 	"""The timetabled class or registration group."""
 	class_code=models.CharField(max_length=10,primary_key=True,help_text="The unique class identifier code.")
 	cohort=models.ForeignKey(yeargroup, help_text="The yeargroup that the class group's students belong to.")
@@ -220,18 +240,18 @@ class classgroup(models.Model):
 		except TypeError:
 			return "-"
 			
-	def avg_progress(self,**filters):
-		if not("datadrop" in filters or "datadrop_name" in filters or "datadrop_date" in filters):
-			filters['datadrop']=datadrop.objects.all().filter(cohort=self.cohort).order_by('-date')[0]
-		if (not 'classgroup__class_code__contains' in filters and not 'classgroup' in filters):
-			filters['classgroup']=self
-		grades_found=grade.objects.filter(**filters)
-		print(filters,grades_found.count())
-		progress_avg=grades_found.aggregate(models.Avg('progress'))['progress__avg']
-		if not progress_avg is None:
-			return round(progress_avg,2)
-		else:
-			return "-"
+	# def avg_progress(self,**filters):
+		# if not("datadrop" in filters or "datadrop_name" in filters or "datadrop_date" in filters):
+			# filters['datadrop']=datadrop.objects.all().filter(cohort=self.cohort).order_by('-date')[0]
+		# if (not 'classgroup__class_code__contains' in filters and not 'classgroup' in filters):
+			# filters['classgroup']=self
+		# grades_found=grade.objects.filter(**filters)
+		# print(filters,grades_found.count())
+		# progress_avg=grades_found.aggregate(models.Avg('progress'))['progress__avg']
+		# if not progress_avg is None:
+			# return round(progress_avg,2)
+		# else:
+			# return "-"
 			
 class student(models.Model):
 	"""A pupil at the school"""
