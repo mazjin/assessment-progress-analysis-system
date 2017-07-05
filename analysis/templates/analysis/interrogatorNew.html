@@ -1,0 +1,14 @@
+{% extends 'analysis/base.html' %}
+{% block content %}
+<div style="float: left;">
+	<form action="{% url 'analysis:interrogate'%}" method="post">
+		{% csrf_token %}
+		{{form.as_p}}
+		<input type="submit" value="Get Table"/>
+	</form>
+</div>
+<div >
+	{{outputTable|safe}}
+</div>
+
+{%endblock content%}

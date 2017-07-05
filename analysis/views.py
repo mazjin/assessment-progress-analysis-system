@@ -2,11 +2,13 @@ from django.shortcuts import render
 from .models import *
 from .sisraTools import *
 from selenium import webdriver
-from .forms import importForm
+from .forms import importForm,interrogatorForm
 from django.http import HttpResponseRedirect
 from assessment import settings
 import sqlite3
 import time
+import pandas as pd
+import numpy as np
 #from data_interrogator import views
 
 # Create your views here.
@@ -38,6 +40,45 @@ def subjAssessment(request,cohort_string,subject_string):
 	classes=selected_subject.classgroup_set.order_by('subject','class_code')
 	context={'subject':selected_subject,'classes':classes}
 	return render(request,'analysis/subjAssessment.html',context)
+	
+def get_subject_type_info(subj_name):
+	ebacc_bool=False
+	option_bool=True
+	faculty=None
+	bkt="op"
+	if "English" in subj_name:
+		bkt="en"
+		ebacc_bool=True
+		option_bool=False
+		faculty="English"
+	elif "Math" in subj_name:
+		bkt="ma"
+		ebacc_bool=True
+		option_bool=False
+		faculty="Maths"
+	elif "Science" in subj_name:
+		bkt="eb"
+		ebacc_bool=True
+		if subj_name=="Computer Science":
+			faculty="IT"
+		else:
+			option_bool=False
+			faculty="Science"
+	elif subj_name in ["History","Geography"]:
+		bkt="eb"
+		ebacc_bool=True
+		faculty="Humanities"
+	elif subj_name in ["Spanish","French","MFL"]:
+		bkt="eb"
+		ebacc_bool=True
+		faculty="MFL"
+	elif "Business" in subj_name or "ICT" in subj_name:
+		faculty="IT"
+	elif "Food" in subj_name or "Materials" in subj_name:
+		faculty="Technology"
+	elif subj_name in ["Art","Drama","Music","Media Studies"]:
+		faculty="Arts"
+	return ebacc_bool,option_bool,faculty,bkt
 	
 def importPrompt(request):
 	if request.method !="POST":
@@ -97,7 +138,7 @@ def importPrompt(request):
 						banding=band,
 						eal=stu['eal']=="Yes",
 						pp=stu['pp']=="Yes",
-						sen=stu['sen'],
+						sen=stu['sen'][0],
 						lac=stu['lac']=="Yes",
 						fsm_ever=stu['fsm_ever']=="Yes")
 					created_student.save()
@@ -140,23 +181,44 @@ def importPrompt(request):
 				try:
 					gr['subject']=subject.objects.get(name=gr['Qualification Name'],cohort=form.cleaned_data.get('cohort'))
 					gr['method']=gr['subject'].method
-				except:
-					if "English" in gr['Qualification Name']:
-						bkt="en"
-					elif "Math" in gr['Qualification Name']:
-						bkt="ma"
-					elif "Science" in gr['Qualification Name'] or gr['Qualification Name'] in ["History","Geography","French","Spanish","MFL"]:
-						bkt="eb"
+					if gr['subject'].name=="English Literature":
+						class_subject=[gr['subject'],subject.objects.get(name="English Language", cohort=form.cleaned_data.get('cohort'))]
+					elif gr['subject'].name=="English Language":
+						class_subject=[gr['subject'],subject.objects.get(name="English Literature", cohort=form.cleaned_data.get('cohort'))]
 					else:
-						bkt="op"
+						class_subject=[gr['subject']]
+				except:
+					# if "English" in gr['Qualification Name']:
+						# bkt="en"
+					# elif "Math" in gr['Qualification Name']:
+						# bkt="ma"
+					# elif "Science" in gr['Qualification Name'] or gr['Qualification Name'] in ["History","Geography","French","Spanish","MFL"]:
+						# bkt="eb"
+					# else:
+						# bkt="op"
 					mtd=gradeMethod.objects.filter(text=gr['Type'])
 					if len(mtd)<1:
 						mtd=gradeMethod.objects.filter(vals__name__contains=gr['Grade'])
 					if len(mtd)>=1:
 						gr['method']=mtd[0]
-					gr['subject'],subject_created=subject.objects.get_or_create(name=gr['Qualification Name'],cohort=form.cleaned_data.get('cohort'),defaults={'method':gr['method'],'attainment8bucket':bkt})
+					ebacc_bool,option_bool,faculty,bkt=get_subject_type_info(gr['Qualification Name'])
+					gr['subject'],subject_created=subject.objects.get_or_create(name=gr['Qualification Name'],cohort=form.cleaned_data.get('cohort'),defaults={'method':gr['method'],'attainment8bucket':bkt,'faculty':faculty,'ebacc_subject':ebacc_bool,'option_subject':option_bool})
 					if subject_created:
 						created_subjects.append(gr['subject'].__str__())
+					if "English L" in gr['Qualification Name']:
+						if "Literature" in gr['Qualification Name']:
+							other_subj, subject_created=subject.objects.get_or_create(name="English Language",cohort=form.cleaned_data.get('cohort'),defaults={'method':gr['method'],'attainment8bucket':bkt,'faculty':faculty,'ebacc_subject':ebacc_bool,'option_subject':option_bool})
+						elif "Language" in gr['Qualification Name']:
+							other_subj, subject_created=subject.objects.get_or_create(name="English Literature",cohort=form.cleaned_data.get('cohort'),defaults={'method':gr['method'],'attainment8bucket':bkt,'faculty':faculty,'ebacc_subject':ebacc_bool,'option_subject':option_bool})
+						class_subject=[gr['subject'],other_subj]
+						if subject_created:
+							created_subjects.append(other_subj.__str__())
+					else:
+						class_subject=[gr['subject']]
+							
+						
+					
+				
 				try:
 					gr_value=gr['Grade']
 					if isinstance(gr_value,float):
@@ -193,7 +255,7 @@ def importPrompt(request):
 					staff_string=" ".join(gr['staff'])
 				else:
 					staff_string=gr['staff'][0]
-				gr['classgroup'],classgroup_created=classgroup.objects.get_or_create(class_code=gr['Class'],defaults={'cohort':form.cleaned_data.get('cohort'),'staff':staff_string,'subject':[gr['subject']]})
+				gr['classgroup'],classgroup_created=classgroup.objects.get_or_create(class_code=gr['Class'],defaults={'cohort':form.cleaned_data.get('cohort'),'staff':staff_string,'subject':class_subject})
 				if classgroup_created:
 					created_classes.append(gr['Class'])
 				new_grades_df.loc[ii]=gr
@@ -230,7 +292,46 @@ def importPrompt(request):
 			return render(request,'analysis/quickDisplayDF.html',context)
 	context={'form':form}
 	return render(request,'analysis/importPrompt.html',context)
-# def interrogate(request):
-	# print(dir(views))
-	# return views.InterrogationRoom.as_view(template_name="analysis/interrogator.html")(request)
-	
+
+def interrogate(request):
+	if request.method !="POST":
+		form=interrogatorForm()
+	else:
+		form=interrogatorForm(data=request.POST)
+		if form.is_valid():
+			filters={}
+			for grp in [('yeargroup','cohort',""),('subject','subject',"name"),('classgroup','classgroup',""),('datadrop','datadrop',"name")]:
+				if form.cleaned_data.get(grp[0]+'_selected') and grp[2]!="" and form.cleaned_data.get('match_'+grp[0]+'_by_name')==True:
+					filters[grp[1]+"__"+grp[2]]=getattr(form.cleaned_data.get(grp[0]+'_selected'),grp[2])
+				elif form.cleaned_data.get(grp[0]+"_selected"):
+					filters[grp[1]]=form.cleaned_data.get(grp[0]+'_selected')
+
+			# if form.cleaned_data.get('yeargroup_selected'):
+				# filters['cohort']=form.cleaned_data.get('yeargroup_selected')
+			# if form.cleaned_data.get('subject_selected'):
+				# filters['subject']=form.cleaned_data.get('subject_selected')
+			# if form.cleaned_data.get('classgroup_selected'):
+				# filters['classgroup']=form.cleaned_data.get('classgroup_selected')
+			# if form.cleaned_data.get('datadrop_selected'):
+				# filters['datadrop']=form.cleaned_data.get('datadrop_selected')
+				
+			rfilters=get_default_filters_dict(form.cleaned_data.get('row_choice'),**filters)
+			cfilters=get_default_filters_dict(form.cleaned_data.get('col_choice'),**filters)
+			if not 'datadrop' in filters and not 'datadrop__name' in filters:
+				filters['datadrop__name__contains']=""
+			print(filters)
+			#outputTable=form.cleaned_data.get('datadrop_selected').avg_progress_df_filters_col(cfilters,rfilters,filters).to_html
+			outputTable=datadrop.objects.all()[0].avg_progress_df_filters_col(cfilters,rfilters,filters)
+			if form.cleaned_data.get('residual_toggle'):
+				residual_mask=pd.DataFrame()
+				outputTable.replace(to_replace="-",value=np.nan,inplace=True)
+				residual_mask['All']=outputTable['All']
+				for c in outputTable.columns:
+					residual_mask[c]=outputTable['All']
+				outputTable=outputTable-residual_mask
+				outputTable.fillna(value="-",inplace=True)
+			outputTable=outputTable.to_html
+			context={'form':form,'outputTable':outputTable}
+			return render(request,'analysis/interrogatorNew.html',context)
+	context={'form':form,'outputTable':""}
+	return render(request,'analysis/interrogatorNew.html',context)

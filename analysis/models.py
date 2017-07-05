@@ -1,6 +1,125 @@
 from django.db import models
 import pandas
+from django.apps import apps
 # Create your models here.
+
+def get_default_filters_dict(class_of_filters,**filters):
+	if class_of_filters=="student":
+		return {'All':{},
+			'Male':{'upn__gender':"M"},
+			'Female':{'upn__gender':"F"},
+			'PP':{'upn__pp':True},
+			'NPP':{'upn__pp':False},
+			'EAL':{'upn__eal':True},
+			'LAC':{'upn__lac':True},
+			'FSM Ever':{'upn__fsm_ever':True},
+			'NSEN':{'upn__sen':"N"},
+			'KSEN':{'upn__sen':"K"},
+			'EHCP':{'upn__sen':"E"},
+			'Lower':{'upn__banding':"L"},
+			'Middle':{'upn__banding':"M"},
+			'Higher':{'upn__banding':"H"},
+			'No Band':{'upn__banding':"N"}
+			}
+	elif class_of_filters=="att8bucket":
+		return {'All':{},
+			'Maths':{'subject__attainment8bucket':'ma'},
+			'English':{'subject__attainment8bucket':'en'},
+			'EBacc':{'subject__attainment8bucket':'eb'},
+			'Open':{'subject__attainment8bucket':'op'},
+			}
+	elif class_of_filters=="banding":
+		return {'All':{},
+			'Lower':{'upn__banding':'L'},
+			'Middle':{'upn__banding':'M'},
+			'Upper/High':{'upn__banding':'H'},
+			'No Banding':{'upn__banding':'N'},
+			}
+	elif class_of_filters=="subject_blocks":
+		return {'All':{},
+			'Core':{'subject__option_subject':False},
+			'Option':{'subject__option_subject':True},
+			'EBacc':{'subject__ebacc_subject':True},
+			'Non-EBacc':{'subject__ebacc_subject':False},
+			}
+	else:
+		if class_of_filters=="classgroup" :
+			filters.pop('datadrop',None)
+			filters.pop('datadrop__name',None)
+			if "classgroup" in filters:
+				filters['class_code']=filters['classgroup'].class_code
+				filters.pop('classgroup',None)
+		elif class_of_filters=="subject":
+			if "subject" in filters:
+				filters['name']=filters['subject'].name
+				filters.pop('subject',None)
+			elif "subject__name" in filters:
+				filters['name']=filters['subject__name']
+				filters.pop('subject__name',None)
+			filters.pop('datadrop',None)
+			filters.pop('datadrop__name',None)
+		elif class_of_filters=="datadrop":
+			if 	"datadrop__name" in filters:
+				filters['name']=filters['datadrop__name']
+				filters.pop('datadrop__name',None)
+			if "datadrop" in filters:
+				filters['id']=filters['datadrop'].id
+				filters.pop('datadrop',None)
+			if "subject" in filters or "faculty" in filters:
+				filters['cohort__in']=yeargroup.objects.filter(subject=filters['subject'])
+				filters.pop('subject',None)
+			elif "subject__name" in filters:
+				filters['cohort__in']=yeargroup.objects.filter(subject__name__contains=filters['subject__name'])
+				filters.pop('subject__name',None)
+			if "classgroup" in filters:
+				filters['cohort']=filters['classgroup'].cohort
+				filters.pop('classgroup',None)
+		elif class_of_filters=="yeargroup" :
+			if "subject__name" in filters:
+				filters['subject__in']=subject.objects.filter(name__contains=filters['subject__name'])
+				filters.pop('subject__name',None)
+			filters.pop('subject',None)
+		if class_of_filters in ['yeargroup','datadrop','subject','classgroup']:
+			qset=apps.get_model('analysis',class_of_filters).objects.filter(**filters)
+		elif class_of_filters=="faculty":
+			qset=['Maths','English','Science','Humanities','MFL','Arts','Technology','IT',None]
+			for sub in subject.objects.filter(**filters):
+				if sub.faculty not in qset:
+					qset.add(sub.faculty)
+		if class_of_filters=="yeargroup":
+			class_of_filters="subject__cohort"
+			qset=qset.order_by('cohort')
+		elif class_of_filters=="datadrop":
+			qset=qset.order_by('cohort','name')
+		elif class_of_filters=="subject":
+			qset=qset.order_by('name','faculty')
+		elif class_of_filters=="classgroup":
+			qset=qset.order_by('class_code')
+		print(qset)
+		# if class_of_filters=="subject" or class_of_filters=="datadrop":
+			# label_attribute="name"
+		# elif class_of_filters=="yeargroup":
+			# label_attribute="cohort"
+		# elif class_of_filters=="classgroup":
+			# label_attribute="class_code"
+		returnDict={'All':{}}
+		if class_of_filters=="subject":
+			for q in qset:
+				returnDict[q.name]={'subject__name':q.name}
+		elif class_of_filters=="faculty":
+			for q in qset:
+				if q is None:
+					returnDict["Other"]={'subject__faculty':q}
+				else:
+					returnDict[q]={'subject__faculty':q}
+		else:
+			for q in qset:
+				# nm=getattr(q,label_attribute)
+				# print(class_of_filters,nm,q)
+				# returnDict[getattr(q,label_attribute)]={class_of_filters:q}
+				returnDict[q.__str__()]={class_of_filters:q}
+
+	return returnDict
 
 class studentGrouping(models.Model):
 	"""provides set of common functions for child classes yeargroup, classgroup, datadrop and subject"""
@@ -21,6 +140,7 @@ class studentGrouping(models.Model):
 	def avg_progress_df_filters_col(self,col_filters_dict,row_filters_dict,filters):
 		"""returns a dataframe of the average progress for a combination of groups - rows and columns both defined by dicts of dicts"""
 		results=pandas.DataFrame()
+		filters.pop('cohort',None)
 		for col_name,col_filter in col_filters_dict.items():
 			joined_filters_col={**filters,**col_filter}
 			results[col_name]=self.avg_progress_series(row_filters_dict,joined_filters_col)
@@ -42,11 +162,11 @@ class studentGrouping(models.Model):
 		model_pk_field=self._meta.pk.name
 		if model_name=="subject":
 			model_pk_field="name"
-		if not("datadrop" in filters or "datadrop_name" in filters or "datadrop_date" in filters) and self.__class__.__name__ !="datadrop":
-			filters['datadrop']=datadrop.objects.all().filter(cohort=self.cohort).order_by('-date')[0]
+		# if not("datadrop" in filters or "datadrop__name" in filters or "datadrop__date" in filters) and self.__class__.__name__ !="datadrop":
+			# filters['datadrop']=datadrop.objects.all().filter(cohort=self.cohort).order_by('-date')[0]
 
-		if (not (model_name+"__"+model_pk_field+"__contains") in filters and not model_name in filters):
-			filters[model_name]=self
+		# if (not (model_name+"__"+model_pk_field+"__contains") in filters and not model_name in filters):
+			# filters[model_name]=self
 		grades_found=grade.objects.filter(**filters)
 		return grades_found
 	
@@ -57,16 +177,21 @@ class studentGrouping(models.Model):
 			return round(progress_avg,2)
 		else:
 			return "-"
-		
+	
+	def avg_progress_template(self,**filters):
+		filters['datadrop']=datadrop.objects.all().filter(cohort=self.cohort).order_by('-date')[0]
+		filters[self.__class__.__name__]=self
+		return self.avg_progress(**filters)
+	
 	def avg_progress_pp(self,**filters):
 		"""calculates average progress for pupil premium students"""
 		filters['upn__pp']=True
-		return self.avg_progress(**filters)
+		return self.avg_progress_template(**filters)
 		
 	def avg_progress_npp(self,**filters):
 		"""calculates average progress for non-pupil premium students"""
 		filters['upn__pp']=False
-		return self.avg_progress(**filters)
+		return self.avg_progress_template(**filters)
 	
 	def avg_progress_pp_gap(self,**filters):
 		"""calculates the gap in average progress between pupil premium and non-PP students"""
@@ -75,17 +200,17 @@ class studentGrouping(models.Model):
 	def avg_progress_higher(self,**filters):
 		"""calls avg_progress for higher banding for templating"""
 		filters['upn__banding__contains']="H"
-		return self.avg_progress(**filters)
+		return self.avg_progress_template(**filters)
 
 	def avg_progress_middle(self,**filters):
 		"""calls avg_progress for middle banding for templating"""
 		filters['upn__banding__contains']="M"
-		return self.avg_progress(**filters)
+		return self.avg_progress_template(**filters)
 
 	def avg_progress_lower(self,**filters):
 		"""calls avg_progress for lower banding for templating"""
 		filters['upn__banding__contains']="L"
-		return self.avg_progress(**filters)
+		return self.avg_progress_template(**filters)
 		
 class gradeValue(models.Model):
 	"""A definition of a grade for use in a grade method (NOT an instance of a grade, see  grade class instead)"""
@@ -147,7 +272,7 @@ class datadrop(studentGrouping):
 	cohort=models.ForeignKey(yeargroup, help_text="The yeargroup the data drop belongs to.")
 	
 	def __str__(self):
-		return self.name
+		return self.name + " (Y"+self.cohort.current_year+")"
 	
 class subject(studentGrouping):
 	"""A subject studied by students in a yeargroup"""
