@@ -317,9 +317,11 @@ def interrogate(request):
 				
 			rfilters=get_default_filters_dict(form.cleaned_data.get('row_choice'),**filters)
 			cfilters=get_default_filters_dict(form.cleaned_data.get('col_choice'),**filters)
+			if "cohort" in filters:
+				filters['datadrop__cohort']=filters['cohort']
+				filters.pop('cohort')
 			if not 'datadrop' in filters and not 'datadrop__name' in filters:
 				filters['datadrop__name__contains']=""
-			print(filters)
 			#outputTable=form.cleaned_data.get('datadrop_selected').avg_progress_df_filters_col(cfilters,rfilters,filters).to_html
 			outputTable=datadrop.objects.all()[0].avg_progress_df_filters_col(cfilters,rfilters,filters)
 			if form.cleaned_data.get('residual_toggle'):

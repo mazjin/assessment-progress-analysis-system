@@ -49,7 +49,7 @@ def get_default_filters_dict(class_of_filters,**filters):
 			if "classgroup" in filters:
 				filters['class_code']=filters['classgroup'].class_code
 				filters.pop('classgroup',None)
-		elif class_of_filters=="subject":
+		elif class_of_filters=="subject" or class_of_filters=="faculty":
 			if "subject" in filters:
 				filters['name']=filters['subject'].name
 				filters.pop('subject',None)
@@ -78,6 +78,8 @@ def get_default_filters_dict(class_of_filters,**filters):
 			if "subject__name" in filters:
 				filters['subject__in']=subject.objects.filter(name__contains=filters['subject__name'])
 				filters.pop('subject__name',None)
+			if "cohort" in filters:
+				filters['cohort']=filters['cohort'].cohort
 			filters.pop('subject',None)
 		if class_of_filters in ['yeargroup','datadrop','subject','classgroup']:
 			qset=apps.get_model('analysis',class_of_filters).objects.filter(**filters)
@@ -140,7 +142,6 @@ class studentGrouping(models.Model):
 	def avg_progress_df_filters_col(self,col_filters_dict,row_filters_dict,filters):
 		"""returns a dataframe of the average progress for a combination of groups - rows and columns both defined by dicts of dicts"""
 		results=pandas.DataFrame()
-		filters.pop('cohort',None)
 		for col_name,col_filter in col_filters_dict.items():
 			joined_filters_col={**filters,**col_filter}
 			results[col_name]=self.avg_progress_series(row_filters_dict,joined_filters_col)
@@ -394,7 +395,7 @@ class student(models.Model):
 	("E","EHCP"))
 	sen=models.CharField(max_length=1,choices=sen_types, help_text="The Special Educational Need code applicable to the student.", default="N")
 	
-	lac=models.BooleanField(help_text="Whether the student is a Looked After Child (in social care." )
+	lac=models.BooleanField(help_text="Whether the student is a Looked After Child (in social care)." )
 	fsm_ever=models.BooleanField(help_text="Whether the student has ever been eligible for Free School Meals.")
 	
 	#class_codes=models.ManyToManyField(classgroup, help_text="The classes that the student belongs to.",blank=True)
