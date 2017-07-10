@@ -13,14 +13,13 @@ def logIntoSISRA(uname,pword,browser):
 	print("<"+str(datetime.datetime.now()).split('.')[0]+">: "+"Logging in with provided details...")
 	try:
 		unameBox=browser.find_element_by_id('LogIn_UserName')
-		unameBox.send_keys(uname)
 		pwordBox=browser.find_element_by_id('LogIn_Password')
+		unameBox.send_keys(uname)
 		pwordBox.send_keys(pword)
 		pwordBox.submit()
 	except:
 		print("<"+str(datetime.datetime.now()).split('.')[0]+">: "+  "ERR")
 		browser.close()
-
 	try:
 		browser.find_element_by_css_selector('.green').click()
 	except:

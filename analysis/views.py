@@ -10,6 +10,7 @@ import time
 import pandas as pd
 import numpy as np
 #from data_interrogator import views
+from xvfbwrapper import Xvfb
 
 # Create your views here.
 def index(request):
@@ -95,7 +96,11 @@ def importPrompt(request):
 				print("<"+str(datetime.datetime.now()).split('.')[0]+">: "+"New data drop " + dd_name + " created for Year " + cohort +". Getting ready to import data...")
 			else:
 				print("<"+str(datetime.datetime.now()).split('.')[0]+">: "+"Data drop " + dd_name + " located for Year "+cohort+". Getting ready to update data...")
-			browser=webdriver.Chrome()
+			virtual_display=Xvfb(width=1280,height=720)
+			virtual_display.start()
+			browse_options=webdriver.ChromeOptions()
+			browse_options.add_argument('--headless')
+			browser=webdriver.Chrome('/home/administrator/assessment-progress-analysis-system/chromedriver',chrome_options=browse_options)
 			logIntoSISRA(username,pw,browser)
 			openStudentReports(browser,cohort,dd_name)
 			students_df,grades_df=getStudentData(browser,cohort,dd_name)
@@ -103,6 +108,7 @@ def importPrompt(request):
 
 			
 			browser.close()
+			virtual_display.stop()
 			print("<"+str(datetime.datetime.now()).split('.')[0]+">: "+  "Student records retrieved, importing...")
 			failed_upns=[]
 			failed_grades=[]
