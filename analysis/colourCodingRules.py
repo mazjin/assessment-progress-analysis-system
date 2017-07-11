@@ -1,7 +1,7 @@
 import numpy as np
 
 def colour_progress(series):
-		sdev=np.std(series)/2.0
+		sdev=np.std(series)
 		savg=np.mean(series)
 		print(sdev,savg)
 		output=[]
@@ -13,6 +13,6 @@ def colour_progress(series):
 			elif val<(savg-sdev):
 				output.append('background-color:red')
 			else:
-				output.append('background-color:yellow')
+				output.append('')
 		#is_high=series<(savg+sdev)
 		return output
