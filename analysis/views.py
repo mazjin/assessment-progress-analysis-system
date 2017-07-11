@@ -9,6 +9,7 @@ import sqlite3
 import time
 import pandas as pd
 import numpy as np
+from .colourCodingRules import colour_progress
 #from data_interrogator import views
 from xvfbwrapper import Xvfb
 
@@ -330,15 +331,17 @@ def interrogate(request):
 				filters['datadrop__name__contains']=""
 			#outputTable=form.cleaned_data.get('datadrop_selected').avg_progress_df_filters_col(cfilters,rfilters,filters).to_html
 			outputTable=datadrop.objects.all()[0].avg_progress_df_filters_col(cfilters,rfilters,filters)
+			outputTable.replace(to_replace="-",value=np.nan,inplace=True)
 			if form.cleaned_data.get('residual_toggle'):
 				residual_mask=pd.DataFrame()
-				outputTable.replace(to_replace="-",value=np.nan,inplace=True)
 				residual_mask['All']=outputTable['All']
 				for c in outputTable.columns:
 					residual_mask[c]=outputTable['All']
 				outputTable=outputTable-residual_mask
-				outputTable.fillna(value="-",inplace=True)
-			outputTable=outputTable.to_html
+			outputTable=outputTable.style.apply(colour_progress)
+			outputTable=outputTable.highlight_null(null_color="grey").render()
+			#outputTable.fillna(value="-",inplace=True)
+			#outputTable=outputTable.to_html
 			context={'form':form,'outputTable':outputTable}
 			return render(request,'analysis/interrogatorNew.html',context)
 	context={'form':form,'outputTable':""}
