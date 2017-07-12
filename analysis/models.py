@@ -4,6 +4,10 @@ from django.apps import apps
 # Create your models here.
 
 def get_default_filters_dict(class_of_filters,**filters):
+	"""defines a row or column query as a dictionary of filter conditions, to be
+	used in functions of the studentGrouping class"""
+	
+	
 	if class_of_filters=="student":
 		return {'All':{},
 			'Male':{'upn__gender':"M"},
@@ -42,13 +46,17 @@ def get_default_filters_dict(class_of_filters,**filters):
 			'EBacc':{'subject__ebacc_subject':True},
 			'Non-EBacc':{'subject__ebacc_subject':False},
 			}
-	else:
+	else: 
+		"""if not a fixed set of filters, populate from objects in db based on
+		class, code specific to each class removes invalid filters and replaces 
+		them with valid ones where possible"""
 		if class_of_filters=="classgroup" :
 			filters.pop('datadrop',None)
 			filters.pop('datadrop__name',None)
 			if "classgroup" in filters:
 				filters['class_code']=filters['classgroup'].class_code
 				filters.pop('classgroup',None)
+				
 		elif class_of_filters=="subject" or class_of_filters=="faculty":
 			if "subject" in filters:
 				filters['name']=filters['subject'].name
@@ -58,6 +66,7 @@ def get_default_filters_dict(class_of_filters,**filters):
 				filters.pop('subject__name',None)
 			filters.pop('datadrop',None)
 			filters.pop('datadrop__name',None)
+			
 		elif class_of_filters=="datadrop":
 			if 	"datadrop__name" in filters:
 				filters['name']=filters['datadrop__name']
@@ -66,28 +75,38 @@ def get_default_filters_dict(class_of_filters,**filters):
 				filters['id']=filters['datadrop'].id
 				filters.pop('datadrop',None)
 			if "subject" in filters or "faculty" in filters:
-				filters['cohort__in']=yeargroup.objects.filter(subject=filters['subject'])
+				filters['cohort__in']=yeargroup.objects.filter(
+					subject=filters['subject'])
 				filters.pop('subject',None)
 			elif "subject__name" in filters:
-				filters['cohort__in']=yeargroup.objects.filter(subject__name__contains=filters['subject__name'])
+				filters['cohort__in']=yeargroup.objects.filter(
+					subject__name__contains=filters['subject__name'])
 				filters.pop('subject__name',None)
 			if "classgroup" in filters:
 				filters['cohort']=filters['classgroup'].cohort
 				filters.pop('classgroup',None)
+				
 		elif class_of_filters=="yeargroup" :
 			if "subject__name" in filters:
-				filters['subject__in']=subject.objects.filter(name__contains=filters['subject__name'])
+				filters['subject__in']=subject.objects.filter(
+					name__contains=filters['subject__name'])
 				filters.pop('subject__name',None)
 			if "cohort" in filters:
 				filters['cohort']=filters['cohort'].cohort
 			filters.pop('subject',None)
+		
+		#get queryset or set of objects from db based on filters
 		if class_of_filters in ['yeargroup','datadrop','subject','classgroup']:
-			qset=apps.get_model('analysis',class_of_filters).objects.filter(**filters)
+			qset=apps.get_model('analysis',class_of_filters).\
+				objects.filter(**filters)
 		elif class_of_filters=="faculty":
-			qset=['Maths','English','Science','Humanities','MFL','Arts','Technology','IT',None]
+			qset=['Maths','English','Science','Humanities','MFL',
+				'Arts','Technology','IT',None]
 			for sub in subject.objects.filter(**filters):
 				if sub.faculty not in qset:
 					qset.add(sub.faculty)
+			
+		#sorting set for each class
 		if class_of_filters=="yeargroup":
 			class_of_filters="subject__cohort"
 			qset=qset.order_by('cohort')
@@ -97,13 +116,8 @@ def get_default_filters_dict(class_of_filters,**filters):
 			qset=qset.order_by('name','faculty')
 		elif class_of_filters=="classgroup":
 			qset=qset.order_by('class_code')
-		print(qset)
-		# if class_of_filters=="subject" or class_of_filters=="datadrop":
-			# label_attribute="name"
-		# elif class_of_filters=="yeargroup":
-			# label_attribute="cohort"
-		# elif class_of_filters=="classgroup":
-			# label_attribute="class_code"
+		
+		#populate returning dictionary with set/queryset
 		returnDict={'All':{}}
 		if class_of_filters=="subject":
 			for q in qset:
@@ -116,39 +130,31 @@ def get_default_filters_dict(class_of_filters,**filters):
 					returnDict[q]={'subject__faculty':q}
 		else:
 			for q in qset:
-				# nm=getattr(q,label_attribute)
-				# print(class_of_filters,nm,q)
-				# returnDict[getattr(q,label_attribute)]={class_of_filters:q}
 				returnDict[q.__str__()]={class_of_filters:q}
 
 	return returnDict
 
 class studentGrouping(models.Model):
-	"""provides set of common functions for child classes yeargroup, classgroup, datadrop and subject"""
+	"""provides set of common functions for child classes yeargroup, classgroup,
+	datadrop and subject"""
 	class Meta:
 		abstract = True
-	def avg_progress_df_querycol(self,col_queryset,group_filters_dict,filters):
-		"""returns a dataframe of the average progress for a combination of groups - rows defined by dict of dicts,columns defined by iterable object (intended to be queryset or list)"""
-		results=pandas.DataFrame()
-		for col_header in col_queryset:
-			if type(col_header).__name__=="yeargroup":
-				label=col_header.cohort
-			elif type(col_header).__name__=="classgroup":
-				label=col_header.class_code
-			else:
-				label=col_header.name
-			results[label]=col_header.avg_progress_series(group_filters_dict,filters)
-		return results.reindex(group_filters_dict.keys()).sort_index(axis=1)
-	def avg_progress_df_filters_col(self,col_filters_dict,row_filters_dict,filters):
-		"""returns a dataframe of the average progress for a combination of groups - rows and columns both defined by dicts of dicts"""
+		
+	def avg_progress_df_filters_col(self,col_filters_dict,
+		row_filters_dict,filters):
+		"""returns a dataframe of the average progress for a combination of 
+		group filters - rows and columns both defined by dicts of dicts"""
 		results=pandas.DataFrame()
 		for col_name,col_filter in col_filters_dict.items():
 			joined_filters_col={**filters,**col_filter}
-			results[col_name]=self.avg_progress_series(row_filters_dict,joined_filters_col)
-		return results.reindex(index=row_filters_dict.keys(),columns=col_filters_dict.keys())
+			results[col_name]=self.avg_progress_series(row_filters_dict,
+				joined_filters_col)
+		return results.reindex(index=row_filters_dict.keys(),
+			columns=col_filters_dict.keys())
 		
 	def avg_progress_series(self,group_filters_dict,filters):
-		"""returns the average progress of a set of groups given by a dict of dicts"""
+		"""returns the average progress of a set of group filters given by a 
+		dict of dicts"""
 		results={}
 		for group_key,group_filter in group_filters_dict.items():
 			joined_filters={**group_filter,**filters}
@@ -163,24 +169,24 @@ class studentGrouping(models.Model):
 		model_pk_field=self._meta.pk.name
 		if model_name=="subject":
 			model_pk_field="name"
-		# if not("datadrop" in filters or "datadrop__name" in filters or "datadrop__date" in filters) and self.__class__.__name__ !="datadrop":
-			# filters['datadrop']=datadrop.objects.all().filter(cohort=self.cohort).order_by('-date')[0]
-
-		# if (not (model_name+"__"+model_pk_field+"__contains") in filters and not model_name in filters):
-			# filters[model_name]=self
 		grades_found=grade.objects.filter(**filters)
 		return grades_found
 	
 	def avg_progress(self,**filters):
-		"""returns average progress score for set of grades defined by filters"""
-		progress_avg=self.get_grades(**filters).aggregate(models.Avg('progress'))['progress__avg']
+		"""returns average progress score of set of grades defined by filters"""
+		progress_avg=self.get_grades(**filters).aggregate(
+			models.Avg('progress'))['progress__avg']
 		if not progress_avg is None:
 			return round(progress_avg,2)
 		else:
 			return "-"
 	
 	def avg_progress_template(self,**filters):
-		filters['datadrop']=datadrop.objects.all().filter(cohort=self.cohort).order_by('-date')[0]
+		"""returns average progress for "default values without having to set 
+		filters directly - used for directly embedding values in page 
+		templates"""
+		filters['datadrop']=datadrop.objects.all().filter(cohort=self.cohort)\
+			.order_by('-date')[0]
 		filters[self.__class__.__name__]=self
 		return self.avg_progress(**filters)
 	
@@ -195,7 +201,8 @@ class studentGrouping(models.Model):
 		return self.avg_progress_template(**filters)
 	
 	def avg_progress_pp_gap(self,**filters):
-		"""calculates the gap in average progress between pupil premium and non-PP students"""
+		"""calculates the gap in average progress between pupil premium and 
+		non-PP students"""
 		return round(self.avg_progress_pp()-self.avg_progress_npp(),2)
 		
 	def avg_progress_higher(self,**filters):
@@ -212,30 +219,36 @@ class studentGrouping(models.Model):
 		"""calls avg_progress for lower banding for templating"""
 		filters['upn__banding__contains']="L"
 		return self.avg_progress_template(**filters)
-		
+
 class gradeValue(models.Model):
-	"""A definition of a grade for use in a grade method (NOT an instance of a grade, see  grade class instead)"""
-	name=models.CharField(max_length=5, help_text="The grade symbol, e.g. A+, 9=, 4.3, Pass")
-	progress_value=models.IntegerField("The value of the grade in the school's internal progress system.")
-	att8_value=models.DecimalField(decimal_places=1,max_digits=4, help_text="The value of the grade towards Attainment 8.",blank=True)
+	"""A definition of a grade for use in a grade method (NOT an instance of a 
+	grade, see  grade class instead)"""
+	name=models.CharField(max_length=5, help_text="The grade symbol, e.g. A+, \
+	9=, 4.3, Pass")
+	progress_value=models.IntegerField("The value of the grade in the school's \
+	internal progress system.")
+	att8_value=models.DecimalField(decimal_places=1,max_digits=4, 
+		help_text="The value of the grade towards Attainment 8.",blank=True)
 	
 	def __str__(self):
 		return self.name
-		
-	
+
 class gradeMethod(models.Model):
 	"""the grading method associated with a subject group"""
 	text=models.CharField(
 	max_length=100,
 	help_text="The identifying label for the grading scheme.")
 	
-	vals=models.ManyToManyField(gradeValue,related_name="gradeset",help_text="The set of grades used/included in the grading method.")
+	vals=models.ManyToManyField(gradeValue,related_name="gradeset",
+		help_text="The set of grades used/included in the grading method.")
 	
-	pass_grade=models.ForeignKey(gradeValue,help_text="The grade considered a pass or strong pass for the purposes of headline measures (e.g. EnMa Basics, Ebacc).")
+	pass_grade=models.ForeignKey(gradeValue,help_text="The grade considered a \
+		pass or strong pass for the purposes of headline measures (e.g. EnMa \
+		Basics, Ebacc).")
 	
 	def __str__(self):
 		return self.text
-	
+
 class yeargroup(studentGrouping):
 	"""A cohort of students"""
 	cohort_choices=(
@@ -250,7 +263,8 @@ class yeargroup(studentGrouping):
 		("2025-2026","2025-2026"),
 		("2026-2027","2026-2027"),
 		)
-	cohort=models.CharField(max_length=9,choices=cohort_choices,primary_key=True,help_text="The graduating year of this yeargroup.")
+	cohort=models.CharField(max_length=9,choices=cohort_choices,
+		primary_key=True,help_text="The graduating year of this yeargroup.")
 	current_year_choices=(
 	("7","Year 7"),
 	("8","Year 8"),
@@ -258,23 +272,26 @@ class yeargroup(studentGrouping):
 	("10","Year 10"),
 	("11","Year 11"),
 	)
-	current_year=models.CharField(max_length=2,choices=current_year_choices,help_text="The current yeargroup the cohort is in.")
+	current_year=models.CharField(max_length=2,choices=current_year_choices,
+		help_text="The current yeargroup the cohort is in.")
 	
 	def __str__(self):
 		return self.cohort + " (current Year " + self.current_year +")"
 		
 	def reggroups(self):
 		return self.classgroup_set.filter(subject=None)
-	
+
 class datadrop(studentGrouping):
 	"""A scheduled collection of data; an individual dataset"""
-	name=models.CharField(max_length=30,help_text="The label identifying the datadrop, e.g. Y9 DD3")
+	name=models.CharField(max_length=30,help_text="The label identifying the \
+	datadrop, e.g. Y9 DD3")
 	date=models.DateField(help_text="The date the datadrop ended.")
-	cohort=models.ForeignKey(yeargroup, help_text="The yeargroup the data drop belongs to.")
+	cohort=models.ForeignKey(yeargroup, 
+		help_text="The yeargroup the data drop belongs to.")
 	
 	def __str__(self):
 		return self.name + " (Y"+self.cohort.current_year+")"
-	
+
 class subject(studentGrouping):
 	"""A subject studied by students in a yeargroup"""
 	buckets=(
@@ -285,46 +302,62 @@ class subject(studentGrouping):
 	)
 	
 	name=models.CharField(max_length=100,help_text="The subject's name.")
-	method=models.ForeignKey(gradeMethod,help_text="The grade method used by the subject.")
-	attainment8bucket=models.CharField(max_length=2,choices=buckets,help_text="The highest Attainment 8 bucket the subject can be counted in.")
-	cohort=models.ForeignKey(yeargroup,help_text="The yeargroup studying the subject.")
+	method=models.ForeignKey(gradeMethod,
+		help_text="The grade method used by the subject.")
+	attainment8bucket=models.CharField(max_length=2,choices=buckets,
+		help_text="The highest Attainment 8 bucket the subject can be counted in.")
+	cohort=models.ForeignKey(yeargroup,
+		help_text="The yeargroup studying the subject.")
 	
-	faculty=models.CharField(max_length=100,help_text="The faculty the subject is part of.",null=True,blank=True)
+	faculty=models.CharField(max_length=100,
+		help_text="The faculty the subject is part of.",null=True,blank=True)
 	
+	"""defines whether a subject is optional or core, and whether it counts for 
+	English Baccalaureate"""
 	option_subject=models.BooleanField(default=True)
 	ebacc_subject=models.BooleanField(default=False)
 	
 	def staff_list(self):
+		"""returns set of staff codes for teachers of the subject"""
 		staff_tuple_list=list(self.classgroup_set.all().values_list('staff'))
 		staff_list=[]
 		for st in staff_tuple_list:
 			staff_list.append(st[0])
 		staff_list=set(staff_list)
 		return staff_list
+		
 	def __str__(self):
 		return self.name + " (Y" + self.cohort.current_year+")"
 	
 	def num_classes(self,dd=""):
+		"""returns number of classes in the subject - used for page templates"""
 		if dd=="":
-			dd=datadrop.objects.all().filter(cohort=self.cohort).order_by('-date')[0]
+			dd=datadrop.objects.all().filter(cohort=self.cohort)\
+				.order_by('-date')[0]
 		elif isinstance(dd,str):	
 			dd=datadrop.objects.get(name=dd,cohort=self.cohort)
 		return self.classgroup_set.all().count()
 		
 	def num_students(self,dd=""):
+		"""returns the number of students studying the subject as of the data 
+		drop specified (defaults to most recent) - used for page templates"""
 		if dd=="":
-			dd=datadrop.objects.all().filter(cohort=self.cohort).order_by('-date')[0]
+			dd=datadrop.objects.all().filter(cohort=self.cohort)\
+				.order_by('-date')[0]
 		elif isinstance(dd,str):	
 			dd=datadrop.objects.get(name=dd,cohort=self.cohort)
 		return len(set(grade.objects.filter(subject=self).values_list('upn')))
-	
-	
+
 class classgroup(studentGrouping):
-	"""The timetabled class or registration group."""
-	class_code=models.CharField(max_length=10,primary_key=True,help_text="The unique class identifier code.")
-	cohort=models.ForeignKey(yeargroup, help_text="The yeargroup that the class group's students belong to.")
-	staff=models.CharField(max_length=12, help_text="The staff member(s) assigned to this group.")
-	subject=models.ManyToManyField(subject,help_text="The subject(s) studied by the group.",blank=True)
+	"""A timetabled class or registration group."""
+	class_code=models.CharField(max_length=10,primary_key=True,
+		help_text="The class group's unique identifier code.")
+	cohort=models.ForeignKey(yeargroup, 
+		help_text="The yeargroup that the class group's students belong to.")
+	staff=models.CharField(max_length=12, 
+		help_text="The staff member(s) assigned to this group.")
+	subject=models.ManyToManyField(subject,
+		help_text="The subject(s) studied by the group.",blank=True)
 	
 	def __str__(self):
 		return self.class_code
@@ -339,79 +372,114 @@ class classgroup(studentGrouping):
 	
 	@property
 	def students(self):
-		"""returns set of unique student records with a grade attached to the classgroup"""
+		"""returns set of unique student records with a grade attached to the
+		classgroup"""
 		return set(gr.upn for gr in self.grade_set.all())
-
+		
 	def avg_progress_residual_subject(self,subj=None,**filters):
+		"""returns the average progress relative to that of the whole subject
+		- used for templates"""
 		if subj is None:
 			subj=self.subject.all()[0]
 		return round(self.avg_progress(**filters) - subj.avg_progress(),2)
 		
 	def avg_progress_att8bucket(self,**filters):
+		"""returns the average progress for the students in the class in 
+		subjects in the same attainment 8 category - used for templates"""
 		filters['upn__in']=self.students
 		filters['classgroup__class_code__contains']=""
 		if not "subject__attainment8bucket" in filters:
-			filters['subject__attainment8bucket']=self.subject.all()[0].attainment8bucket
+			filters['subject__attainment8bucket']=self.subject.all()[0]\
+				.attainment8bucket
 		return self.avg_progress(**filters)
 		
 	def avg_progress_residual_att8bucket(self,**filters):
+		"""returns the difference between the average progress of the class
+		and that of the same pupils in subjects in the same attainment 8 bucket
+		 - used for page templates"""
 		try:
-			return round(self.avg_progress(**filters) - self.avg_progress_att8bucket(**filters),2)
+			return round(self.avg_progress(**filters) - \
+				self.avg_progress_att8bucket(**filters),2)
 		except TypeError:
 			return "-"
-			
+
 class student(models.Model):
 	"""A pupil at the school"""
 	upn=models.CharField(max_length=13,primary_key=True,help_text="Unique 13-character identifier used in many school systems.")
-	forename=models.CharField(max_length=50,help_text="The student's forename(s).")
-	surname=models.CharField(max_length=75,help_text="The student's surname(s).")
-	reg=models.ForeignKey(classgroup,related_name="reg_group",help_text="The registration group the pupil belongs to.")
+	forename=models.CharField(max_length=50,
+		help_text="The student's forename(s).")
+	surname=models.CharField(max_length=75,
+		help_text="The student's surname(s).")
+	reg=models.ForeignKey(classgroup,related_name="reg_group",
+		help_text="The registration group the pupil belongs to.")
 	genders=(
 	("M","Male"),
 	("F","Female"),
 	("N","Not Specified")
 	)
-	gender=models.CharField(max_length=1,choices=genders,help_text="The gender identity of the student.")
+	gender=models.CharField(max_length=1,choices=genders,
+		help_text="The gender identity of the student.")
 	
-	cohort=models.ForeignKey(yeargroup, help_text="The yeargroup the student belongs to.")
+	cohort=models.ForeignKey(yeargroup, 
+		help_text="The yeargroup the student belongs to.")
 	
-	ks2_reading=models.CharField(max_length=5,help_text="The student's reading score at the end of KS2.")
-	ks2_maths=models.CharField(max_length=5, help_text="The student's maths score at the end of KS2.")
-	ks2_average=models.CharField(max_length=5, help_text= "The student's average reading and maths score at the end of KS2")
+	ks2_reading=models.CharField(max_length=5,
+		help_text="The student's reading score at the end of KS2.")
+	ks2_maths=models.CharField(max_length=5, 
+		help_text="The student's maths score at the end of KS2.")
+	ks2_average=models.CharField(max_length=5, 
+		help_text= "The student's average reading and maths score at the end of\
+			 KS2")
 	
 	bands=(
 	("H","Upper/High Ability"),
 	("M","Middle Ability"),
 	("L","Lower Ability"),
 	("N","No data"))
-	banding=models.CharField(max_length=1,choices=bands, help_text="The ability grouping the student belongs to.")
+	banding=models.CharField(max_length=1,choices=bands, help_text="The ability\
+		 grouping the student belongs to.")
 	
-	eal=models.BooleanField(help_text="Whether the student has a native language other than English.")
-	pp=models.BooleanField(help_text="Whether the student is a pupil premium student.")
+	eal=models.BooleanField(help_text="Whether the student has a native \
+		language other than English.")
+	pp=models.BooleanField(help_text="Whether the student is a pupil premium \
+		student.")
 	
 	sen_types=(
 	("N","Non SEN"),
 	("K","K SEN"),
 	("E","EHCP"))
-	sen=models.CharField(max_length=1,choices=sen_types, help_text="The Special Educational Need code applicable to the student.", default="N")
+	sen=models.CharField(max_length=1,choices=sen_types,
+		help_text="Special Educational Need code applicable to the student.",
+		default="N")
 	
-	lac=models.BooleanField(help_text="Whether the student is a Looked After Child (in social care)." )
-	fsm_ever=models.BooleanField(help_text="Whether the student has ever been eligible for Free School Meals.")
-	
-	#class_codes=models.ManyToManyField(classgroup, help_text="The classes that the student belongs to.",blank=True)
+	lac=models.BooleanField(help_text="Whether the student is a Looked After \
+		Child (in social care)." )
+	fsm_ever=models.BooleanField(help_text="Whether the student has ever been \
+		eligible for Free School Meals.")
 	
 	def __str__(self):
 		return self.forename+ " " + self.surname + " ("+self.upn+")"
-	
+
 class grade(models.Model):
-	"""An instance of a grade assigned to a student in a subject as part of a data drop."""
+	"""An instance of a grade assigned to a student in a subject as part of a 
+	data drop."""
 	value=models.ForeignKey(gradeValue,help_text="The grade given.")
-	method=models.ForeignKey(gradeMethod,help_text="The grade method the grade belongs to.")
-	upn=models.ForeignKey(student, help_text="The UPN of the student the grade has been given to.")
-	datadrop=models.ForeignKey(datadrop, help_text="The data drop that the grade is part of.")
-	subject=models.ForeignKey(subject, help_text="The subject the grade was given in.")
-	progress=models.IntegerField(blank=True, help_text="The progress the student has made from their baseline.",default=0)
-	EAPgrade=models.ForeignKey(gradeValue,help_text="The estimated attainment for the student in this data drop.",related_name="EAP")
-	classgroup=models.ForeignKey(classgroup,help_text="The class the grade was given in",null=True)
+	method=models.ForeignKey(gradeMethod,
+		help_text="The grade method the grade belongs to.")
+	upn=models.ForeignKey(student, 
+		help_text="The UPN of the student the grade has been given to.")
+	datadrop=models.ForeignKey(datadrop, 
+		help_text="The data drop that the grade is part of.")
+	subject=models.ForeignKey(subject,
+		help_text="The subject the grade was given in.")
+	progress=models.IntegerField(blank=True,
+		help_text="The progress the student has made from their baseline.",
+		default=0)
+	EAPgrade=models.ForeignKey(gradeValue,
+		help_text="The estimated attainment for the student in this data drop.",
+		related_name="EAP")
+	classgroup=models.ForeignKey(classgroup,
+		help_text="The class the grade was given in",null=True)
 	def __str__(self):
-		return self.datadrop.name+"/"+self.upn.__str__()+"/"+self.subject.__str__()+"/"+self.value.name
+		return self.datadrop.name+"/"+self.upn.__str__()+"/"+\
+		 self.subject.__str__()+"/"+self.value.name
