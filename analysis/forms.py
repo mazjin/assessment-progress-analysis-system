@@ -45,8 +45,10 @@ class interrogatorForm(forms.Form):
 	val_choice=forms.ChoiceField(label="valChoice",
 		choices=VALUES,required=True)
 	
-	#returns table values as a residual from the "All" column
-	residual_toggle=forms.BooleanField(label="residualToggle",
+	#returns table values as a residual from the "All" column/row
+	residual_toggle_col=forms.BooleanField(label="residualToggleCol",
+		required=False)
+	residual_toggle_row=forms.BooleanField(label="residualToggleRow",
 		required=False)
 	
 	"""below options limit query to specific objects/groups"""

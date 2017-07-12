@@ -10,6 +10,7 @@ import time
 import pandas as pd
 import numpy as np
 from .colourCodingRules import colour_progress
+import seaborn as sns
 #from data_interrogator import views
 
 # Create your views here.
@@ -412,19 +413,33 @@ def interrogate(request):
 				cfilters,rfilters,filters)
 			#format & apply colour coding
 			outputTable.replace(to_replace="-",value=np.nan,inplace=True)
-			if form.cleaned_data.get('residual_toggle'):
+			if form.cleaned_data.get('residual_toggle_col'):
 				#for residual, create mask of "All" values and subtract from df
 				residual_mask=pd.DataFrame()
 				residual_mask['All']=outputTable['All']
 				for c in outputTable.columns:
 					residual_mask[c]=outputTable['All']
 				outputTable=outputTable-residual_mask
-			outputTable=outputTable.style.apply(colour_progress,axis=1)
+			if form.cleaned_data.get('residual_toggle_row'):
+				#for residual, create mask of "All" values and subtract from df
+				residual_mask=pd.DataFrame(columns=outputTable.columns)
+				residual_mask.loc['All']=outputTable.loc['All']
+				for c in outputTable.index.values:
+					residual_mask.loc[c]=outputTable.loc['All']
+				outputTable=outputTable-residual_mask
+			if form.cleaned_data.get('residual_toggle_row') and form.cleaned_data.get('residual_toggle_col'):
+				outputTable=outputTable.style.bar(align='mid',color=['red','green'])
+				#outputTable=outputTable.style.background_gradient(
+				#	cmap=sns.light_palette("green", as_cmap=True))
+			elif form.cleaned_data.get('residual_toggle_row'):
+				outputTable=outputTable.style.apply(colour_progress,axis=0)
+			else:
+				outputTable=outputTable.style.apply(colour_progress,axis=1)
 			outputTable=outputTable.highlight_null(null_color="grey")
 			#outputTable.fillna(value="-",inplace=True)
 			
 			#change output dataframe table to html format
-			outputTable=outputTable.render()
+			outputTable=outputTable.render().replace('nan','')
 			#outputTable=outputTable.to_html
 			
 			#render page with input form and filled table

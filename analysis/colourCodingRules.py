@@ -19,3 +19,4 @@ def colour_progress(series):
 		else:
 			output.append('')
 	return output
+	
