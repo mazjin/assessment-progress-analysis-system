@@ -428,7 +428,7 @@ def interrogate(request):
 				for c in outputTable.columns:
 					residual_mask[c]=outputTable['All']
 				outputTable=outputTable-residual_mask
-			outputTable=outputTable.style.apply(colour_progress)
+			outputTable=outputTable.style.apply(colour_progress,axis=1)
 			outputTable=outputTable.highlight_null(null_color="grey")
 			#outputTable.fillna(value="-",inplace=True)
 			
