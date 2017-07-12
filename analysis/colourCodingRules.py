@@ -1,18 +1,21 @@
 import numpy as np
 
 def colour_progress(series):
-		sdev=np.std(series)
-		savg=np.mean(series)
-		print(sdev,savg)
-		output=[]
-		for index,val in series.iteritems():
-			if val=="NaN":
-				output.append('background-color:grey')
-			elif val>(savg+sdev):
-				output.append('background-color:green')
-			elif val<(savg-sdev):
-				output.append('background-color:red')
-			else:
-				output.append('')
-		#is_high=series<(savg+sdev)
-		return output
+	"""sets colour coding rules for progress values"""
+	sdev=np.std(series)
+	savg=np.mean(series)
+	output=[]
+	for index,val in series.iteritems():
+		#if no value, colour grey
+		if val=="NaN":
+			output.append('background-color:grey')
+		#if value significantly above, colour green
+		elif val>(savg+sdev):
+			output.append('background-color:green')
+		#if value significantly below, colour red
+		elif val<(savg-sdev):
+			output.append('background-color:red')
+		#otherwise no colour
+		else:
+			output.append('')
+	return output
