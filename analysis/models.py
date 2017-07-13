@@ -483,3 +483,46 @@ class grade(models.Model):
 	def __str__(self):
 		return self.datadrop.name+"/"+self.upn.__str__()+"/"+\
 		 self.subject.__str__()+"/"+self.value.name
+
+class headline(models.Model):
+	"""set of headline measures for each student and datadrop"""
+	upn=models.ForeignKey(student, 
+		help_text="The student the headline figures pertain to.")
+	datadrop=models.ForeignKey(datadrop,
+		help_text="The datadrop the headline figures pertain to.")
+	progress8=models.DecimalField(blank=True,null=True,
+		decimal_places=2, max_digits=4,
+		help_text="The PROJECTED, INACCURATE Progress 8 figure calculated \
+			for the student/DD.")
+			
+	attainment8=models.IntegerField(default=0,
+		help_text="The Attainment8 calculated for the student/DD.")
+		
+	en_att8=models.IntegerField(default=0,
+		help_text="The score for the English Att8 bucket.")
+	ma_att8=models.IntegerField(default=0,
+		help_text="The score for the Maths Att8 bucket.")
+	eb_att8=models.IntegerField(default=0,
+		help_text="The score for the EBacc Att8 bucket.")
+	op_att8=models.IntegerField(default=0,
+		help_text="The score for the Open Att8 bucket.")
+	
+	eb_filled=models.IntegerField(default=0,
+		help_text="The number of subjects in the Ebacc Att8 bucket.")
+	op_filled=models.IntegerField(default=0,
+		help_text="The number of subjects in the Open Att8 bucket.")
+	
+	ebacc_entered=models.BooleanField(default=False,
+		help_text="Whether the student qualified to enter the EBacc or not.")
+	ebacc_achieved=models.BooleanField(default=False,
+		help_text="Whether the student achieved the EBacc or not.")
+	
+	basics_9to4=models.BooleanField(default=False,
+		help_text="Whether the student achieved a standard pass in both \
+		English and Maths")
+	basics_9to5=models.BooleanField(default=False,
+		help_text="Whether the student achieved a strong pass in both \
+		English and Maths")
+	att8_progress=models.IntegerField(default=0,
+		help_text="The difference in Attainment 8 score between this datadrop\
+		 and baseline.")
