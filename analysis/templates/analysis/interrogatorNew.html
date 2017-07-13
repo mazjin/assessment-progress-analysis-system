@@ -4,7 +4,8 @@
 	<form action="{% url 'analysis:interrogate'%}" method="post">
 		{% csrf_token %}
 		{{form.as_p}}
-		<input type="submit" value="Get Table"/>
+		<input type="submit" name="show_table" value="Get Table"/>
+		<input type="submit" name="export_table" value="Export to Excel"/>
 	</form>
 </div>
 <div >
