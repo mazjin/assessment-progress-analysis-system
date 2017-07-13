@@ -386,47 +386,7 @@ def interrogate(request):
 	else:
 		form=interrogatorForm(data=request.POST)
 		if form.is_valid():
-			filters={}
-			#get individual object filters
-			for grp in [('yeargroup','cohort',""),('subject','subject',"name"),\
-				('classgroup','classgroup',""),('datadrop','datadrop',"name")]:
-				if form.cleaned_data.get(grp[0]+'_selected') and grp[2]!="" and\
-				form.cleaned_data.get('match_'+grp[0]+'_by_name')==True:
-					filters[grp[1]+"__"+grp[2]]=getattr(
-						form.cleaned_data.get(grp[0]+'_selected'),grp[2])
-				elif form.cleaned_data.get(grp[0]+"_selected"):
-					filters[grp[1]]=form.cleaned_data.get(grp[0]+'_selected')
-			#determine filters for rows & columns based on selected values
-			rfilters=get_default_filters_dict(form.cleaned_data\
-				.get('row_choice'),**filters)
-			cfilters=get_default_filters_dict(form.cleaned_data\
-				.get('col_choice'),**filters)
-			
-			#set/edit filters for use directly on grades
-			if "cohort" in filters:
-				filters['datadrop__cohort']=filters['cohort']
-				filters.pop('cohort')
-			if not 'datadrop' in filters and not 'datadrop__name' in filters:
-				filters['datadrop__name__contains']=""
-			#get dataframe of values matching every combination of filters
-			outputTable=datadrop.objects.all()[0].avg_progress_df_filters_col(
-				cfilters,rfilters,filters)
-			#format & apply colour coding
-			outputTable.replace(to_replace="-",value=np.nan,inplace=True)
-			if form.cleaned_data.get('residual_toggle_col'):
-				#for residual, create mask of "All" values and subtract from df
-				residual_mask=pd.DataFrame()
-				residual_mask['All']=outputTable['All']
-				for c in outputTable.columns:
-					residual_mask[c]=outputTable['All']
-				outputTable=outputTable-residual_mask
-			if form.cleaned_data.get('residual_toggle_row'):
-				#for residual, create mask of "All" values and subtract from df
-				residual_mask=pd.DataFrame(columns=outputTable.columns)
-				residual_mask.loc['All']=outputTable.loc['All']
-				for c in outputTable.index.values:
-					residual_mask.loc[c]=outputTable.loc['All']
-				outputTable=outputTable-residual_mask
+			outputTable=getInterrogatorOutput(form)
 			if form.cleaned_data.get('residual_toggle_row') and form.cleaned_data.get('residual_toggle_col'):
 				outputTable=outputTable.style.bar(align='mid',color=['red','green'])
 				#outputTable=outputTable.style.background_gradient(
@@ -447,3 +407,49 @@ def interrogate(request):
 			return render(request,'analysis/interrogatorNew.html',context)
 	context={'form':form,'outputTable':""}
 	return render(request,'analysis/interrogatorNew.html',context)
+	
+def getInterrogatorOutput(form):
+	"""given valid form from interrogator template, retrieves and formats
+	output dataframe"""
+	filters={}
+	#get individual object filters
+	for grp in [('yeargroup','cohort',""),('subject','subject',"name"),\
+		('classgroup','classgroup',""),('datadrop','datadrop',"name")]:
+		if form.cleaned_data.get(grp[0]+'_selected') and grp[2]!="" and\
+		form.cleaned_data.get('match_'+grp[0]+'_by_name')==True:
+			filters[grp[1]+"__"+grp[2]]=getattr(
+				form.cleaned_data.get(grp[0]+'_selected'),grp[2])
+		elif form.cleaned_data.get(grp[0]+"_selected"):
+			filters[grp[1]]=form.cleaned_data.get(grp[0]+'_selected')
+	#determine filters for rows & columns based on selected values
+	rfilters=get_default_filters_dict(form.cleaned_data\
+		.get('row_choice'),**filters)
+	cfilters=get_default_filters_dict(form.cleaned_data\
+		.get('col_choice'),**filters)
+	
+	#set/edit filters for use directly on grades
+	if "cohort" in filters:
+		filters['datadrop__cohort']=filters['cohort']
+		filters.pop('cohort')
+	if not 'datadrop' in filters and not 'datadrop__name' in filters:
+		filters['datadrop__name__contains']=""
+	#get dataframe of values matching every combination of filters
+	outputTable=datadrop.objects.all()[0].avg_progress_df_filters_col(
+		cfilters,rfilters,filters)
+	#format & apply colour coding
+	outputTable.replace(to_replace="-",value=np.nan,inplace=True)
+	if form.cleaned_data.get('residual_toggle_col'):
+		#for residual, create mask of "All" values and subtract from df
+		residual_mask=pd.DataFrame()
+		residual_mask['All']=outputTable['All']
+		for c in outputTable.columns:
+			residual_mask[c]=outputTable['All']
+		outputTable=outputTable-residual_mask
+	if form.cleaned_data.get('residual_toggle_row'):
+		#for residual, create mask of "All" values and subtract from df
+		residual_mask=pd.DataFrame(columns=outputTable.columns)
+		residual_mask.loc['All']=outputTable.loc['All']
+		for c in outputTable.index.values:
+			residual_mask.loc[c]=outputTable.loc['All']
+		outputTable=outputTable-residual_mask
+	return outputTable
