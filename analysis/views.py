@@ -3,7 +3,7 @@ from .models import *
 from .sisraTools import *
 from selenium import webdriver
 from .forms import importForm,interrogatorForm
-from django.http import HttpResponseRedirect
+from django.http import HttpResponseRedirect,HttpResponse
 from assessment import settings
 import sqlite3
 import time
@@ -11,6 +11,7 @@ import pandas as pd
 import numpy as np
 from .colourCodingRules import colour_progress
 import seaborn as sns
+import io
 #from data_interrogator import views
 
 # Create your views here.
@@ -383,6 +384,8 @@ def interrogate(request):
 	dataframe based on entered query"""
 	if request.method !="POST":
 		form=interrogatorForm()
+	elif 'export_table' in request.POST:
+		return interrogateExport(request)
 	else:
 		form=interrogatorForm(data=request.POST)
 		if form.is_valid():
@@ -453,3 +456,37 @@ def getInterrogatorOutput(form):
 			residual_mask.loc[c]=outputTable.loc['All']
 		outputTable=outputTable-residual_mask
 	return outputTable
+	
+def interrogateExport(request):
+	"""takes POST request and serves excel file of returned dataframe"""
+	form=interrogatorForm(data=request.POST)
+	if form.is_valid():
+		outputTable=getInterrogatorOutput(form)
+		filename="scapasQuery-" + str(datetime.datetime.now()).split(".")[0] + ".xlsx"
+		filename=filename.replace(" ","").replace(":","")
+		sio=io.BytesIO()
+		writer=pd.ExcelWriter(sio,engine='openpyxl')
+		
+		if form.cleaned_data.get('residual_toggle_row') and form.cleaned_data.get('residual_toggle_col'):
+			outputTable=outputTable.style.bar(align='mid',color=['red','green'])
+			#outputTable=outputTable.style.background_gradient(
+			#	cmap=sns.light_palette("green", as_cmap=True))
+		elif form.cleaned_data.get('residual_toggle_row'):
+			outputTable=outputTable.style.apply(colour_progress,axis=0)
+		else:
+			outputTable=outputTable.style.apply(colour_progress,axis=1)
+		outputTable=outputTable.highlight_null(null_color="gray")
+		
+		outputTable.to_excel(writer,sheet_name="Sheet1")
+		writer.save()
+		
+		sio.seek(0)
+		workbook=sio.getvalue()
+		
+		
+		response= HttpResponse(workbook,
+			content_type='application/vnd.ms-excel')
+		response['Content-Disposition']='attachment; filename="' +\
+			filename + '"'
+		return response
+			
