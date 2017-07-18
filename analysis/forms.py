@@ -30,9 +30,11 @@ class interrogatorForm(forms.Form):
 		('progress','Progress Score'),
 		('meeting','Meeting/Exceeding EAP'),
 		('exceeding','Exceeding EAP'),
-		('att8','Attainment 8'),
-		#('p8','Progress 8'),
+		('attainment8','Attainment 8'),
+		('progress8','Progress 8'),
+		('att8_progress','Δ Attainment 8'),
 		('ppGap','Pupil Premium Gap'),
+		# add other headlines to this, eg. att8 by bucket, basics,ebacc
 		)
 	
 
