@@ -118,7 +118,7 @@ def importPrompt(request):
 			student data"""
 			logIntoSISRA(username,pw,browser)
 			openStudentReports(browser,cohort,dd_name)
-			students_df,grades_df=getStudentData(browser,cohort,dd_name)
+			students_df,grades_df,headlines_df=getStudentData(browser,cohort,dd_name)
 			students_df['cohort']=form.cleaned_data.get('cohort')
 			#close browser
 			browser.close()
@@ -130,7 +130,7 @@ def importPrompt(request):
 			created_classes=[]
 			created_subjects=[]
 			multiple_classes=[]
-			
+			failed_headlines=[]
 			#variables to track progress through importation processing
 			student_position=1
 			student_number=len(students_df.index)
@@ -342,13 +342,33 @@ def importPrompt(request):
 			for i,gr in new_grades_df.iterrows():
 				created_grade=grade(**gr.to_dict())
 				created_grade.save()
-				
+			
+			for i,hd in headlines_df.iterrows():
+				try:
+					hd['id']=hd['upn']+"/"+hd['datadrop']
+					hd['upn']=student.objects.get(upn=hd['upn'])
+					hd['datadrop'] =dd_obj
+					for colname in ['attainment8','en_att8','ma_att8','eb_att8','op_att8','eb_filled','op_filled','att8_progress']:
+						if pd.isnull(hd[colname]):
+							hd[colname]=0
+						else:
+							hd[colname]=int(hd[colname])
+					created_headline=headline(**hd)
+					created_headline.save()
+				except:
+					failed_headlines.append((hd['upn'],hd['datadrop']))
+					
 			#print saved feedback output from relevant lists
 			if len(failed_upns)>0:
 				print("<"+str(datetime.datetime.now()).split('.')[0]+">: "+\
 				"Importing failed on following Students:")
 				for u in failed_upns:
 					print(student.objects.get(upn=u))
+			if len(failed_headlines)>0:
+				print("<"+str(datetime.datetime.now()).split('.')[0]+">: "+\
+				"Importing failed on headline measures for:")
+				for h in failed_headlines:
+					print(u)
 			if len(failed_grades)>0:
 				print("<"+str(datetime.datetime.now()).split('.')[0]+">: "+  \
 					"Importing failed on following grades:")
@@ -374,7 +394,9 @@ def importPrompt(request):
 			#render page showing imported students, grades
 			students_table=students_df.to_html
 			grades_table=new_grades_df.to_html
-			context={'students':students_table,'grades':grades_table}
+			headlines_table=headlines_df.to_html
+			context={'students':students_table,'grades':grades_table,
+				'headlines':headlines_table}
 			return render(request,'analysis/quickDisplayDF.html',context)
 	context={'form':form}
 	return render(request,'analysis/importPrompt.html',context)
@@ -425,10 +447,12 @@ def getInterrogatorOutput(form):
 		elif form.cleaned_data.get(grp[0]+"_selected"):
 			filters[grp[1]]=form.cleaned_data.get(grp[0]+'_selected')
 	#determine filters for rows & columns based on selected values
+	
+	measure=form.cleaned_data.get('val_choice')
 	rfilters=get_default_filters_dict(form.cleaned_data\
-		.get('row_choice'),**filters)
+		.get('row_choice'),measure,**filters)
 	cfilters=get_default_filters_dict(form.cleaned_data\
-		.get('col_choice'),**filters)
+		.get('col_choice'),measure,**filters)
 	
 	#set/edit filters for use directly on grades
 	if "cohort" in filters:
@@ -437,8 +461,13 @@ def getInterrogatorOutput(form):
 	if not 'datadrop' in filters and not 'datadrop__name' in filters:
 		filters['datadrop__name__contains']=""
 	#get dataframe of values matching every combination of filters
-	outputTable=datadrop.objects.all()[0].avg_progress_df_filters_col(
-		cfilters,rfilters,filters)
+	if measure in ['attainment8','progress8',
+		'att8_progress']:
+		outputTable=datadrop.objects.all()[0].avg_headline_df(
+			cfilters,rfilters,filters,measure)
+	else:
+		outputTable=datadrop.objects.all()[0].avg_progress_df_filters_col(
+			cfilters,rfilters,filters)
 	#format & apply colour coding
 	outputTable.replace(to_replace="-",value=np.nan,inplace=True)
 	if form.cleaned_data.get('residual_toggle_col'):
