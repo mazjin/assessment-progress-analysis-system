@@ -386,9 +386,13 @@ def getStudentData(browser,year,dd):
 	student_df=pd.DataFrame(columns=['upn','forename','surname','gender','reg',
 		'banding','pp','eal','fsm_ever','lac','sen','homestatus','attendance',
 		'ks2_reading','ks2_maths'])
-	grades_df=pd.DataFrame(columns=['upn','Qualification Name','Basket','Class',
-		'Type','Grade''Att8 Points','EAP Grade','staff','Compare Grade',
-		'progress'])
+	grades_df=pd.DataFrame(columns=['upn','Qualification Name','Basket',
+		'Class','Type','Grade''Att8 Points','EAP Grade','staff',
+		'Compare Grade','progress'])
+	headlines_df=pd.DataFrame(columns=['upn','datadrop','progress8',
+		'attainment8', 'en_att8','ma_att8','eb_att8','op_att8','eb_filled',
+		'op_filled','ebacc_entered','ebacc_achieved','basics_9to4',
+		'basics_9to5','att8_progress'])
 	temp_counter=0
 	#loop through student pages
 	student_position=1
@@ -396,6 +400,7 @@ def getStudentData(browser,year,dd):
 	student_milestone=int(student_number/15)
 	if student_milestone<2:
 		student_milestone=1
+	headline_position=0
 	for key in studentDict.keys():
 		if student_position % student_milestone==1:
 			print("<"+str(datetime.datetime.now()).split('.')[0]+">: "+\
@@ -467,6 +472,37 @@ def getStudentData(browser,year,dd):
 		
 		student_position+=1
 		
+		a8p8Table=pd.read_html(browser\
+			.find_element_by_css_selector('#page.closed')
+			.get_attribute('innerHTML'),header=0,index_col=0)[9]
+		basicsTable=pd.read_html(browser\
+			.find_element_by_css_selector('#page.closed')
+			.get_attribute('innerHTML'),header=0,index_col=0)[11]
+		ebaccTable=pd.read_html(browser\
+			.find_element_by_css_selector('#page.closed')
+			.get_attribute('innerHTML'),header=0,index_col=0)[12]
+		a8p8Table.columns.str.strip()
+		a8p8Table.index.str.strip()
+		basicsTable.columns.str.strip()
+		basicsTable.index.str.strip()
+		ebaccTable.columns.str.strip()
+		ebaccTable.index.str.strip()
+		hd_entry=pd.Series({'upn':upn,'datadrop':dd,
+			'progress8':a8p8Table.loc[dd+" Progress 8","Overall"],
+			'attainment8':a8p8Table.loc[dd+" Attainment 8","Overall"],
+			'en_att8':a8p8Table.loc[dd+" Attainment 8","English"],
+			'ma_att8':a8p8Table.loc[dd+" Attainment 8","Maths"],
+			'eb_att8':a8p8Table.loc[dd+" Attainment 8","EBacc"],
+			'op_att8':a8p8Table.loc[dd+" Attainment 8","Open"],
+			'eb_filled':a8p8Table.loc[dd+" Slots Filled","EBacc"],
+			'op_filled':a8p8Table.loc[dd+" Slots Filled","Open"],
+			'ebacc_entered':ebaccTable.loc[dd+" Entered","Overall"],
+			'ebacc_achieved':ebaccTable.loc[dd+" Achieving","Overall"],
+			'basics_9to4':basicsTable.loc[dd+" - Overall","Passed 9-4"],
+			'basics_9to5':basicsTable.loc[dd+" - Overall","Passed 9-5"],
+			'att8_progress':a8p8Table.loc[comparison_dd+" Attainment 8 >",
+				"Overall"]})
+		headlines_df.loc[dd+"-"+upn]=hd_entry
 	#clean and parse grades dataframe
 	grades_df['staff']=grades_df['Class'].str.split().str[1:]
 	grades_df['Class']=grades_df['Class'].str.split().str[0]
@@ -482,5 +518,8 @@ def getStudentData(browser,year,dd):
 	student_df['ks2_average']=round((student_df['ks2_maths']+\
 		student_df['ks2_reading'])*10/2.0)/10.0 
 		#dividing & multiplying by 10s needed to get decimal values from round
-	return student_df,grades_df
-
+	for colname in ['ebacc_entered','ebacc_achieved','basics_9to4','basics_9to5']:
+		headlines_df[colname]=headlines_df[colname]=="Y"
+	headlines_df['att8_progress']=headlines_df['attainment8']-\
+		headlines_df['att8_progress']
+	return student_df,grades_df,headlines_df
