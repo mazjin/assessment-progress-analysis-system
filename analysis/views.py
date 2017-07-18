@@ -119,6 +119,7 @@ def importPrompt(request):
 			logIntoSISRA(username,pw,browser)
 			openStudentReports(browser,cohort,dd_name)
 			students_df,grades_df,headlines_df=getStudentData(browser,cohort,dd_name)
+			
 			students_df['cohort']=form.cleaned_data.get('cohort')
 			#close browser
 			browser.close()

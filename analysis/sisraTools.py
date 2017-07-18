@@ -488,7 +488,6 @@ def getStudentData(browser,year,dd):
 		basicsTable.index.str.strip()
 		ebaccTable.columns.str.strip()
 		ebaccTable.index.str.strip()
-		
 		hd_entry=pd.Series({'upn':upn,'datadrop':dd,
 			'progress8':a8p8Table.loc[dd+" Progress 8","Overall"],
 			'attainment8':a8p8Table.loc[dd+" Attainment 8","Overall"],
@@ -522,4 +521,6 @@ def getStudentData(browser,year,dd):
 		#dividing & multiplying by 10s needed to get decimal values from round
 	for colname in ['ebacc_entered','ebacc_achieved','basics_9to4','basics_9to5']:
 		headlines_df[colname]=headlines_df[colname]=="Y"
+	headlines_df['att8_progress']=headlines_df['attainment8']-\
+		headlines_df['att8_progress']
 	return student_df,grades_df,headlines_df

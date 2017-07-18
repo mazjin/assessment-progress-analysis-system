@@ -124,9 +124,9 @@ def get_default_filters_dict(class_of_filters,measure,**filters):
 				class_of_filters="subject__cohort"
 			qset=qset.order_by('cohort')
 		elif class_of_filters=="datadrop":
-			if measure!="progress":
-				class_of_filters="grade__datadrop"
-			qset=qset.order_by('cohort','name')
+			#if measure!="progress":
+				#class_of_filters="grade__datadrop"
+			qset=qset.order_by('cohort','-date')
 		elif class_of_filters=="subject":
 			if measure!="progress":
 				class_of_filters="grade__subject"
@@ -236,11 +236,6 @@ class studentGrouping(models.Model):
 		return self.avg_progress_template(**filters)
 	
 	def avg_headline(self,measure,**filters):
-		# if "datadrop" in filters:
-			# dd=filters['datadrop']
-			# filters.pop('datadrop',None)
-		# else
-		#stu_filters={key:filters[key] for key in filters.keys() if "datadrop" not in key}
 		stu_filters={}
 		for key in filters.keys():
 			if "datadrop" not in key:
@@ -248,9 +243,13 @@ class studentGrouping(models.Model):
 					stu_filters[key.replace("upn__","")]=filters[key]
 				else:
 					stu_filters[key]=filters[key]
-			
+			else:
+				stu_filters[key.replace('datadrop','grade__datadrop')]=filters[key]
 		students_found=student.objects.filter(**stu_filters)
-		headlines_found=headline.objects.filter(upn__in=students_found)
+		if "datadrop" in filters:
+			headlines_found=headline.objects.filter(upn__in=students_found,datadrop=filters['datadrop'])
+		else:
+			headlines_found=headline.objects.filter(upn__in=students_found)
 		hd_avg=headlines_found.aggregate(models.Avg(measure))[measure+'__avg']
 		if not hd_avg is None:
 			return round(hd_avg,4)
