@@ -1,22 +1,54 @@
-<head>
-	<style>
-		table,td {
-			text-align: center;
-			border: 1px solid grey;
-			}
-		th {
-			border:1.5px solid grey;
-			text-align: left;
-			}
-	</style>
-</head>
-<body>
-	<p>
-		<a href="{% url 'analysis:index' %}">SCAPAS</a>
-		<br><br>
-		<a href="{% url 'analysis:yeargroups' %}"> Cohorts</a>  <a href="{% url 'analysis:interrogate' %}">Interrogator</a>  <a href="{% url 'analysis:importPrompt' %}">Import</a>
-		<hr>
-	</p>
-
-	{%block content%}{%endblock content%}
-</body>
+{% load bootstrap3 %}
+<!DOCTYPE html>
+<html lang="en">
+	<head>
+		<meta charset="utf-8">
+		<meta http-equiv="X-UA-Compatible" content = "IE=edge">
+		<meta name="viewport" content="width=device-width, initial-scale=1">
+		<title>SCAPAS</title>
+		
+		{% bootstrap_css %}
+		{% bootstrap_javascript %}
+		<!-- <style>
+			table,td {
+				text-align: center;
+				border: 1px solid grey;
+				}
+			th {
+				border:1.5px solid grey;
+				text-align: left;
+				}
+		</style> -->
+	</head>
+	<body>
+		<!--static navbar-->
+		<nav class="navbar navbar-default navbar-static-top">
+			<div class="container">
+				<div class="navbar-header">
+					<button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-target="#navbar" aria-expanded="false" aria-controls="navbar">
+					</button>
+					<a class="navbar-brand" href="{% url 'analysis:index' %}">SCAPAS</a>
+				</div>
+				
+				<div id="navbar" class="navbar-collapse collapse">
+					<ul class="nav navbar-nav">
+						<li><a href="{% url 'analysis:yeargroups' %}"> Cohorts</a></li>
+						<li><a href="{% url 'analysis:interrogate' %}">Interrogator</a></li>
+						{% if user.is_authenticated %}
+						<li><a href="{% url 'analysis:importPrompt' %}">Import</a></li>
+						{% endif %}
+					</ul>
+				</div><!--/.nav-collapse-->
+			</div>
+		</nav>
+		
+		<div class="container">
+			<div class="page-header">
+				{% block header %}{% endblock header %}
+			</div>
+			<div>
+				{%block content%}{%endblock content%}
+			</div>
+		</div><!-- /container -->
+	</body>
+</html>

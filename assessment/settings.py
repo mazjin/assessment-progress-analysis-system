@@ -43,7 +43,8 @@ INSTALLED_APPS = [
 	
 	#third party
 	"django_spaghetti",
-	"data_interrogator"
+	"data_interrogator",
+	"bootstrap3",
 ]
 
 MIDDLEWARE = [
@@ -145,4 +146,8 @@ DATA_INTERROGRATION_DOSSIER={
 		{'model':("analysis","grade")},
 		],
 		'witness_protection':['User','Revision','Version']
+	}
+
+BOOTSTRAP3 = {
+	'include_jquery':True,
 	}
