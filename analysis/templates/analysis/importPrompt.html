@@ -1,9 +1,16 @@
 {% extends 'analysis/base.html' %}
+
+{% block header %}
+	<h2> SISRA Import </h2>
+{% endblock header %}
+
 {% block content %}
-<form action="{% url 'analysis:importPrompt'%}" method="post">
+<form class="form" action="{% url 'analysis:importPrompt'%}" method="post">
 	{% csrf_token %}
-	{{form.as_p }}
-	<input type="submit" value="Submit"/>
+	{% bootstrap_form form%}
+	{%buttons%}
+	<input type="submit" value="Submit" class="btn btn-primary"/>
+	{%endbuttons%}
 </form>
 
 {%endblock content%}

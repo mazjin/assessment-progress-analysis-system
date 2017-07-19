@@ -1,4 +1,10 @@
 {% extends 'analysis/base.html'%}
+{% block header%}
+<div class="alert alert-success" role="alert">
+	<span class="glyphicon glyphicon-ok"></span> <h2>Import complete</h2>
+</div>
+{% endblock header%}
+
 {%block content%}
 
 {{students|safe}}

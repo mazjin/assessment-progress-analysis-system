@@ -1,14 +1,24 @@
 {% extends 'analysis/base.html' %}
+
+{% load bootstrap3 %}
+
+{% block header %}
+	<h2> Data Interrogator </h2>
+{% endblock header %}
+
 {% block content %}
 <div style="float: left;">
-	<form action="{% url 'analysis:interrogate'%}" method="post">
+	<form action="{% url 'analysis:interrogate'%}" method="post" class="form">
 		{% csrf_token %}
-		{{form.as_p}}
-		<input type="submit" name="show_table" value="Get Table"/>
-		<input type="submit" name="export_table" value="Export to Excel"/>
+		{% bootstrap_form form %}
+		
+		{% buttons %}
+			<input type="submit" name="show_table" value="Get Table" class="btn btn-primary"/>
+			<input type="submit" name="export_table" value="Export to Excel" class="btn btn-primary"/>
+		{% endbuttons %}
 	</form>
 </div>
-<div >
+<div class="table-responsive" padding=5em>
 	{{outputTable|safe}}
 </div>
 

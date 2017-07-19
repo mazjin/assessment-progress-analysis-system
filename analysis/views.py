@@ -434,9 +434,11 @@ def interrogate(request):
 			#outputTable.fillna(value="-",inplace=True)
 			
 			#change output dataframe table to html format
+			outputTable.set_table_attributes('class="table table-striped table-hover table-bordered"')
 			outputTable=outputTable.render().replace('nan','')
-			#outputTable=outputTable.to_html
+			#outputTable=outputTable.to_html(classes="table table-striped table-hover", na_rep="-")
 			
+			#outputTable.replace("<table ",'<table class="table table-hover table-striped" ')
 			#render page with input form and filled table
 			context={'form':form,'outputTable':outputTable}
 			return render(request,'analysis/interrogatorNew.html',context)

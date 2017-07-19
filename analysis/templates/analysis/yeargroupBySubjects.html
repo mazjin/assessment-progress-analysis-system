@@ -1,38 +1,40 @@
 {% extends 'analysis/base.html' %}
 
-{% block content %}
+{% block header %}
 
 	<h2> Subjects taught in {{cohort}} </h2>
-	
-	<table>
-		<tr>
-			<th>Subject</th>
-			<th># Classes</th>
-			<th># Students</th>
-			<th>Staff Member(s)</th>
-			<th>Avg. Progress</th>
-			<th>Avg. Progress (Lower)</th>
-			<th>Avg. Progress (Middle)</th>
-			<th>Avg. Progress (Higher)</th>
-		{% for subj in subjects %}
-		<tr>
-			<th> <a href="{% url 'analysis:subjAssessment' cohort_string=subj.cohort.cohort subject_string=subj.name %}">{{subj.name}}</th>
-			<td>{{subj.num_classes}}</td>
-			<td>{{subj.num_students}}</td>
-			<td>
-			{% for st in subj.staff_list%}
-			{{st}}
-			{%endfor%}
-			</td>
-			<td>{{subj.avg_progress_template}}</td>
-			<td>{{subj.avg_progress_lower}}</td>
-			<td>{{subj.avg_progress_middle}}</td>
-			<td>{{subj.avg_progress_higher}}</td>
-		</tr>
-		{% empty %}
-		<tr>
-			<td colspan=8>There are no classes or reg groups set up for this yeargroup yet.</td>
-		</tr>
-		{% endfor %}
-	</table>
+{%endblock header%}
+
+{% block content %}
+<table class="table table-striped table-hover table-bordered">
+	<tr>
+		<th>Subject</th>
+		<th># Classes</th>
+		<th># Students</th>
+		<th>Staff Member(s)</th>
+		<th>Avg. Progress</th>
+		<th>Avg. Progress (Lower)</th>
+		<th>Avg. Progress (Middle)</th>
+		<th>Avg. Progress (Higher)</th>
+	{% for subj in subjects %}
+	<tr>
+		<th> <a href="{% url 'analysis:subjAssessment' cohort_string=subj.cohort.cohort subject_string=subj.name %}">{{subj.name}}</th>
+		<td>{{subj.num_classes}}</td>
+		<td>{{subj.num_students}}</td>
+		<td>
+		{% for st in subj.staff_list%}
+		{{st}}
+		{%endfor%}
+		</td>
+		<td>{{subj.avg_progress_template}}</td>
+		<td>{{subj.avg_progress_lower}}</td>
+		<td>{{subj.avg_progress_middle}}</td>
+		<td>{{subj.avg_progress_higher}}</td>
+	</tr>
+	{% empty %}
+	<tr>
+		<td colspan=8>There are no classes or reg groups set up for this yeargroup yet.</td>
+	</tr>
+	{% endfor %}
+</table>
 {% endblock content %}
