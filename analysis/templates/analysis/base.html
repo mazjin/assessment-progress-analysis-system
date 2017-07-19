@@ -32,10 +32,10 @@
 				
 				<div id="navbar" class="navbar-collapse collapse">
 					<ul class="nav navbar-nav">
-						<li><a href="{% url 'analysis:yeargroups' %}"> Cohorts</a></li>
-						<li><a href="{% url 'analysis:interrogate' %}">Interrogator</a></li>
+						<li><a href="{% url 'analysis:yeargroups' %}"><i class="glyphicon glyphicon-user"></i>Cohorts</a></li>
+						<li><a href="{% url 'analysis:interrogate' %}">{% bootstrap_icon "stats" %}Interrogator</a></li>
 						{% if user.is_authenticated %}
-						<li><a href="{% url 'analysis:importPrompt' %}">Import</a></li>
+						<li><a href="{% url 'analysis:importPrompt' %}">{% bootstrap_icon "save" %}Import</a></li>
 						{% endif %}
 					</ul>
 				</div><!--/.nav-collapse-->

@@ -4,13 +4,13 @@ from .models import datadrop,yeargroup,subject,classgroup
 
 class importForm(forms.Form):
 	"""takes input to start process of importation from SISRA"""
-	username=forms.CharField(label="uname",max_length=50)
-	pw=forms.CharField(label="pw",
+	username=forms.CharField(label="SISRA username",max_length=50)
+	pw=forms.CharField(label="Password",
 		max_length=50,widget=forms.PasswordInput)
-	cohort=forms.ModelChoiceField(label="year",
+	cohort=forms.ModelChoiceField(label="Cohort",
 		queryset=yeargroup.objects.all())
-	dd_name=forms.CharField(label="dd")
-	dd_date=forms.DateField(label="dd_date",required=False)
+	dd_name=forms.CharField(label="Datadrop")
+	dd_date=forms.DateField(label="Date of Datadrop",required=False)
 
 class interrogatorForm(forms.Form):
 	"""takes input to dictate query for interrogator table"""
@@ -38,29 +38,29 @@ class interrogatorForm(forms.Form):
 		)
 	
 
-	row_choice=forms.ChoiceField(label="rowChoice",
+	row_choice=forms.ChoiceField(label="Row Grouping",
 		choices=GROUPINGS,required=True)
 		
-	col_choice=forms.ChoiceField(label="colChoice",
+	col_choice=forms.ChoiceField(label="Column Grouping",
 		choices=GROUPINGS,required=True)
 		
-	val_choice=forms.ChoiceField(label="valChoice",
+	val_choice=forms.ChoiceField(label="Cell Value Type",
 		choices=VALUES,required=True)
 	
 	#returns table values as a residual from the "All" column/row
-	residual_toggle_col=forms.BooleanField(label="residualToggleCol",
+	residual_toggle_col=forms.BooleanField(label="Calculate residual by col",
 		required=False)
-	residual_toggle_row=forms.BooleanField(label="residualToggleRow",
+	residual_toggle_row=forms.BooleanField(label="Calculate residual by row",
 		required=False)
 	
 	"""below options limit query to specific objects/groups"""
-	yeargroup_selected=forms.ModelChoiceField(label="cohort",
+	yeargroup_selected=forms.ModelChoiceField(label="Cohort",
 		queryset=yeargroup.objects.all(),required=False)
-	subject_selected=forms.ModelChoiceField(label="subject",
+	subject_selected=forms.ModelChoiceField(label="Subject",
 		queryset=subject.objects.all(),required=False)
-	classgroup_selected=forms.ModelChoiceField(label="classgroup",
+	classgroup_selected=forms.ModelChoiceField(label="Class/Form group",
 		queryset=classgroup.objects.all(), required=False)
-	datadrop_selected=forms.ModelChoiceField(label="datadrop",
+	datadrop_selected=forms.ModelChoiceField(label="Datadrop",
 		queryset=datadrop.objects.all(),required=False)
 	
 	"""when filtering for a specific subject/data drop, decides whether to match
