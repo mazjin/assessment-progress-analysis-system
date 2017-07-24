@@ -164,7 +164,7 @@ class studentGrouping(models.Model):
 		abstract = True
 		
 	def avg_progress_df_filters_col(self,col_filters_dict,
-		row_filters_dict,filters):
+		row_filters_dict,**filters):
 		"""returns a dataframe of the average progress for a combination of 
 		group filters - rows and columns both defined by dicts of dicts"""
 		results=pandas.DataFrame()
@@ -304,6 +304,7 @@ class studentGrouping(models.Model):
 		return results.reindex(index=row_filters_dict.keys(),
 			columns=col_filters_dict.keys())
 		return results
+		
 
 class gradeValue(models.Model):
 	"""A definition of a grade for use in a grade method (NOT an instance of a 
