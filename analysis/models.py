@@ -48,7 +48,7 @@ def get_default_filters_dict(class_of_filters,measure,**filters):
 			'No Banding':{'upn__banding':'N'},
 			}
 	elif class_of_filters=="subject_blocks":
-		if measure=="progress":
+		if measure not in ["attainment8","progress8","att8_progress"]:
 			return {'All':{},
 				'Core':{'subject__option_subject':False},
 				'Option':{'subject__option_subject':True},
@@ -120,7 +120,7 @@ def get_default_filters_dict(class_of_filters,measure,**filters):
 			
 		#sorting set for each class
 		if class_of_filters=="yeargroup":
-			if measure=="progress":
+			if measure in ["progress","meeting","exceeding"]:
 				class_of_filters="subject__cohort"
 			qset=qset.order_by('cohort')
 		elif class_of_filters=="datadrop":
@@ -128,18 +128,18 @@ def get_default_filters_dict(class_of_filters,measure,**filters):
 				#class_of_filters="grade__datadrop"
 			qset=qset.order_by('cohort','-date')
 		elif class_of_filters=="subject":
-			if measure!="progress":
+			if measure in ['attainment8','progress8','att8_progress']:
 				class_of_filters="grade__subject"
 			qset=qset.order_by('name','faculty')
 		elif class_of_filters=="classgroup":
-			if measure!="progress":
+			if measure in ['attainment8','progress8','att8_progress']:
 				class_of_filters="grade__classgroup"
 			qset=qset.order_by('class_code')
 		elif class_of_filters=="faculty":
-			if measure=="progress":
-				class_of_filters="subject_faculty"
-			else:
+			if measure in ['attainment8','progress8','att8_progress']:
 				class_of_filters="grade__subject__faculty"
+			else:
+				class_of_filters="subject__faculty"
 		
 		#populate returning dictionary with set/queryset
 		returnDict={'All':{}}
@@ -274,6 +274,35 @@ class studentGrouping(models.Model):
 			results[group_key]=self.avg_headline(measure,**joined_filters)
 		return pandas.Series(results)
 		
+	def pct_EAP(self,only_exceeding=False,**filters):
+		filtered_grades=self.get_grades(EAPgrade__progress_value__gt=0,**filters)
+		num_total=filtered_grades.count()
+		if only_exceeding:
+			num_meeting=filtered_grades.filter(value__progress_value__gt=models.F('EAPgrade__progress_value')).count()
+		else:
+			num_meeting=filtered_grades.filter(value__progress_value__gte=models.F('EAPgrade__progress_value')).count()
+		if num_total==0:
+			return "-"
+		else:
+			return round((num_meeting/num_total)*100,1)
+			
+	def pct_EAP_series(self,only_exceeding,group_filters_dict,filters):
+		results={}
+		for group_key,group_filter in group_filters_dict.items():
+			joined_filters={**group_filter,**filters}
+			results[group_key]=self.pct_EAP(only_exceeding,**joined_filters)
+		return pandas.Series(results)
+		
+	def pct_EAP_df(self,only_exceeding,col_filters_dict,row_filters_dict,filters):
+		results=pandas.DataFrame()
+		for col_name,col_filter in col_filters_dict.items():
+			joined_filters_col={**filters,**col_filter}
+			results[col_name]=self.pct_EAP_series(only_exceeding, 
+				row_filters_dict,joined_filters_col)
+		return results.reindex(index=row_filters_dict.keys(),
+			columns=col_filters_dict.keys())
+		return results
+
 class gradeValue(models.Model):
 	"""A definition of a grade for use in a grade method (NOT an instance of a 
 	grade, see  grade class instead)"""

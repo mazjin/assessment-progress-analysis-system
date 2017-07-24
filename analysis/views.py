@@ -468,6 +468,11 @@ def getInterrogatorOutput(form):
 		'att8_progress']:
 		outputTable=datadrop.objects.all()[0].avg_headline_df(
 			cfilters,rfilters,filters,measure)
+	elif measure in ['meeting','exceeding']:
+		if measure=="exceeding":
+			outputTable=datadrop.objects.all()[0].pct_EAP_df(True,cfilters,rfilters,filters)
+		else:
+			outputTable=datadrop.objects.all()[0].pct_EAP_df(False,cfilters,rfilters,filters)
 	else:
 		outputTable=datadrop.objects.all()[0].avg_progress_df_filters_col(
 			cfilters,rfilters,filters)
