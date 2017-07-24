@@ -142,7 +142,9 @@ def get_default_filters_dict(class_of_filters,measure,**filters):
 				class_of_filters="subject__faculty"
 		
 		#populate returning dictionary with set/queryset
-		returnDict={'All':{}}
+		returnDict={}
+		if len(qset)>=2:
+			returnDict['All']={}
 		if class_of_filters=="subject":
 			for q in qset:
 				returnDict[q.name]={'subject__name':q.name}
