@@ -2,14 +2,27 @@ from django.db import models
 import pandas
 from django.apps import apps
 # Create your models here.
+avg_headline_measures=["en_att8","ma_att8","eb_att8","op_att8",	
+	'attainment8','progress8','att8_progress',"eb_filled","op_filled",]
+pct_headline_measures=["ebacc_achieved","ebacc_entered","basics_9to4","basics_9to5"]
 
+def clean_filters(dict,measure):
+	for innerkey,val in dict.copy().items():
+		if innerkey[0:9]=="yeargroup":
+			dict[innerkey.replace("yeargroup","datadrop__cohort")]=val
+			dict.pop(innerkey,None)
+		if innerkey[0:7]=="subject" or innerkey[0:10]=="classgroup":
+			dict['upn__grade__'+innerkey]=val
+			dict['upn__grade__datadrop']=models.F('datadrop')
+			dict.pop(innerkey,None)
+	return dict
+	
 def get_default_filters_dict(class_of_filters,measure,**filters):
 	"""defines a row or column query as a dictionary of filter conditions, to be
 	used in functions of the studentGrouping class"""
-	
-	
+
 	if class_of_filters=="student":
-		return {'All':{},
+		returnDict= {'All':{},
 			'Male':{'upn__gender':"M"},
 			'Female':{'upn__gender':"F"},
 			'PP':{'upn__pp':True},
@@ -26,38 +39,26 @@ def get_default_filters_dict(class_of_filters,measure,**filters):
 			'No Band':{'upn__banding':"N"}
 			}
 	elif class_of_filters=="att8bucket":
-		if measure=="progress":
-			return {'All':{},
-				'Maths':{'subject__attainment8bucket':'ma'},
-				'English':{'subject__attainment8bucket':'en'},
-				'EBacc':{'subject__attainment8bucket':'eb'},
-				'Open':{'subject__attainment8bucket':'op'},
-				}
-		else:
-			return {'All':{},
-			'Maths':{'grade__subject__attainment8bucket':'ma'},
-			'English':{'grade__subject__attainment8bucket':'en'},
-			'EBacc':{'grade__subject__attainment8bucket':'eb'},
-			'Open':{'grade__subject__attainment8bucket':'op'},
+		returnDict= {'All':{},
+			'Maths':{'subject__attainment8bucket':'ma'},
+			'English':{'subject__attainment8bucket':'en'},
+			'EBacc':{'subject__attainment8bucket':'eb'},
+			'Open':{'subject__attainment8bucket':'op'},
 			}
 	elif class_of_filters=="banding":
-		return {'All':{},
+		returnDict= {'All':{},
 			'Lower':{'upn__banding':'L'},
 			'Middle':{'upn__banding':'M'},
 			'Upper/High':{'upn__banding':'H'},
 			'No Banding':{'upn__banding':'N'},
 			}
 	elif class_of_filters=="subject_blocks":
-		if measure not in ["attainment8","progress8","att8_progress"]:
-			return {'All':{},
-				'Core':{'subject__option_subject':False},
-				'Option':{'subject__option_subject':True},
-				'EBacc':{'subject__ebacc_subject':True},
-				'Non-EBacc':{'subject__ebacc_subject':False},
-				}
-		else:
-			return {'All':{},
-				}
+		returnDict= {'All':{},
+			'Core':{'subject__option_subject':False},
+			'Option':{'subject__option_subject':True},
+			'EBacc':{'subject__ebacc_subject':True},
+			'Non-EBacc':{'subject__ebacc_subject':False},
+			}
 	else: 
 		"""if not a fixed set of filters, populate from objects in db based on
 		class, code specific to each class removes invalid filters and replaces 
@@ -108,7 +109,8 @@ def get_default_filters_dict(class_of_filters,measure,**filters):
 			filters.pop('subject',None)
 		
 		#get queryset or set of objects from db based on filters
-		if class_of_filters in ['yeargroup','datadrop','subject','classgroup']:
+		if class_of_filters in ['yeargroup','datadrop','subject',
+		'classgroup']:
 			qset=apps.get_model('analysis',class_of_filters).\
 				objects.filter(**filters)
 		elif class_of_filters=="faculty":
@@ -120,27 +122,16 @@ def get_default_filters_dict(class_of_filters,measure,**filters):
 			
 		#sorting set for each class
 		if class_of_filters=="yeargroup":
-			if measure in ["progress","meeting","exceeding"]:
-				class_of_filters="subject__cohort"
+			class_of_filters="subject__cohort"
 			qset=qset.order_by('cohort')
 		elif class_of_filters=="datadrop":
-			#if measure!="progress":
-				#class_of_filters="grade__datadrop"
 			qset=qset.order_by('cohort','-date')
 		elif class_of_filters=="subject":
-			if measure in ['attainment8','progress8','att8_progress']:
-				class_of_filters="grade__subject"
 			qset=qset.order_by('name','faculty')
 		elif class_of_filters=="classgroup":
-			if measure in ['attainment8','progress8','att8_progress']:
-				class_of_filters="grade__classgroup"
 			qset=qset.order_by('class_code')
 		elif class_of_filters=="faculty":
-			if measure in ['attainment8','progress8','att8_progress']:
-				class_of_filters="grade__subject__faculty"
-			else:
-				class_of_filters="subject__faculty"
-		
+			class_of_filters="subject__faculty"
 		#populate returning dictionary with set/queryset
 		returnDict={}
 		if len(qset)>=2:
@@ -154,7 +145,9 @@ def get_default_filters_dict(class_of_filters,measure,**filters):
 					returnDict["Other"]={class_of_filters:q}
 				else:
 					returnDict[q.__str__()]={class_of_filters:q}
-
+	if measure in avg_headline_measures or measure in pct_headline_measures:
+		for outerkey,dict in returnDict.items():
+			dict=clean_filters(dict,measure)
 	return returnDict
 
 class studentGrouping(models.Model):
@@ -239,19 +232,7 @@ class studentGrouping(models.Model):
 	
 	def avg_headline(self,measure,**filters):
 		stu_filters={}
-		for key in filters.keys():
-			if "datadrop" not in key:
-				if "upn__" in key:
-					stu_filters[key.replace("upn__","")]=filters[key]
-				else:
-					stu_filters[key]=filters[key]
-			else:
-				stu_filters[key.replace('datadrop','grade__datadrop')]=filters[key]
-		students_found=student.objects.filter(**stu_filters)
-		if "datadrop" in filters:
-			headlines_found=headline.objects.filter(upn__in=students_found,datadrop=filters['datadrop'])
-		else:
-			headlines_found=headline.objects.filter(upn__in=students_found)
+		headlines_found=headline.objects.filter(**filters).distinct()
 		hd_avg=headlines_found.aggregate(models.Avg(measure))[measure+'__avg']
 		if not hd_avg is None:
 			return round(hd_avg,4)
@@ -304,7 +285,34 @@ class studentGrouping(models.Model):
 		return results.reindex(index=row_filters_dict.keys(),
 			columns=col_filters_dict.keys())
 		return results
+	
+	def pct_headline(self,measure,**filters):
+		filtered_headlines=headline.objects.filter(**{measure+"__isnull":False},**filters)
+		num_total=filtered_headlines.count()
+		num_meeting=filtered_headlines.filter(**{measure:True}).count()
+		if num_total==0:
+			return "-"
+		else:
+			return round((num_meeting/num_total)*100,1)
+	
+	def pct_headline_df(self, col_filters_dict,row_filters_dict,filters,
+		measure):
+		results=pandas.DataFrame()
+		for col_name,col_filter in col_filters_dict.items():
+			joined_filters_col={**filters,**col_filter}
+			results[col_name]=self.pct_headline_series(row_filters_dict,
+				joined_filters_col,measure)
+		return results.reindex(index=row_filters_dict.keys(),
+			columns=col_filters_dict.keys())
+		return results
 		
+	def pct_headline_series(self,group_filters_dict,filters,measure):
+		results={}
+		for group_key,group_filter in group_filters_dict.items():
+			joined_filters={**group_filter,**filters}
+			results[group_key]=self.pct_headline(measure,**joined_filters)
+		return pandas.Series(results)
+	
 
 class gradeValue(models.Model):
 	"""A definition of a grade for use in a grade method (NOT an instance of a 
@@ -432,7 +440,7 @@ class subject(studentGrouping):
 				.order_by('-date')[0]
 		elif isinstance(dd,str):	
 			dd=datadrop.objects.get(name=dd,cohort=self.cohort)
-		return len(set(grade.objects.filter(subject=self).values_list('upn')))
+		return len(grade.objects.filter(subject=self).distinct().values_list('upn'))
 
 class classgroup(studentGrouping):
 	"""A timetabled class or registration group."""
@@ -454,13 +462,13 @@ class classgroup(studentGrouping):
 		if self.subject.count()==0:
 			return student.objects.all().filter(reg=self).count()
 		else:
-			return len(set(gr.upn for gr in self.grade_set.all()))
+			return self.grade_set.all().distinct().count()
 	
 	@property
 	def students(self):
 		"""returns set of unique student records with a grade attached to the
 		classgroup"""
-		return set(gr.upn for gr in self.grade_set.all())
+		return self.grade_set.all().distinct()
 		
 	def avg_progress_residual_subject(self,subj=None,**filters):
 		"""returns the average progress relative to that of the whole subject
@@ -583,16 +591,16 @@ class headline(models.Model):
 		help_text="The PROJECTED, INACCURATE Progress 8 figure calculated \
 			for the student/DD.")
 			
-	attainment8=models.IntegerField(default=0,
+	attainment8=models.DecimalField(decimal_places=1,max_digits=3,default=0,
 		help_text="The Attainment8 calculated for the student/DD.")
 		
-	en_att8=models.IntegerField(default=0,
+	en_att8=models.DecimalField(decimal_places=1,max_digits=3,default=0,
 		help_text="The score for the English Att8 bucket.")
-	ma_att8=models.IntegerField(default=0,
+	ma_att8=models.DecimalField(decimal_places=1,max_digits=3,default=0,
 		help_text="The score for the Maths Att8 bucket.")
-	eb_att8=models.IntegerField(default=0,
+	eb_att8=models.DecimalField(decimal_places=1,max_digits=3,default=0,
 		help_text="The score for the EBacc Att8 bucket.")
-	op_att8=models.IntegerField(default=0,
+	op_att8=models.DecimalField(decimal_places=1,max_digits=3,default=0,
 		help_text="The score for the Open Att8 bucket.")
 	
 	eb_filled=models.IntegerField(default=0,
@@ -611,7 +619,7 @@ class headline(models.Model):
 	basics_9to5=models.BooleanField(default=False,
 		help_text="Whether the student achieved a strong pass in both \
 		English and Maths")
-	att8_progress=models.IntegerField(default=0,
+	att8_progress=models.DecimalField(decimal_places=1,max_digits=3,default=0,
 		help_text="The difference in Attainment 8 score between this datadrop\
 		 and baseline.")
 		
