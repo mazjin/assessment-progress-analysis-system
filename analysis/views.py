@@ -341,20 +341,16 @@ def importPrompt(request):
 			">: Processing " + str(len(grades_df)) + " imports...")
 			#loop through new grades dataframe, save each grade to db
 			for i,gr in new_grades_df.iterrows():
-				created_grade=grade(**gr.to_dict())
-				created_grade.save()
+				selected_grade,grade_created=grade.objects.update_or_create(upn=gr['upn'],
+				datadrop=gr['datadrop'],subject=gr['subject'],defaults=gr.to_dict())
+				selected_grade.save()
 			
 			for i,hd in headlines_df.iterrows():
 				try:
 					hd['id']=hd['upn']+"/"+hd['datadrop']
 					hd['upn']=student.objects.get(upn=hd['upn'])
 					hd['datadrop'] =dd_obj
-					for colname in ['attainment8','en_att8','ma_att8','eb_att8','op_att8','eb_filled','op_filled','att8_progress']:
-						if pd.isnull(hd[colname]):
-							hd[colname]=0
-						else:
-							hd[colname]=int(hd[colname])
-					created_headline=headline(**hd)
+					created_headline=headline.objects.update_or_create(id=hd[id],defaults=hd)
 					created_headline.save()
 				except:
 					failed_headlines.append((hd['upn'],hd['datadrop']))
