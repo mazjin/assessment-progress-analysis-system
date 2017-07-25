@@ -421,37 +421,13 @@ def interrogate(request):
 	else:
 		form=interrogatorForm(data=request.POST)
 		if form.is_valid():
-			outputTable=getInterrogatorOutput(form)
-			if form.cleaned_data.get("val_choice")!="ppGap":
-				if (form.cleaned_data.get('residual_toggle_row') and form.cleaned_data.get('residual_toggle_col')) or (not form.cleaned_data.get('residual_toggle_row') and not form.cleaned_data.get('residual_toggle_col')):
-					outputTable=outputTable.style.apply(colour_progress_df,axis=None)
-					#outputTable=outputTable.style.bar(align='mid',color=['red','green'])
-					
-				elif form.cleaned_data.get('residual_toggle_row'):
-					outputTable=outputTable.style.apply(colour_progress,axis=0)
-				else:
-					outputTable=outputTable.style.apply(colour_progress,axis=1)
-			
-			else:
-				if (form.cleaned_data.get('residual_toggle_row') and form.cleaned_data.get('residual_toggle_col')) or (not form.cleaned_data.get('residual_toggle_row') and not form.cleaned_data.get('residual_toggle_col')):
-					outputTable=outputTable.style.apply(colour_pp_gap_df,axis=None)
-				elif form.cleaned_data.get('residual_toggle_row'):
-					outputTable=outputTable.style.apply(colour_pp_gap,axis=0)
-				else:
-					outputTable=outputTable.style.apply(colour_pp_gap,axis=1)
-			
-			outputTable=outputTable.highlight_null(null_color="grey")
+			outputTable=get_formatted_output_table(form)
 			#outputTable.fillna(value="-",inplace=True)
 			
 			#change output dataframe table to html format
 			outputTable.set_table_attributes('class="table table-striped\
 				table-hover table-bordered"')
 			outputTable=outputTable.render().replace('nan','')
-			#outputTable=outputTable.to_html(classes="table table-striped\
-				#table-hover", na_rep="-")
-			
-			#outputTable.replace("<table ",'<table class="table table-hover\
-				#table-striped" ')
 			#render page with input form and filled table
 			context={'form':form,'outputTable':outputTable}
 			return render(request,'analysis/interrogatorNew.html',context)
@@ -532,24 +508,13 @@ def interrogateExport(request):
 	"""takes POST request and serves excel file of returned dataframe"""
 	form=interrogatorForm(data=request.POST)
 	if form.is_valid():
-		outputTable=getInterrogatorOutput(form)
 		filename="scapasQuery-" + str(datetime.datetime.now()).split(".")[0] \
 			+ ".xlsx"
 		filename=filename.replace(" ","").replace(":","")
 		sio=io.BytesIO()
 		writer=pd.ExcelWriter(sio,engine='openpyxl')
 		
-		if form.cleaned_data.get('residual_toggle_row') and form.cleaned_data\
-		.get('residual_toggle_col'):
-			outputTable=outputTable.style.bar(align='mid',color=\
-				['red','green'])
-			#outputTable=outputTable.style.background_gradient(
-			#	cmap=sns.light_palette("green", as_cmap=True))
-		elif form.cleaned_data.get('residual_toggle_row'):
-			outputTable=outputTable.style.apply(colour_progress,axis=0)
-		else:
-			outputTable=outputTable.style.apply(colour_progress,axis=1)
-		outputTable=outputTable.highlight_null(null_color="gray")
+		outputTable=get_formatted_output_table(form)
 		
 		outputTable.to_excel(writer,sheet_name="Sheet1")
 		writer.save()
@@ -563,4 +528,26 @@ def interrogateExport(request):
 		response['Content-Disposition']='attachment; filename="' +\
 			filename + '"'
 		return response
+
+def get_formatted_output_table(form):
+	outputTable=getInterrogatorOutput(form)
+	if form.cleaned_data.get("val_choice")!="ppGap":
+		if (form.cleaned_data.get('residual_toggle_row') and form.cleaned_data.get('residual_toggle_col')) or (not form.cleaned_data.get('residual_toggle_row') and not form.cleaned_data.get('residual_toggle_col')):
+			outputTable=outputTable.style.apply(colour_progress_df,axis=None)
+			#outputTable=outputTable.style.bar(align='mid',color=['red','green'])
 			
+		elif form.cleaned_data.get('residual_toggle_row'):
+			outputTable=outputTable.style.apply(colour_progress,axis=0)
+		else:
+			outputTable=outputTable.style.apply(colour_progress,axis=1)
+	
+	else:
+		if (form.cleaned_data.get('residual_toggle_row') and form.cleaned_data.get('residual_toggle_col')) or (not form.cleaned_data.get('residual_toggle_row') and not form.cleaned_data.get('residual_toggle_col')):
+			outputTable=outputTable.style.apply(colour_pp_gap_df,axis=None)
+		elif form.cleaned_data.get('residual_toggle_row'):
+			outputTable=outputTable.style.apply(colour_pp_gap,axis=0)
+		else:
+			outputTable=outputTable.style.apply(colour_pp_gap,axis=1)
+	
+	outputTable=outputTable.highlight_null(null_color="grey")
+	return outputTable

@@ -1,6 +1,12 @@
 import numpy as np
 import pandas as pd
 
+set_colours={"red":"#FF0000",
+	"amber":"#FFCC00",
+	"ligreen":"#99CC00",
+	"fgreen":"#008800",
+	}
+
 def colour_progress(series):
 	"""sets colour coding rules for progress values"""
 	#get std dev and average of input series
@@ -54,13 +60,19 @@ def cc_rules_centre_zero(val,sdev):
 	"""decision making for colour coding centered around 0"""
 	#if no value, colour grey
 	if val==np.nan:
-		return 'background-color:grey'
+		return "background-color:grey"
+	#if exactly zero, forest green
+	elif val ==0:
+		return "background-color:" + set_colours['fgreen']
+	#if close to 0, light green
+	elif val<(sdev/10) and val>(0-(sdev/10)):
+		return "background-color:" + set_colours['ligreen']
 	#if significantly above/below 0, colour red
 	elif val>(sdev) or val<(0-sdev):
-		return 'background-color:red'
-	#if slightly above/below 0, colour light red
+		return "background-color:" + set_colours['red']
+	#if slightly above/below 0, colour amber
 	elif val>(sdev/2) or val<(0-(sdev/2)):
-		return 'background-color:#FF8888'
+		return "background-color:" + set_colours['amber']
 	#otherwise no colour
 	else:
 		return ''
@@ -70,13 +82,19 @@ def cc_rules_hilo_avg(val,sdev,savg):
 		average"""
 	#if no value, colour grey
 	if val=="NaN":
-		return 'background-color:grey'
-	#if value significantly above, colour green
+		return "background-color:grey"
+	#if value significantly above, colour forest green
 	elif val>(savg+sdev):
-		return 'background-color:green'
+		return "background-color:" + set_colours['fgreen']
+	#if value somewhat above, colour light green 
+	elif val>(savg+(sdev/2)):
+		return "background-color:" + set_colours['ligreen']
 	#if value significantly below, colour red
 	elif val<(savg-sdev):
-		return 'background-color:red'
+		return "background-color:" + set_colours['red']
+	#if value somewhat below, colour amber
+	elif val<(savg-(sdev/5)):
+		return "background-color:" + set_colours['amber']
 	#otherwise no colour
 	else:
 		return ''
