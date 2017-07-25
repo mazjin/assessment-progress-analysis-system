@@ -462,7 +462,7 @@ class classgroup(studentGrouping):
 		if self.subject.count()==0:
 			return student.objects.all().filter(reg=self).count()
 		else:
-			return gr.upn for gr in self.grade_set.all().distinct().count()
+			return self.grade_set.all().distinct().count()
 	
 	@property
 	def students(self):
@@ -591,16 +591,16 @@ class headline(models.Model):
 		help_text="The PROJECTED, INACCURATE Progress 8 figure calculated \
 			for the student/DD.")
 			
-	attainment8=models.IntegerField(default=0,
+	attainment8=models.DecimalField(decimal_places=1,max_digits=3,default=0,
 		help_text="The Attainment8 calculated for the student/DD.")
 		
-	en_att8=models.IntegerField(default=0,
+	en_att8=models.DecimalField(decimal_places=1,max_digits=3,default=0,
 		help_text="The score for the English Att8 bucket.")
-	ma_att8=models.IntegerField(default=0,
+	ma_att8=models.DecimalField(decimal_places=1,max_digits=3,default=0,
 		help_text="The score for the Maths Att8 bucket.")
-	eb_att8=models.IntegerField(default=0,
+	eb_att8=models.DecimalField(decimal_places=1,max_digits=3,default=0,
 		help_text="The score for the EBacc Att8 bucket.")
-	op_att8=models.IntegerField(default=0,
+	op_att8=models.DecimalField(decimal_places=1,max_digits=3,default=0,
 		help_text="The score for the Open Att8 bucket.")
 	
 	eb_filled=models.IntegerField(default=0,
@@ -619,7 +619,7 @@ class headline(models.Model):
 	basics_9to5=models.BooleanField(default=False,
 		help_text="Whether the student achieved a strong pass in both \
 		English and Maths")
-	att8_progress=models.IntegerField(default=0,
+	att8_progress=models.DecimalField(decimal_places=1,max_digits=3,default=0,
 		help_text="The difference in Attainment 8 score between this datadrop\
 		 and baseline.")
 		
