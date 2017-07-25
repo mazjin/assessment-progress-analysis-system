@@ -8,7 +8,7 @@ def get_default_filters_dict(class_of_filters,measure,**filters):
 	used in functions of the studentGrouping class"""
 	avg_headline_measures=["en_att8","ma_att8","eb_att8","op_att8",	
 		'attainment8','progress8','att8_progress',"eb_filled","op_filled",]
-	
+	pct_headline_measures=["ebacc_achieved","ebacc_entered","basics_9to4","basics_9to5"]
 	if class_of_filters=="student":
 		return {'All':{},
 			'Male':{'upn__gender':"M"},
@@ -27,7 +27,8 @@ def get_default_filters_dict(class_of_filters,measure,**filters):
 			'No Band':{'upn__banding':"N"}
 			}
 	elif class_of_filters=="att8bucket":
-		if measure=="progress":
+		if measure not in avg_headline_measures and\
+		measure not in pct_headline_measures:
 			return {'All':{},
 				'Maths':{'subject__attainment8bucket':'ma'},
 				'English':{'subject__attainment8bucket':'en'},
@@ -36,10 +37,10 @@ def get_default_filters_dict(class_of_filters,measure,**filters):
 				}
 		else:
 			return {'All':{},
-			'Maths':{'grade__subject__attainment8bucket':'ma'},
-			'English':{'grade__subject__attainment8bucket':'en'},
-			'EBacc':{'grade__subject__attainment8bucket':'eb'},
-			'Open':{'grade__subject__attainment8bucket':'op'},
+			'Maths':{'upn__grade__subject__attainment8bucket':'ma'},
+			'English':{'upn__grade__subject__attainment8bucket':'en'},
+			'EBacc':{'upn__grade__subject__attainment8bucket':'eb'},
+			'Open':{'upn__grade__subject__attainment8bucket':'op'},
 			}
 	elif class_of_filters=="banding":
 		return {'All':{},
@@ -49,7 +50,8 @@ def get_default_filters_dict(class_of_filters,measure,**filters):
 			'No Banding':{'upn__banding':'N'},
 			}
 	elif class_of_filters=="subject_blocks":
-		if measure not in avg_headline_measures:
+		if measure not in avg_headline_measures and measure \
+		not in pct_headline_measures:
 			return {'All':{},
 				'Core':{'subject__option_subject':False},
 				'Option':{'subject__option_subject':True},
@@ -58,6 +60,10 @@ def get_default_filters_dict(class_of_filters,measure,**filters):
 				}
 		else:
 			return {'All':{},
+				'Core':{'upn__grade__subject__option_subject':False},
+				'Option':{'upn__grade__subject__option_subject':True},
+				'EBacc':{'upn__grade__subject__ebacc_subject':True},
+				'Non-EBacc':{'upn__grade__subject__ebacc_subject':False},
 				}
 	else: 
 		"""if not a fixed set of filters, populate from objects in db based on
@@ -109,7 +115,8 @@ def get_default_filters_dict(class_of_filters,measure,**filters):
 			filters.pop('subject',None)
 		
 		#get queryset or set of objects from db based on filters
-		if class_of_filters in ['yeargroup','datadrop','subject','classgroup']:
+		if class_of_filters in ['yeargroup','datadrop','subject',
+		'classgroup']:
 			qset=apps.get_model('analysis',class_of_filters).\
 				objects.filter(**filters)
 		elif class_of_filters=="faculty":
@@ -305,7 +312,34 @@ class studentGrouping(models.Model):
 		return results.reindex(index=row_filters_dict.keys(),
 			columns=col_filters_dict.keys())
 		return results
+	
+	def pct_headline(self,measure,**filters):
+		filtered_headlines=headline.objects.filter(**{measure+"__isnull":False},**filters)
+		num_total=filtered_headlines.count()
+		num_meeting=filtered_headlines.filter(**{measure:True}).count()
+		if num_total==0:
+			return "-"
+		else:
+			return round((num_meeting/num_total)*100,1)
+	
+	def pct_headline_df(self, col_filters_dict,row_filters_dict,filters,
+		measure):
+		results=pandas.DataFrame()
+		for col_name,col_filter in col_filters_dict.items():
+			joined_filters_col={**filters,**col_filter}
+			results[col_name]=self.pct_headline_series(row_filters_dict,
+				joined_filters_col,measure)
+		return results.reindex(index=row_filters_dict.keys(),
+			columns=col_filters_dict.keys())
+		return results
 		
+	def pct_headline_series(self,group_filters_dict,filters,measure):
+		results={}
+		for group_key,group_filter in group_filters_dict.items():
+			joined_filters={**group_filter,**filters}
+			results[group_key]=self.pct_headline(measure,**joined_filters)
+		return pandas.Series(results)
+	
 
 class gradeValue(models.Model):
 	"""A definition of a grade for use in a grade method (NOT an instance of a 

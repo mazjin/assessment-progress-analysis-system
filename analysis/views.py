@@ -474,6 +474,10 @@ def getInterrogatorOutput(form):
 			value=np.nan)-datadrop.objects.all()[0].\
 			avg_progress_df_filters_col(cfilters,rfilters,**filters,
 			upn__pp=True).replace(to_replace="-",value=np.nan)
+	elif measure in ['ebacc_entered','ebacc_achieved',
+	'basics_9to4','basics_9to5']:
+		outputTable=datadrop.objects.all()[0].pct_headline_df(
+			cfilters,rfilters,filters,measure)
 	else:
 		outputTable=datadrop.objects.all()[0].avg_progress_df_filters_col(
 			cfilters,rfilters,**filters)

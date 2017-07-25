@@ -40,8 +40,10 @@ class interrogatorForm(forms.Form):
 		('op_att8','Open Att8 Bucket'),
 		('eb_filled','Subjects in EBacc Bucket'),
 		('op_filled','Subjects in Open Bucket'),
-		
-		# add other headlines to this, eg. att8 by bucket, basics,ebacc
+		('ebacc_entered','Entered for EBacc'),
+		('ebacc_achieved','Achieving EBacc'),
+		('basics_9to4','Basics 4+'),
+		('basics_9to5','Basics 5+'),
 		)
 	
 
