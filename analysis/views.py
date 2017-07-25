@@ -9,7 +9,7 @@ import sqlite3
 import time
 import pandas as pd
 import numpy as np
-from .colourCodingRules import colour_progress
+from .colourCodingRules import colour_progress,colour_pp_gap,colour_pp_gap_df,colour_progress_df
 import seaborn as sns
 import io
 #from data_interrogator import views
@@ -422,23 +422,36 @@ def interrogate(request):
 		form=interrogatorForm(data=request.POST)
 		if form.is_valid():
 			outputTable=getInterrogatorOutput(form)
-			if form.cleaned_data.get('residual_toggle_row') and form.cleaned_data.get('residual_toggle_col'):
-				outputTable=outputTable.style.bar(align='mid',color=['red','green'])
-				#outputTable=outputTable.style.background_gradient(
-				#	cmap=sns.light_palette("green", as_cmap=True))
-			elif form.cleaned_data.get('residual_toggle_row'):
-				outputTable=outputTable.style.apply(colour_progress,axis=0)
+			if form.cleaned_data.get("val_choice")!="ppGap":
+				if (form.cleaned_data.get('residual_toggle_row') and form.cleaned_data.get('residual_toggle_col')) or (not form.cleaned_data.get('residual_toggle_row') and not form.cleaned_data.get('residual_toggle_col')):
+					outputTable=outputTable.style.apply(colour_progress_df,axis=None)
+					#outputTable=outputTable.style.bar(align='mid',color=['red','green'])
+					
+				elif form.cleaned_data.get('residual_toggle_row'):
+					outputTable=outputTable.style.apply(colour_progress,axis=0)
+				else:
+					outputTable=outputTable.style.apply(colour_progress,axis=1)
+			
 			else:
-				outputTable=outputTable.style.apply(colour_progress,axis=1)
+				if (form.cleaned_data.get('residual_toggle_row') and form.cleaned_data.get('residual_toggle_col')) or (not form.cleaned_data.get('residual_toggle_row') and not form.cleaned_data.get('residual_toggle_col')):
+					outputTable=outputTable.style.apply(colour_pp_gap_df,axis=None)
+				elif form.cleaned_data.get('residual_toggle_row'):
+					outputTable=outputTable.style.apply(colour_pp_gap,axis=0)
+				else:
+					outputTable=outputTable.style.apply(colour_pp_gap,axis=1)
+			
 			outputTable=outputTable.highlight_null(null_color="grey")
 			#outputTable.fillna(value="-",inplace=True)
 			
 			#change output dataframe table to html format
-			outputTable.set_table_attributes('class="table table-striped table-hover table-bordered"')
+			outputTable.set_table_attributes('class="table table-striped\
+				table-hover table-bordered"')
 			outputTable=outputTable.render().replace('nan','')
-			#outputTable=outputTable.to_html(classes="table table-striped table-hover", na_rep="-")
+			#outputTable=outputTable.to_html(classes="table table-striped\
+				#table-hover", na_rep="-")
 			
-			#outputTable.replace("<table ",'<table class="table table-hover table-striped" ')
+			#outputTable.replace("<table ",'<table class="table table-hover\
+				#table-striped" ')
 			#render page with input form and filled table
 			context={'form':form,'outputTable':outputTable}
 			return render(request,'analysis/interrogatorNew.html',context)
@@ -477,9 +490,26 @@ def getInterrogatorOutput(form):
 		'att8_progress']:
 		outputTable=datadrop.objects.all()[0].avg_headline_df(
 			cfilters,rfilters,filters,measure)
+	elif measure in ['meeting','exceeding']:
+		if measure=="exceeding":
+			outputTable=datadrop.objects.all()[0].pct_EAP_df(True,
+				cfilters,rfilters,filters)
+		else:
+			outputTable=datadrop.objects.all()[0].pct_EAP_df(False,
+				cfilters,rfilters,filters)
+	elif measure=="ppGap":
+		for g in ["PP","NPP"]:
+			for f in [cfilters,rfilters]:
+				if g in f:
+					f.pop(g,None)
+		outputTable=datadrop.objects.all()[0].avg_progress_df_filters_col(
+			cfilters,rfilters,**filters,upn__pp=False).replace(to_replace="-",
+			value=np.nan)-datadrop.objects.all()[0].\
+			avg_progress_df_filters_col(cfilters,rfilters,**filters,
+			upn__pp=True).replace(to_replace="-",value=np.nan)
 	else:
 		outputTable=datadrop.objects.all()[0].avg_progress_df_filters_col(
-			cfilters,rfilters,filters)
+			cfilters,rfilters,**filters)
 	#format & apply colour coding
 	outputTable.replace(to_replace="-",value=np.nan,inplace=True)
 	if form.cleaned_data.get('residual_toggle_col'):
@@ -503,13 +533,16 @@ def interrogateExport(request):
 	form=interrogatorForm(data=request.POST)
 	if form.is_valid():
 		outputTable=getInterrogatorOutput(form)
-		filename="scapasQuery-" + str(datetime.datetime.now()).split(".")[0] + ".xlsx"
+		filename="scapasQuery-" + str(datetime.datetime.now()).split(".")[0] \
+			+ ".xlsx"
 		filename=filename.replace(" ","").replace(":","")
 		sio=io.BytesIO()
 		writer=pd.ExcelWriter(sio,engine='openpyxl')
 		
-		if form.cleaned_data.get('residual_toggle_row') and form.cleaned_data.get('residual_toggle_col'):
-			outputTable=outputTable.style.bar(align='mid',color=['red','green'])
+		if form.cleaned_data.get('residual_toggle_row') and form.cleaned_data\
+		.get('residual_toggle_col'):
+			outputTable=outputTable.style.bar(align='mid',color=\
+				['red','green'])
 			#outputTable=outputTable.style.background_gradient(
 			#	cmap=sns.light_palette("green", as_cmap=True))
 		elif form.cleaned_data.get('residual_toggle_row'):

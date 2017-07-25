@@ -11,14 +11,14 @@
 	<form action="{% url 'analysis:interrogate'%}" method="post" class="form">
 		{% csrf_token %}
 		{% bootstrap_form form %}
-		
+
 		{% buttons %}
-			<input type="submit" name="show_table" value="Get Table" class="btn btn-primary"/>
-			<input type="submit" name="export_table" value="Export to Excel" class="btn btn-primary"/>
+			<button type="submit" name="show_table"  class="btn btn-primary">{% bootstrap_icon "circle-arrow-right" %} Get Table</button>
+			<button type="submit" name="export_table"  class="btn btn-primary"/>{% bootstrap_icon "download-alt" %}Export to Excel</button>
 		{% endbuttons %}
 	</form>
 </div>
-<div class="table-responsive" padding=5em>
+<div class="table-responsive" style="padding:10pt;">
 	{{outputTable|safe}}
 </div>
 
