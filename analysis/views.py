@@ -454,7 +454,7 @@ def getInterrogatorOutput(form):
 		filters['datadrop__name__contains']=""
 	#get dataframe of values matching every combination of filters
 	if measure in ['attainment8','progress8',
-		'att8_progress']:
+		'en_att8','ma_att8','eb_att8','op_att8','eb_filled','op_filled','att8_progress']:
 		outputTable=datadrop.objects.all()[0].avg_headline_df(
 			cfilters,rfilters,filters,measure)
 	elif measure in ['meeting','exceeding']:

@@ -34,6 +34,13 @@ class interrogatorForm(forms.Form):
 		('progress8','Progress 8'),
 		('att8_progress','Δ Attainment 8'),
 		('ppGap','Pupil Premium Gap'),
+		('en_att8','English Att8 Bucket'),
+		('ma_att8','Maths Att8 Bucket'),
+		('eb_att8','EBacc Att8 Bucket'),
+		('op_att8','Open Att8 Bucket'),
+		('eb_filled','Subjects in EBacc Bucket'),
+		('op_filled','Subjects in Open Bucket'),
+		
 		# add other headlines to this, eg. att8 by bucket, basics,ebacc
 		)
 	

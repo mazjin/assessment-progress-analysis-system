@@ -6,7 +6,8 @@ from django.apps import apps
 def get_default_filters_dict(class_of_filters,measure,**filters):
 	"""defines a row or column query as a dictionary of filter conditions, to be
 	used in functions of the studentGrouping class"""
-	
+	avg_headline_measures=["en_att8","ma_att8","eb_att8","op_att8",	
+		'attainment8','progress8','att8_progress',"eb_filled","op_filled",]
 	
 	if class_of_filters=="student":
 		return {'All':{},
@@ -48,7 +49,7 @@ def get_default_filters_dict(class_of_filters,measure,**filters):
 			'No Banding':{'upn__banding':'N'},
 			}
 	elif class_of_filters=="subject_blocks":
-		if measure not in ["attainment8","progress8","att8_progress"]:
+		if measure not in avg_headline_measures:
 			return {'All':{},
 				'Core':{'subject__option_subject':False},
 				'Option':{'subject__option_subject':True},
@@ -120,7 +121,7 @@ def get_default_filters_dict(class_of_filters,measure,**filters):
 			
 		#sorting set for each class
 		if class_of_filters=="yeargroup":
-			if measure in ["progress","meeting","exceeding"]:
+			if measure not in avg_headline_measures:
 				class_of_filters="subject__cohort"
 			qset=qset.order_by('cohort')
 		elif class_of_filters=="datadrop":
@@ -128,15 +129,15 @@ def get_default_filters_dict(class_of_filters,measure,**filters):
 				#class_of_filters="grade__datadrop"
 			qset=qset.order_by('cohort','-date')
 		elif class_of_filters=="subject":
-			if measure in ['attainment8','progress8','att8_progress']:
+			if measure in avg_headline_measures:
 				class_of_filters="grade__subject"
 			qset=qset.order_by('name','faculty')
 		elif class_of_filters=="classgroup":
-			if measure in ['attainment8','progress8','att8_progress']:
+			if measure in avg_headline_measures:
 				class_of_filters="grade__classgroup"
 			qset=qset.order_by('class_code')
 		elif class_of_filters=="faculty":
-			if measure in ['attainment8','progress8','att8_progress']:
+			if measure in avg_headline_measures:
 				class_of_filters="grade__subject__faculty"
 			else:
 				class_of_filters="subject__faculty"
