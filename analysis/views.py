@@ -450,8 +450,8 @@ def getInterrogatorOutput(form):
 	if "cohort" in filters:
 		filters['datadrop__cohort']=filters['cohort']
 		filters.pop('cohort')
-	if not 'datadrop' in filters and not 'datadrop__name' in filters:
-		filters['datadrop__name__contains']=""
+	filters=clean_filters(filters,measure)
+	
 	#get dataframe of values matching every combination of filters
 	if measure in ['attainment8','progress8',
 		'en_att8','ma_att8','eb_att8','op_att8','eb_filled','op_filled','att8_progress']:
