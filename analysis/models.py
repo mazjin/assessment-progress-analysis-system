@@ -11,11 +11,18 @@ def clean_filters(dict,measure):
 		if innerkey[0:9]=="yeargroup":
 			dict[innerkey.replace("yeargroup","datadrop__cohort")]=val
 			dict.pop(innerkey,None)
-		if innerkey[0:7]=="subject" or innerkey[0:10]=="classgroup":
+		if (innerkey[0:7]=="subject" or innerkey[0:10]=="classgroup") and\
+		(measure in avg_headline_measures or measure in \
+		pct_headline_measures):
 			dict['upn__grade__'+innerkey]=val
 			dict['upn__grade__datadrop']=models.F('datadrop')
 			dict.pop(innerkey,None)
+		# if  innerkey[0:10]=="class_code":
+			# dict['upn__grade__classgroup__class_code']=val
+			# dict.pop(innerkey,None)
+		
 	return dict
+
 	
 def get_default_filters_dict(class_of_filters,measure,**filters):
 	"""defines a row or column query as a dictionary of filter conditions, to be

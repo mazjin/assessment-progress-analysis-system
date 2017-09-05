@@ -12,6 +12,7 @@ import numpy as np
 from .colourCodingRules import colour_progress,colour_pp_gap,colour_pp_gap_df,colour_progress_df
 import seaborn as sns
 import io
+from django.apps import apps
 #from data_interrogator import views
 
 # Create your views here.
@@ -542,3 +543,124 @@ def get_formatted_output_table(form):
 	
 	outputTable=outputTable.highlight_null(null_color="grey")
 	return outputTable
+	
+def get_standard_table(view_focus,view_rows,view_cols,current_year,
+start_dd="",**filters):
+	"""view focus can be "classgroup", "subject" or "datadrop". 
+	rows can be "student" (VGs),"classgroup","yeargroup", "datadrop", 
+	or "subject". 
+	columns can be "progress","attainment" (EAP), "headline" (A8/P8) or
+	(for datadrops) "all" ."""
+	
+	cohort=yeargroup.objects.get(current_year=current_year)
+	filters['cohort']=cohort
+	
+
+	
+	
+	#get focus object and datadrop (if applicable)
+	
+	focus_model=apps.get_model(model_name=view_focus,app_label="analysis")
+	focus_object=focus_model.objects.get(**filters)
+	
+	if "name" in filters.keys() and view_focus=="subject":
+		filters[view_focus]=filters.pop('name')
+	elif "name" in filters.keys() and view_focus=="datadrop":
+		filters.pop('name')
+	if "class_code" in filters.keys():
+		filters.pop('class_code')
+	if view_cols=="headline" and view_focus=="subject":
+		filters['upn__grade__' + view_focus]=focus_object
+	else:
+		filters[view_focus]=focus_object
+	if view_rows=="student":
+		filters["upn__cohort"]=cohort
+		filters.pop("cohort")
+	
+	output_df=pd.DataFrame()
+	
+	#get row filter conditions
+	if view_cols == "headlines":
+		measure="progress8"
+	else:
+		measure=view_cols
+	row_filters=get_default_filters_dict(view_rows,measure,**filters)
+	if view_cols=="headline" and view_focus!="datadrop":
+		filters['upn__grade__' + view_focus]=focus_object
+		filters.pop(view_focus)
+	
+	if "upn__cohort" not in filters.keys():
+		filters["upn__cohort"]=cohort
+		filters.pop("cohort")
+	
+	#set columns 
+	if view_focus=="datadrop":
+		if view_cols=="progress" or view_cols=="all":
+			output_df[focus_object.name + " Avg Progress"] =\
+				focus_object.avg_progress_series(group_filters_dict=row_filters,filters=filters)
+			#avg=output_df[focus_object.name +" Avg Progress"].mean()
+			#output_df[focus_object.name +" Residual"] = \
+				#output_df[focus_object.name+" Avg Progress"] - output_df.loc["All",focus_object.name+" Avg Progress"]
+			for i in output_df.index:
+				try:
+					output_df.loc[i,focus_object.name +" Residual"]=\
+					output_df.loc[i,focus_object.name +" Avg Progress"] -\
+					output_df.loc["All",focus_object.name +" Avg Progress"]
+				except:
+					output_df.loc[i,focus_object.name +" Residual"]=""
+		if view_cols=="attainment" or view_cols=="all":
+			output_df[focus_object.name+" >=EAP"]=\
+				focus_object.pct_EAP_series(False,row_filters,filters)
+			output_df[focus_object.name+" >EAP"]=\
+				focus_object.pct_EAP_series(True,row_filters,filters)
+				
+		if view_cols=="headline" or view_cols=="all":
+			output_df[focus_object.name+" Att8"]=\
+				focus_object.avg_headline_series(row_filters,filters,"attainment8")
+			output_df[focus_object.name+" P8"]=\
+				focus_object.avg_headline_series(row_filters,filters,"progress8")
+	else:
+		# get starting datadrop & get list of datadrops to use
+		if start_dd=="":
+			start_dd="Y" + str(current_year-1) + " DD3"
+		start_dd=datadrop.objects.filter(cohort=cohort,
+			name=start_dd).first()
+		if start_dd is None:
+			start_dd=datadrop.objects.get(cohort=cohort,
+				name="Y" + str(current_year) + " DD1")
+		datadrops=datadrop.objects.filter(date__gte=start_dd.date,cohort=cohort).order_by('date')
+
+		#populate dataframe
+		if view_cols=="progress":
+			for d in datadrops:
+				filters['datadrop']=d
+				output_df[d.name + " Avg Progress"] =\
+					focus_object.avg_progress_series(group_filters_dict=row_filters,filters=filters)
+				#avg=output_df[d.name +" Avg Progress"].mean()
+				# output_df[d.name +" Residual"] = \
+					# output_df[d.name+" Avg Progress"] - output_df.loc["All",d.name+" Avg Progress"]
+				for i in output_df.index:
+					try:
+						output_df.loc[i,d.name +" Residual"]=\
+						output_df.loc[i,d.name +" Avg Progress"] -\
+						output_df.loc["All",d.name +" Avg Progress"]
+					except:
+						output_df.loc[i,d.name +" Residual"]="-"
+				
+		elif view_cols=="attainment":
+			for d in datadrops:
+				filters['datadrop']=d
+				output_df[d.name+" >=EAP"]=\
+					focus_object.pct_EAP_series(False,row_filters,filters)
+				output_df[d.name+" >EAP"]=\
+					focus_object.pct_EAP_series(True,row_filters,filters)
+				
+		elif view_cols=="headline":
+			for d in datadrops:
+				filters['datadrop']=d
+				output_df[d.name+" Att8"]=\
+					focus_object.avg_headline_series(row_filters,filters,"attainment8")
+				output_df[d.name+" P8"]=\
+					focus_object.avg_headline_series(row_filters,filters,"progress8")
+	output_df=output_df.reindex(index=row_filters.keys())
+	return output_df
