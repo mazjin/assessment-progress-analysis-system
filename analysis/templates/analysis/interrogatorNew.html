@@ -1,6 +1,11 @@
 {% extends 'analysis/base.html' %}
 
 {% load bootstrap3 %}
+{% load static from staticfiles %}
+
+{%block jquery%}
+	<script src="{% static 'interrogateScript.js' %}"> </script> 
+{% endblock jquery%}
 
 {% block header %}
 	<h2> Data Interrogator </h2>

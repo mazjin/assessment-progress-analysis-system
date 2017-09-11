@@ -1,0 +1,9 @@
+$(document).ready(function(){
+	$("[for=id_match_subject_by_name],[for=id_match_datadrop_by_name").hide()
+	$("#id_subject_selected").on("change",function(){
+		$("[for=id_match_subject_by_name]").show()
+		})
+	$("#id_datadrop_selected").on("change",function(){
+		$("[for=id_match_datadrop_by_name]").show()
+		})
+	})
