@@ -60,10 +60,10 @@ $(document).ready(function(){
   $(".dropdown").on("show.bs.dropdown", function(){
     $(this).children('.dropdown-toggle').find('.caret').addClass('caret-up');
   });
-  $("#accordionSub").on("show.bs.collapse", function(){
+  $("#accordionSub,#accordionCls,#accordionDdp").on("show.bs.collapse", function(){
     $(this).find('.caret').addClass('caret-up');
   });
-  $("#accordionSub").on("hide.bs.collapse", function(){
+  $("#accordionSub,#accordionCls,#accordionDdp").on("hide.bs.collapse", function(){
     $(this).find('.caret').removeClass('caret-up');
   });
   
