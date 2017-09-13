@@ -1,5 +1,5 @@
 {% load bootstrap3 %}
-{% load static %}
+{% load static from staticfiles%}
 <!DOCTYPE html>
 <html lang="en">
 	<head>
@@ -7,35 +7,187 @@
 		<meta http-equiv="X-UA-Compatible" content = "IE=edge">
 		<meta name="viewport" content="width=device-width, initial-scale=1">
 		<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.2.1/jquery.min.js"></script>
-		{%block jquery %} {%endblock jquery%}
+
 		<title>SCAPAS</title>
 
 		{% bootstrap_css %}
 		{% bootstrap_javascript %}
-		<!-- <style>
-			table,td {
-				text-align: center;
-				border: 1px solid grey;
-				}
-			th {
-				border:1.5px solid grey;
-				text-align: left;
-				}
-		</style> -->
+		{%block jquery %} {%endblock jquery%}
+		<script src="{% static 'fixAccordionInDropdown.js' %}"></script>
+		<link href="{% static 'navbarstyling.css' %}" rel="stylesheet">
+
 	</head>
 	<body>
 		<!--static navbar-->
 		<nav class="navbar navbar-default navbar-static-top">
-			<div class="container">
+			<div class="container-fluid">
 				<div class="navbar-header">
 					<button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-target="#navbar" aria-expanded="false" aria-controls="navbar">
 					</button>
-					<a class="navbar-brand" href="{% url 'analysis:index' %}">{% bootstrap_icon "education" %}SCAPAS</a>
+					<a class="navbar-brand" href="{% url 'analysis:index' %}">{% bootstrap_icon "education" %} SCAPAS</a>
 				</div>
 
 				<div id="navbar" class="navbar-collapse collapse">
 					<ul class="nav navbar-nav">
-						<li><a href="{% url 'analysis:yeargroups' %}">{% bootstrap_icon "user" %} Cohorts</a></li>
+						<li><a href="{% url 'analysis:yeargroups' %}" >{% bootstrap_icon "user" %} Cohorts</a></li>
+						<li>
+							<div class="dropdown dropdown-accordion" data-accordion="#accordionSub">
+								<a class="dropdown-toggle" href="#" data-toggle="dropdown">
+									{% bootstrap_icon "book" %} Subjects<span class="caret"></span>
+								</a>
+								<ul class="dropdown-menu" role="menu" aria-labelledby="dLabel">
+									<li>
+										<div class="panel-group" id="accordionSub">
+											<div class="panel panel-default">
+												<div class="panel-heading">
+													<p class="panel-title">
+														<a href="#collapseOneSub" data-toggle="collapse" data-parent="#accordionSub">by Student Groupings<span class="caret"></span></a>
+													</p>
+												</div>
+											<div class="panel-collapse collapse" id="collapseOneSub">
+												<ul class="list-group">
+													<li class="list-group-item"><a href="#">{% bootstrap_icon "chevron-left" %}in Progress Points</a></li>
+													<li class="list-group-item"><a href="#">{% bootstrap_icon "chevron-left" %}in Estimated Attainment</a></li>
+												</ul>
+											</div>
+											<div class="panel panel-default">
+												<div class="panel-heading">
+													<p class="panel-title">
+														<a href="#collapseTwoSub" data-toggle="collapse" data-parent="#accordionSub">by Classgroup<span class="caret"></span></a>
+													</p>
+												</div>
+											<div class="panel-collapse collapse" id="collapseTwoSub">
+												<ul class="list-group">
+													<li class="list-group-item"><a href="#">{% bootstrap_icon "chevron-left" %}in Progress Points</a></li>
+													<li class="list-group-item"><a href="#">{% bootstrap_icon "chevron-left" %}in Estimated Attainment</a></li>
+												</ul>
+											</div>
+											<div class="panel panel-default">
+												<div class="panel-heading">
+													<p class="panel-title">
+														<a href="#collapseThreeSub" data-toggle="collapse" data-parent="#accordionSub">by Yeargroup<span class="caret"></span></a>
+													</p>
+												</div>
+											<div class="panel-collapse collapse" id="collapseThreeSub">
+												<ul class="list-group">
+													<li class="list-group-item"><a href="#">{% bootstrap_icon "chevron-left" %}in Progress Points</a></li>
+													<li class="list-group-item"><a href="#">{% bootstrap_icon "chevron-left" %}in Estimated Attainment</a></li>
+												</ul>
+											</div>
+										</div>
+									</li>
+								</ul>
+							</div>
+						</li>
+						
+						<li>
+							<div class="dropdown dropdown-accordion" data-accordion="#accordionCls">
+								<a class="dropdown-toggle" href="#" data-toggle="dropdown">
+									{% bootstrap_icon "list-alt" %} Classgroups<span class="caret"></span>
+								</a>
+								<ul class="dropdown-menu" role="menu" aria-labelledby="dLabel">
+									<li>
+										<div class="panel-group" id="accordionCls">
+											<div class="panel panel-default">
+												<div class="panel-heading">
+													<p class="panel-title">
+														<a href="#collapseOneCls" data-toggle="collapse" data-parent="#accordionCls">by Student Groupings<span class="caret"></span></a>
+													</p>
+												</div>
+											<div class="panel-collapse collapse" id="collapseOneCls">
+												<ul class="list-group">
+													<li class="list-group-item"><a href="#">{% bootstrap_icon "chevron-left" %}in Progress Points</a></li>
+													<li class="list-group-item"><a href="#">{% bootstrap_icon "chevron-left" %}in Estimated Attainment</a></li>
+													<li class="list-group-item"><a href="#">{% bootstrap_icon "chevron-left" %}in Headline Measures</a></li>
+													
+												</ul>
+											</div>
+											<div class="panel panel-default">
+												<div class="panel-heading">
+													<p class="panel-title">
+														<a href="#collapseTwoCls" data-toggle="collapse" data-parent="#accordionCls">by Classgroup<span class="caret"></span></a>
+													</p>
+												</div>
+											<div class="panel-collapse collapse" id="collapseTwoCls">
+												<ul class="list-group">
+													<li class="list-group-item"><a href="#">{% bootstrap_icon "chevron-left" %}in Progress Points</a></li>
+													<li class="list-group-item"><a href="#">{% bootstrap_icon "chevron-left" %}in Estimated Attainment</a></li>
+													<li class="list-group-item"><a href="#">{% bootstrap_icon "chevron-left" %}in Headline Measures</a></li>
+												</ul>
+											</div>
+											<div class="panel panel-default">
+												<div class="panel-heading">
+													<p class="panel-title">
+														<a href="#collapseThreeCls" data-toggle="collapse" data-parent="#accordionCls">by Yeargroup<span class="caret"></span></a>
+													</p>
+												</div>
+											<div class="panel-collapse collapse" id="collapseThreeCls">
+												<ul class="list-group">
+													<li class="list-group-item"><a href="#">{% bootstrap_icon "chevron-left" %}in Progress Points</a></li>
+													<li class="list-group-item"><a href="#">{% bootstrap_icon "chevron-left" %}in Estimated Attainment</a></li>
+													<li class="list-group-item"><a href="#">{% bootstrap_icon "chevron-left" %}in Headline Measures</a></li>
+												</ul>
+											</div>
+										</div>
+									</li>
+								</ul>
+							</div>
+						</li>
+						
+						<li>
+							<div class="dropdown dropdown-accordion" data-accordion="#accordionDdp">
+								<a class="dropdown-toggle" href="#" data-toggle="dropdown">
+									{% bootstrap_icon "briefcase" %} Datadrops<span class="caret"></span>
+								</a>
+								<ul class="dropdown-menu" role="menu" aria-labelledby="dLabel">
+									<li>
+										<div class="panel-group" id="accordionDdp">
+											<div class="panel panel-default">
+												<div class="panel-heading">
+													<p class="panel-title">
+														<a href="#collapseOneDdp" data-toggle="collapse" data-parent="#accordionDdp">by Student Groupings<span class="caret"></span></a>
+													</p>
+												</div>
+											<div class="panel-collapse collapse" id="collapseOneDdp">
+												<ul class="list-group">
+													<li class="list-group-item"><a href="#">{% bootstrap_icon "chevron-left" %}in Progress Points</a></li>
+													<li class="list-group-item"><a href="#">{% bootstrap_icon "chevron-left" %}in Estimated Attainment</a></li>
+													<li class="list-group-item"><a href="#">{% bootstrap_icon "chevron-left" %}in Headline Measures</a></li>
+													
+												</ul>
+											</div>
+											<div class="panel panel-default">
+												<div class="panel-heading">
+													<p class="panel-title">
+														<a href="#collapseTwoDdp" data-toggle="collapse" data-parent="#accordionDdp">by Classgroup<span class="caret"></span></a>
+													</p>
+												</div>
+											<div class="panel-collapse collapse" id="collapseTwoDdp">
+												<ul class="list-group">
+													<li class="list-group-item"><a href="#">{% bootstrap_icon "chevron-left" %}in Progress Points</a></li>
+													<li class="list-group-item"><a href="#">{% bootstrap_icon "chevron-left" %}in Estimated Attainment</a></li>
+													<li class="list-group-item"><a href="#">{% bootstrap_icon "chevron-left" %}in Headline Measures</a></li>
+												</ul>
+											</div>
+											<div class="panel panel-default">
+												<div class="panel-heading">
+													<p class="panel-title">
+														<a href="#collapseThreeDdp" data-toggle="collapse" data-parent="#accordionDdp">by Yeargroup<span class="caret"></span></a>
+													</p>
+												</div>
+											<div class="panel-collapse collapse" id="collapseThreeDdp">
+												<ul class="list-group">
+													<li class="list-group-item"><a href="#">{% bootstrap_icon "chevron-left" %}in Progress Points</a></li>
+													<li class="list-group-item"><a href="#">{% bootstrap_icon "chevron-left" %}in Estimated Attainment</a></li>
+													<li class="list-group-item"><a href="#">{% bootstrap_icon "chevron-left" %}in Headline Measures</a></li>
+												</ul>
+											</div>
+										</div>
+									</li>
+								</ul>
+							</div>
+						</li>
+						
 						<li><a href="{% url 'analysis:interrogate' %}">{% bootstrap_icon "stats" %} Interrogator</a></li>
 						{% if user.is_authenticated %}
 						<li><a href="{% url 'analysis:importPrompt' %}">{% bootstrap_icon "save" %} Import</a></li>
@@ -53,5 +205,6 @@
 				{%block content%}{%endblock content%}
 			</div>
 		</div><!-- /container -->
+	
 	</body>
 </html>
