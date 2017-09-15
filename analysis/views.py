@@ -2,7 +2,7 @@ from django.shortcuts import render
 from .models import *
 from .sisraTools import *
 from selenium import webdriver
-from .forms import importForm,interrogatorForm
+from .forms import importForm,interrogatorForm,standardTableForm_subject
 from django.http import HttpResponseRedirect,HttpResponse
 from assessment import settings
 import sqlite3
@@ -544,7 +544,7 @@ def get_formatted_output_table(form):
 	outputTable=outputTable.highlight_null(null_color="grey")
 	return outputTable
 	
-def get_standard_table(view_focus,view_rows,view_cols,current_year,
+def get_standard_table(view_focus,view_rows,view_cols,cohort,
 start_dd="",**filters):
 	"""view focus can be "classgroup", "subject" or "datadrop". 
 	rows can be "student" (VGs),"classgroup","yeargroup", "datadrop", 
@@ -552,7 +552,6 @@ start_dd="",**filters):
 	columns can be "progress","attainment" (EAP), "headline" (A8/P8) or
 	(for datadrops) "all" ."""
 	
-	cohort=yeargroup.objects.get(current_year=current_year)
 	filters['cohort']=cohort
 	
 
@@ -622,12 +621,12 @@ start_dd="",**filters):
 	else:
 		# get starting datadrop & get list of datadrops to use
 		if start_dd=="":
-			start_dd="Y" + str(current_year-1) + " DD3"
+			start_dd="Y" + str(int(cohort.current_year)-1) + " DD3"
 		start_dd=datadrop.objects.filter(cohort=cohort,
 			name=start_dd).first()
 		if start_dd is None:
 			start_dd=datadrop.objects.get(cohort=cohort,
-				name="Y" + str(current_year) + " DD1")
+				name="Y" + cohort.current_year + " DD1")
 		datadrops=datadrop.objects.filter(date__gte=start_dd.date,cohort=cohort).order_by('date')
 
 		#populate dataframe
@@ -664,3 +663,26 @@ start_dd="",**filters):
 					focus_object.avg_headline_series(row_filters,filters,"progress8")
 	output_df=output_df.reindex(index=row_filters.keys())
 	return output_df
+	
+def stdTable_sub_getsession(request,row_type,col_type):
+	request.session['row_type']=row_type
+	request.session['col_type']=col_type
+	return HttpResponseRedirect('/view/subject/')
+
+def stdTable_sub(request):
+	if request.method!="POST":
+		form=standardTableForm_subject()
+		outputTable=""
+	else:
+		form=standardTableForm_subject(data=request.POST)
+		if form.is_valid():
+			year=form.cleaned_data.get("yeargroup_selected")
+			outputTable=get_standard_table("subject",request.session['row_type'],request.session['col_type'],
+				year,name=form.cleaned_data.get("subject_selected").name)
+			#outputTable=outputTable.style.apply(colour_progress,axis=0)
+			#outputTable=outputTable.render().replace('nan','')
+			outputTable=outputTable.to_html()
+			#outputTable.set_table_attributes('class="table table-striped\
+			#	table-hover table-bordered"')
+	context={'form':form,'outputTable':outputTable,'row_type':request.session['row_type'],'col_type':request.session['col_type']}
+	return render(request,'analysis/stdTableSub.html',context)
