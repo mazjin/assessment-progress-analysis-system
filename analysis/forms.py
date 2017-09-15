@@ -79,3 +79,9 @@ class interrogatorForm(forms.Form):
 		yeargroups",required=False)
 	match_datadrop_by_name=forms.BooleanField(label="Match Datadrop across \
 		yeargroups",required=False)
+	
+class standardTableForm_subject(forms.Form):
+	subject_selected=forms.ModelChoiceField(label="Subject",queryset=subject.objects.all(),required=True)
+	yeargroup_selected=forms.ModelChoiceField(label="Cohort",
+		queryset=yeargroup.objects.all(),required=False)
+	

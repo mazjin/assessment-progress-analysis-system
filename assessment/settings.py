@@ -43,7 +43,6 @@ INSTALLED_APPS = [
 	
 	#third party
 	"django_spaghetti",
-	"data_interrogator",
 	"bootstrap3",
 ]
 
@@ -133,21 +132,11 @@ SPAGHETTI_SAUCE={
 	'show_fields':False,
 	'exclude':{'auth':['user']}
 	}
-#config for data interrogator
-DATA_INTERROGRATION_DOSSIER={
-	'suspects':[
-		{'model':("analysis","yeargroup")},
-		{'model':("analysis","gradeMethod")},
-		{'model':("analysis","gradeValue")},
-		{'model':("analysis","datadrop")},
-		{'model':("analysis","subject")},
-		{'model':("analysis","classgroup")},
-		{'model':("analysis","student")},
-		{'model':("analysis","grade")},
-		],
-		'witness_protection':['User','Revision','Version']
-	}
+
 
 BOOTSTRAP3 = {
 	'include_jquery':True,
 	}
+
+STATIC_PATH=os.path.join(BASE_DIR,'static')
+STATICFILES_DIRS=[STATIC_PATH,]

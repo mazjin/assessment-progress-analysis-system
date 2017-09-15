@@ -1,0 +1,37 @@
+.dropdown-accordion {
+	padding-top:10px;
+	padding-bottom:10px;
+}
+@media (min-width:768px) {
+	.dropdown-accordion {
+		padding-top:15px;
+	}
+}
+.dropdown-accordion > a{
+	padding:15px;
+}
+.dropdown-accordion a{
+	color:#777;
+	text-decoration:none;
+	cursor:auto;
+}
+.dropdown-menu{
+	padding:0px;
+	min-width:200px;
+}
+.panel-default>.panel-heading{
+	background-color:transparent;
+	border:none;
+	font-weight:150;
+}
+.panel-default{
+	border:none;
+}
+#accordionCls,#accordionSub,#accordionDdp{
+	margin:0px;
+}
+/* Style to reverse the caret icon from pointing downwards to upwards */
+.caret.caret-up {
+	border-top-width: 0;
+	border-bottom: 4px solid;
+}
