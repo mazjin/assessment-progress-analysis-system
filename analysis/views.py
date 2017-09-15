@@ -563,8 +563,6 @@ start_dd="",**filters):
 	columns can be "progress","attainment" (EAP), "headline" (A8/P8) or
 	(for datadrops) "all" ."""
 
-	cohort=yeargroup.objects.get(current_year=current_year)
-
 	filters['cohort']=cohort
 	
 
