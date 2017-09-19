@@ -7,6 +7,9 @@
 	<h2> Subject Analysis- {{ row_type }} - {{ col_type }}</h2>
 {% endblock header %}
 
+{% block jquery %}
+{% endblock jquery %}
+
 {% block content %}
 <div class="form">
 	<form action ="{% url 'analysis:stdTable_sub' %}" method="post" class="form">
@@ -22,7 +25,10 @@
 </div>
 <br>
 <div class="table-responsive" style="padding:10pt;">
+	<h3>{{form.cleaned_data.subject_selected}}, {{form.cleaned_data.yeargroup_selected}}</h3>
 	{{outputTable|safe}}
 </div>
+
+{% include "analysis/subjectFilterByYear.html" %}
 
 {% endblock content %}

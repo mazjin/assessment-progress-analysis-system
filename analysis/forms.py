@@ -81,7 +81,26 @@ class interrogatorForm(forms.Form):
 		yeargroups",required=False)
 	
 class standardTableForm_subject(forms.Form):
-	subject_selected=forms.ModelChoiceField(label="Subject",queryset=subject.objects.all(),required=True)
-	yeargroup_selected=forms.ModelChoiceField(label="Cohort",
-		queryset=yeargroup.objects.all(),required=False)
+	import json
+	dsubs={}
+	list_subs=[]
+	for sub in subject.objects.all():
+		if sub.cohort.__str__() in dsubs:
+			dsubs[sub.cohort.__str__()].append(sub.name)
+		else:
+			dsubs[sub.cohort.__str__()]=[sub.name]
+		list_subs.append((sub.name, sub.name))
+	
+	years=[year.__str__() for year in yeargroup.objects.all()]
+	
+	yeargroup_selected= forms.ChoiceField(choices=([(year,year) for year in years]))
+	subject_selected=forms.ChoiceField(choices=(list_subs))
+	
+	years=json.dumps(years)
+	subs=json.dumps(dsubs)
+	
+	
+	# subject_selected=forms.ModelChoiceField(label="Subject",queryset=subject.objects.all(),required=True)
+	# yeargroup_selected=forms.ModelChoiceField(label="Cohort",
+		# queryset=yeargroup.objects.all(),required=False)
 	

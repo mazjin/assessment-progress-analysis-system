@@ -676,9 +676,9 @@ def stdTable_sub(request):
 	else:
 		form=standardTableForm_subject(data=request.POST)
 		if form.is_valid():
-			year=form.cleaned_data.get("yeargroup_selected")
+			year=yeargroup.objects.get(cohort=form.cleaned_data.get("yeargroup_selected")[0:9])
 			outputTable=get_standard_table("subject",request.session['row_type'],request.session['col_type'],
-				year,name=form.cleaned_data.get("subject_selected").name)
+				year,name=form.cleaned_data.get("subject_selected"))
 			#outputTable=outputTable.style.apply(colour_progress,axis=0)
 			#outputTable=outputTable.render().replace('nan','')
 			outputTable=outputTable.to_html()
