@@ -1,0 +1,37 @@
+<script language="javascript">
+	$('#id_yeargroup_selected').change(function() {populateSubs(this)});
+	$('#id_description').addClass('descriptions');
+	years = {{ form.years | safe }};
+	subs = {{ form.subs | safe}};
+	populateYear();
+	$("#id_subject_selected").empty();
+	$("#id_subject_selected").append('<option value="" disabled selected>Please select a yeargroup</option>');
+
+	function populateYear() {
+		$('#id_yeargroup_selected').empty();
+		$("#id_yeargroup_selected").append('<option value="" selected>Select your option</option>');
+		$.each(years, function(v) {
+			$('#id_yeargroup_selected')
+				.append($("<option></option>")
+				.attr("value", years[v])
+				.text(years[v]));
+		});
+	}
+
+	function populateSubs(event) {
+		year = $("#id_yeargroup_selected option:selected").text();
+		$("#id_subject_selected").empty();
+		$("#id_subject_selected").append('<option value="" disabled selected>Select your option</option>');
+		for (let [y, ysubs] of Object.entries(subs)) {
+			if (y == year) {
+				//alert(y);
+				for (sub in ysubs) {
+					$('#id_subject_selected')
+						.append($("<option></option>")
+							.attr("value", ysubs[sub])
+							.text(ysubs[sub]));
+				}
+			}
+		}
+	}
+</script>
