@@ -4,7 +4,8 @@ from django.apps import apps
 # Create your models here.
 avg_headline_measures=["en_att8","ma_att8","eb_att8","op_att8",	
 	'attainment8','progress8','att8_progress',"eb_filled","op_filled",]
-pct_headline_measures=["ebacc_achieved","ebacc_entered","basics_9to4","basics_9to5"]
+pct_headline_measures=["ebacc_achieved_std","ebacc_achieved_stg",
+	"ebacc_entered","basics_9to4","basics_9to5"]
 
 def clean_filters(dict,measure):
 	for innerkey,val in dict.copy().items():
@@ -617,8 +618,10 @@ class headline(models.Model):
 	
 	ebacc_entered=models.BooleanField(default=False,
 		help_text="Whether the student qualified to enter the EBacc or not.")
-	ebacc_achieved=models.BooleanField(default=False,
-		help_text="Whether the student achieved the EBacc or not.")
+	ebacc_achieved_std=models.BooleanField(default=False,
+		help_text="Whether the student achieved the EBacc (standard grade) or not.")
+	ebacc_achieved_stg=models.BooleanField(default=False,
+		help_text="Whether the student achieved the EBacc (strong grade) or not.")
 	
 	basics_9to4=models.BooleanField(default=False,
 		help_text="Whether the student achieved a standard pass in both \
