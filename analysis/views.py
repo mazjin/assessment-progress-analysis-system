@@ -544,7 +544,7 @@ def get_formatted_output_table(form):
 	outputTable=outputTable.highlight_null(null_color="grey")
 	return outputTable
 	
-def get_standard_table(view_focus,view_rows,view_cols,cohort,
+def get_standard_table(view_focus,view_rows,view_cols,cohort="",
 start_dd="",**filters):
 	"""view focus can be "classgroup", "subject" or "datadrop". 
 	rows can be "student" (VGs),"classgroup","yeargroup", "datadrop", 
@@ -552,7 +552,8 @@ start_dd="",**filters):
 	columns can be "progress","attainment" (EAP), "headline" (A8/P8) or
 	(for datadrops) "all" ."""
 	
-	filters['cohort']=cohort
+	if view_rows!="yeargroup" and cohort!="":
+		filters['cohort']=cohort
 	
 
 	
@@ -560,19 +561,19 @@ start_dd="",**filters):
 	#get focus object and datadrop (if applicable)
 	
 	focus_model=apps.get_model(model_name=view_focus,app_label="analysis")
-	focus_object=focus_model.objects.get(**filters)
+	focus_object=focus_model.objects.filter(**filters)[0]
 	
-	if "name" in filters.keys() and view_focus=="subject":
+	if "name" in filters.keys(): #and view_focus=="subject":
 		filters[view_focus]=filters.pop('name')
-	elif "name" in filters.keys() and view_focus=="datadrop":
-		filters.pop('name')
+	#elif "name" in filters.keys() and view_focus=="datadrop":
+		#filters.pop('name')
 	if "class_code" in filters.keys():
-		filters.pop('class_code')
+		filters[view_focus]=filters.pop('class_code')
 	if view_cols=="headline" and view_focus=="subject":
 		filters['upn__grade__' + view_focus]=focus_object
 	else:
 		filters[view_focus]=focus_object
-	if view_rows=="student":
+	if view_rows=="student" and "cohort" in filters.keys():
 		filters["upn__cohort"]=cohort
 		filters.pop("cohort")
 	
@@ -588,12 +589,12 @@ start_dd="",**filters):
 		filters['upn__grade__' + view_focus]=focus_object
 		filters.pop(view_focus)
 	
-	if "upn__cohort" not in filters.keys():
+	if "upn__cohort" not in filters.keys() and "cohort" in filters.keys():
 		filters["upn__cohort"]=cohort
 		filters.pop("cohort")
 	
 	#set columns 
-	if view_focus=="datadrop":
+	if view_focus=="datadrop" or view_rows=="yeargroup":
 		if view_cols=="progress" or view_cols=="all":
 			output_df[focus_object.name + " Avg Progress"] =\
 				focus_object.avg_progress_series(group_filters_dict=row_filters,filters=filters)
@@ -676,13 +677,16 @@ def stdTable_sub(request):
 	else:
 		form=standardTableForm_subject(data=request.POST)
 		if form.is_valid():
-			year=yeargroup.objects.get(cohort=form.cleaned_data.get("yeargroup_selected")[0:9])
+			if request.session['row_type']=="yeargroup":
+				year=""
+			else:
+				year=yeargroup.objects.get(cohort=form.cleaned_data.get("yeargroup_selected")[0:9])
 			outputTable=get_standard_table("subject",request.session['row_type'],request.session['col_type'],
 				year,name=form.cleaned_data.get("subject_selected"))
-			#outputTable=outputTable.style.apply(colour_progress,axis=0)
-			#outputTable=outputTable.render().replace('nan','')
 			outputTable=outputTable.to_html()
-			#outputTable.set_table_attributes('class="table table-striped\
-			#	table-hover table-bordered"')
+			# outputTable=outputTable.style.apply(colour_progress,axis=0)
+			# outputTable.set_table_attributes('class="table table-striped\
+				# table-hover table-bordered"')
+			# outputTable=outputTable.render()#.replace('nan','')
 	context={'form':form,'outputTable':outputTable,'row_type':request.session['row_type'],'col_type':request.session['col_type']}
 	return render(request,'analysis/stdTableSub.html',context)

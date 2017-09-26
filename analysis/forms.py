@@ -93,7 +93,7 @@ class standardTableForm_subject(forms.Form):
 	
 	years=[year.__str__() for year in yeargroup.objects.all()]
 	
-	yeargroup_selected= forms.ChoiceField(choices=([(year,year) for year in years]))
+	yeargroup_selected= forms.ChoiceField(choices=([(year,year) for year in years]),required=False)
 	subject_selected=forms.ChoiceField(choices=(list_subs))
 	
 	years=json.dumps(years)
