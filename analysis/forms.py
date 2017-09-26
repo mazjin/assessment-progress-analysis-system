@@ -41,7 +41,8 @@ class interrogatorForm(forms.Form):
 		('eb_filled','Subjects in EBacc Bucket'),
 		('op_filled','Subjects in Open Bucket'),
 		('ebacc_entered','Entered for EBacc'),
-		('ebacc_achieved','Achieving EBacc'),
+		('ebacc_achieved_std','Achieving EBacc (4+)'),
+		('ebacc_achieved_stg','Achieving EBacc (5+)'),
 		('basics_9to4','Basics 4+'),
 		('basics_9to5','Basics 5+'),
 		)

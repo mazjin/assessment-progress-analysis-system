@@ -312,7 +312,8 @@ def openStudentReports(browser,year,dd):
 				'.eapPub .eapInfo .line')
 			for ddbox in ddList:
 				if dd in ddbox.text or dd==ddbox.text:
-					ddbox.click()
+					browser.execute_script("arguments[0].scrollIntoView();", ddbox)
+					ddbox.find_element_by_xpath("..").click()
 	except:
 		print("<"+str(datetime.datetime.now()).split('.')[0]+">: "+\
 			"something else went wrong?")
@@ -327,7 +328,7 @@ def openStudentReports(browser,year,dd):
 		print ("Can't find report button!")
 	time.sleep(.5)
 	
-	comparison_dd="Y9 DD1"
+	comparison_dd="Baseline"
 	
 	try:
 		compareSelect=browser.find_element_by_id('compareSelect')
@@ -372,7 +373,7 @@ def openStudentReports(browser,year,dd):
 def getStudentData(browser,year,dd):
 	"""loops through all students in a year, retrieves student and grade data 
 	and returns dataframe"""
-	comparison_dd="Y9 DD1"
+	comparison_dd="Baseline"
 	#getting dictionary of student names & upns to value in dropdown selector
 	studentList=browser.find_element_by_css_selector('#ReportOptions_Stu_ID')\
 		.find_elements_by_css_selector('*')
@@ -392,8 +393,7 @@ def getStudentData(browser,year,dd):
 		'Compare Grade','progress'])
 	headlines_df=pd.DataFrame(columns=['upn','datadrop','progress8',
 		'attainment8', 'en_att8','ma_att8','eb_att8','op_att8','eb_filled',
-		'op_filled','ebacc_entered','ebacc_achieved','basics_9to4',
-		'basics_9to5','att8_progress'])
+		'op_filled','ebacc_entered','ebacc_achieved_std','ebacc_achieved_stg','basics_9to4','basics_9to5','att8_progress'])
 	temp_counter=0
 	#loop through student pages
 	student_position=1
@@ -498,7 +498,10 @@ def getStudentData(browser,year,dd):
 			'eb_filled':a8p8Table.loc[dd+" Slots Filled","EBacc"],
 			'op_filled':a8p8Table.loc[dd+" Slots Filled","Open"],
 			'ebacc_entered':ebaccTable.loc[dd+" Entered","Overall"],
-			'ebacc_achieved':ebaccTable.loc[dd+" Achieving","Overall"],
+			'ebacc_achieved_std':ebaccTable.loc[dd+" Achieving (Standard)",
+				"Overall"],
+			'ebacc_achieved_stg':ebaccTable.loc[dd+" Achieving (Strong)",
+				"Overall"],
 			'basics_9to4':basicsTable.loc[dd+" - Overall","Passed 9-4"],
 			'basics_9to5':basicsTable.loc[dd+" - Overall","Passed 9-5"],
 			'att8_progress':a8p8Table.loc[comparison_dd+" Attainment 8 >",
@@ -519,7 +522,8 @@ def getStudentData(browser,year,dd):
 	student_df['ks2_average']=round((student_df['ks2_maths']+\
 		student_df['ks2_reading'])*10/2.0)/10.0 
 		#dividing & multiplying by 10s needed to get decimal values from round
-	for colname in ['ebacc_entered','ebacc_achieved','basics_9to4','basics_9to5']:
+	for colname in ['ebacc_entered','ebacc_achieved_std','ebacc_achieved_stg',
+	'basics_9to4','basics_9to5']:
 		headlines_df[colname]=headlines_df[colname]=="Y"
 	headlines_df['att8_progress']=headlines_df['attainment8']-\
 		headlines_df['att8_progress']
