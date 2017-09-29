@@ -593,6 +593,12 @@ start_dd="",**filters):
 	
 	#set columns 
 	if view_focus=="datadrop" or view_rows=="yeargroup":
+		if view_rows=="yeargroup":
+			new_rf={}
+			for y,inner_dict in row_filters.items():
+				for val in inner_dict.values():
+					new_rf[y]={'datadrop':datadrop.objects.filter(cohort=val).order_by("date")[0]}
+			row_filters=new_rf
 		if view_cols=="progress" or view_cols=="all":
 			output_df[focus_object.name + " Avg Progress"] =\
 				focus_object.avg_progress_series(group_filters_dict=row_filters,filters=filters)
