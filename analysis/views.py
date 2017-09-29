@@ -566,7 +566,6 @@ start_dd="",**filters):
 	if view_rows!="yeargroup" and cohort!="":
 		filters['cohort']=cohort
 	
-
 	
 	
 	#get focus object and datadrop (if applicable)
@@ -575,14 +574,14 @@ start_dd="",**filters):
 	focus_object=focus_model.objects.filter(**filters)[0]
 	
 	if "name" in filters.keys(): #and view_focus=="subject":
-		filters[view_focus]=filters.pop('name')
+		filters[view_focus + "__name"]=filters.pop('name')
 	#elif "name" in filters.keys() and view_focus=="datadrop":
 		#filters.pop('name')
 	if "class_code" in filters.keys():
 		filters[view_focus]=filters.pop('class_code')
-	if view_cols=="headline" and view_focus=="subject":
+	if view_cols=="headline" and view_focus=="subject" and view_rows!="yeargroup":
 		filters['upn__grade__' + view_focus]=focus_object
-	else:
+	elif view_rows!="yeargroup":
 		filters[view_focus]=focus_object
 	if view_rows=="student" and "cohort" in filters.keys():
 		filters["upn__cohort"]=cohort
@@ -606,6 +605,12 @@ start_dd="",**filters):
 	
 	#set columns 
 	if view_focus=="datadrop" or view_rows=="yeargroup":
+		if view_rows=="yeargroup":
+			new_rf={"All":{}}
+			for y,inner_dict in row_filters.items():
+				for val in inner_dict.values():
+					new_rf[y]={'datadrop':datadrop.objects.filter(cohort=val).order_by("date")[0]}
+			row_filters=new_rf
 		if view_cols=="progress" or view_cols=="all":
 			output_df[focus_object.name + " Avg Progress"] =\
 				focus_object.avg_progress_series(group_filters_dict=row_filters,filters=filters)
@@ -687,10 +692,14 @@ def stdTable_sub(request):
 		outputTable=""
 	else:
 		form=standardTableForm_subject(data=request.POST)
+		request.session['yeargroup_selected']=""
+		request.session['subject_selected']=""
 		if form.is_valid():
+			request.session['subject_selected']=form.cleaned_data.get("subject_selected")
 			if request.session['row_type']=="yeargroup":
 				year=""
 			else:
+				request.session['yeargroup_selected']=form.cleaned_data.get("yeargroup_selected")
 				year=yeargroup.objects.get(cohort=form.cleaned_data.get("yeargroup_selected")[0:9])
 			outputTable=get_standard_table("subject",request.session['row_type'],request.session['col_type'],
 				year,name=form.cleaned_data.get("subject_selected"))
@@ -699,5 +708,5 @@ def stdTable_sub(request):
 			# outputTable.set_table_attributes('class="table table-striped\
 				# table-hover table-bordered"')
 			# outputTable=outputTable.render()#.replace('nan','')
-	context={'form':form,'outputTable':outputTable,'row_type':request.session['row_type'],'col_type':request.session['col_type']}
+	context={'form':form,'outputTable':outputTable,'row_type':request.session['row_type'],'col_type':request.session['col_type'],'subject_selected':request.session['subject_selected'],'yeargroup_selected':request.session['yeargroup_selected']}
 	return render(request,'analysis/stdTableSub.html',context)
