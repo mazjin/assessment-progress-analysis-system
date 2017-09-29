@@ -5,6 +5,7 @@
 			.hide()
 			.append('<option value="" selected></option>');
 		$('[for="id_yeargroup_selected"]').hide();
+		$("#tableTitle").text("{{form.cleaned_data.subject_selected}}");
 		}
 	else{
 		$('#id_yeargroup_selected').change(function() {populateSubs(this)});
@@ -42,5 +43,14 @@
 				}
 			}
 		}
+		if ("{{form.cleaned_data.subject_selected}}"!="" && "{{form.cleaned_data.yeargroup_selected}}"!=""){
+			$("#tableTitle").text("{{form.cleaned_data.subject_selected}}, {{form.cleaned_data.yeargroup_selected}}");
+		}
 	}
+	if ("{{yeargroup_selected}}"!=""){
+		$('#id_yeargroup_selected option:contains({{yeargroup_selected}})').attr("selected","selected").change();
+		}
+	if ("{{subject_selected}}"!=""){
+		$('#id_subject_selected option:contains({{subject_selected}})').attr("selected","selected").change();
+		}
 </script>

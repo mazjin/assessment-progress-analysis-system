@@ -680,10 +680,14 @@ def stdTable_sub(request):
 		outputTable=""
 	else:
 		form=standardTableForm_subject(data=request.POST)
+		request.session['yeargroup_selected']=""
+		request.session['subject_selected']=""
 		if form.is_valid():
+			request.session['subject_selected']=form.cleaned_data.get("subject_selected")
 			if request.session['row_type']=="yeargroup":
 				year=""
 			else:
+				request.session['yeargroup_selected']=form.cleaned_data.get("yeargroup_selected")
 				year=yeargroup.objects.get(cohort=form.cleaned_data.get("yeargroup_selected")[0:9])
 			outputTable=get_standard_table("subject",request.session['row_type'],request.session['col_type'],
 				year,name=form.cleaned_data.get("subject_selected"))
@@ -692,5 +696,5 @@ def stdTable_sub(request):
 			# outputTable.set_table_attributes('class="table table-striped\
 				# table-hover table-bordered"')
 			# outputTable=outputTable.render()#.replace('nan','')
-	context={'form':form,'outputTable':outputTable,'row_type':request.session['row_type'],'col_type':request.session['col_type']}
+	context={'form':form,'outputTable':outputTable,'row_type':request.session['row_type'],'col_type':request.session['col_type'],'subject_selected':request.session['subject_selected'],'yeargroup_selected':request.session['yeargroup_selected']}
 	return render(request,'analysis/stdTableSub.html',context)
