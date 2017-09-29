@@ -554,7 +554,6 @@ start_dd="",**filters):
 	if view_rows!="yeargroup" and cohort!="":
 		filters['cohort']=cohort
 	
-
 	
 	
 	#get focus object and datadrop (if applicable)
@@ -563,14 +562,14 @@ start_dd="",**filters):
 	focus_object=focus_model.objects.filter(**filters)[0]
 	
 	if "name" in filters.keys(): #and view_focus=="subject":
-		filters[view_focus]=filters.pop('name')
+		filters[view_focus + "__name"]=filters.pop('name')
 	#elif "name" in filters.keys() and view_focus=="datadrop":
 		#filters.pop('name')
 	if "class_code" in filters.keys():
 		filters[view_focus]=filters.pop('class_code')
-	if view_cols=="headline" and view_focus=="subject":
+	if view_cols=="headline" and view_focus=="subject" and view_rows!="yeargroup":
 		filters['upn__grade__' + view_focus]=focus_object
-	else:
+	elif view_rows!="yeargroup":
 		filters[view_focus]=focus_object
 	if view_rows=="student" and "cohort" in filters.keys():
 		filters["upn__cohort"]=cohort

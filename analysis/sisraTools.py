@@ -303,9 +303,12 @@ def openStudentReports(browser,year,dd):
 			if ('Yr ' + year) in yeartab.text:
 				yeartab.click()
 				break
-		
-		selectedDD=browser.find_element_by_css_selector(
+		try:
+			selectedDD=browser.find_element_by_css_selector(
 			'.eapPub.active .eapInfo .line')
+		except:
+			selectedDD=browser.find_element_by_css_selector(
+			'.eapPub .eapInfo .line')
 		time.sleep(0.5)
 		if dd not in selectedDD.text and dd!=selectedDD.text:
 			ddList=browser.find_elements_by_css_selector(
