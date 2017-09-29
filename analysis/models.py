@@ -273,7 +273,7 @@ class studentGrouping(models.Model):
 		else:
 			num_meeting=filtered_grades.filter(value__progress_value__gte=models.F('EAPgrade__progress_value')).count()
 		if num_total==0:
-			return "-"
+			return ""
 		else:
 			return round((num_meeting/num_total)*100,1)
 			
@@ -299,7 +299,7 @@ class studentGrouping(models.Model):
 		num_total=filtered_headlines.count()
 		num_meeting=filtered_headlines.filter(**{measure:True}).count()
 		if num_total==0:
-			return "-"
+			return ""
 		else:
 			return round((num_meeting/num_total)*100,1)
 	
