@@ -684,6 +684,12 @@ start_dd="",**filters):
 def stdTable_sub_getsession(request,row_type,col_type):
 	request.session['row_type']=row_type
 	request.session['col_type']=col_type
+	if "subject_selected" not in request.session:
+		request.session['subject_selected']=""
+		
+	if "yeargroup_selected" not in request.session:
+		request.session['yeargroup_selected']=""
+		
 	return HttpResponseRedirect('/view/subject/')
 
 def stdTable_sub(request):
