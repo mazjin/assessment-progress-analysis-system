@@ -9,7 +9,7 @@ import sqlite3
 import time
 import pandas as pd
 import numpy as np
-from .colourCodingRules import colour_progress,colour_pp_gap,colour_pp_gap_df,colour_progress_df
+from .colourCodingRules import colour_progress,colour_pp_gap,colour_pp_gap_df,colour_progress_df,colour_mx_EAP
 import seaborn as sns
 import io
 from django.apps import apps
@@ -697,10 +697,12 @@ def stdTable_sub(request):
 				year=yeargroup.objects.get(cohort=form.cleaned_data.get("yeargroup_selected")[0:9])
 			outputTable=get_standard_table("subject",request.session['row_type'],request.session['col_type'],
 				year,name=form.cleaned_data.get("subject_selected"))
-			outputTable=outputTable.to_html()
-			# outputTable=outputTable.style.apply(colour_progress,axis=0)
-			# outputTable.set_table_attributes('class="table table-striped\
-				# table-hover table-bordered"')
-			# outputTable=outputTable.render()#.replace('nan','')
+			if request.session['col_type']=="attainment":
+				outputTable=outputTable.style.apply(colour_mx_EAP,axis=0)
+			else:
+				outputTable=outputTable.style.apply(colour_progress,axis=0)
+			outputTable.set_table_attributes('class="table table-striped\
+			# table-hover table-bordered"')
+			outputTable=outputTable.render().replace('nan','')
 	context={'form':form,'outputTable':outputTable,'row_type':request.session['row_type'],'col_type':request.session['col_type'],'subject_selected':request.session['subject_selected'],'yeargroup_selected':request.session['yeargroup_selected']}
 	return render(request,'analysis/stdTableSub.html',context)
