@@ -594,7 +594,7 @@ start_dd="",**filters):
 	#set columns 
 	if view_focus=="datadrop" or view_rows=="yeargroup":
 		if view_rows=="yeargroup":
-			new_rf={}
+			new_rf={"All":{}}
 			for y,inner_dict in row_filters.items():
 				for val in inner_dict.values():
 					new_rf[y]={'datadrop':datadrop.objects.filter(cohort=val).order_by("date")[0]}
