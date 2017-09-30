@@ -35,3 +35,6 @@
 	border-top-width: 0;
 	border-bottom: 4px solid;
 }
+.navbar a:hover, .navbar a:focus, .navbar-brand[href="/"]:hover, .navbar-brand[href="/"]:focus{
+	color:#333
+}
