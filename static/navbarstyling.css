@@ -35,6 +35,10 @@
 	border-top-width: 0;
 	border-bottom: 4px solid;
 }
-.navbar a:hover, .navbar a:focus, .navbar-brand[href="/"]:hover, .navbar-brand[href="/"]:focus{
-	color:#333
+.navbar a:hover, .navbar a:focus, .navbar.navbar-default .navbar-header .navbar-brand:hover, .navbar.navbar-default .navbar-header .navbar-brandfocus{
+	color:#333;
+}
+.navbar.navbar-default .navbar-header .navbar-brand{
+	font-size:24px;
+	padding-top:9px;
 }
