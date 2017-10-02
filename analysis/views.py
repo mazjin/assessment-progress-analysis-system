@@ -697,12 +697,18 @@ def stdTable_sub(request):
 				year=yeargroup.objects.get(cohort=form.cleaned_data.get("yeargroup_selected")[0:9])
 			outputTable=get_standard_table("subject",request.session['row_type'],request.session['col_type'],
 				year,name=form.cleaned_data.get("subject_selected"))
+			#outputTable.replace(to_replace='-',value=float(''),inplace=True)
 			if request.session['col_type']=="attainment":
-				outputTable=outputTable.style.apply(colour_mx_EAP,axis=0)
+				outputTableSt=outputTable.style.apply(colour_mx_EAP,axis=0)
 			else:
-				outputTable=outputTable.style.apply(colour_progress,axis=0)
-			outputTable.set_table_attributes('class="table table-striped\
+				outputTableSt=outputTable.style.apply(colour_progress,axis=0)
+			outputTableSt.set_table_attributes('class="table table-striped\
 			# table-hover table-bordered"')
-			outputTable=outputTable.render().replace('nan','')
+			try:
+				outputTable=outputTableSt.render().replace('nan','')
+			except TypeError as err:
+				print(outputTable)
+				print(err)
+				outputTable=outputTable.to_html
 	context={'form':form,'outputTable':outputTable,'row_type':request.session['row_type'],'col_type':request.session['col_type'],'subject_selected':request.session['subject_selected'],'yeargroup_selected':request.session['yeargroup_selected']}
 	return render(request,'analysis/stdTableSub.html',context)

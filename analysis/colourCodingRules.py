@@ -59,7 +59,7 @@ def colour_pp_gap_df(df):
 def cc_rules_centre_zero(val,sdev):
 	"""decision making for colour coding centered around 0"""
 	#if no value, colour grey
-	if val==np.nan:
+	if str(val)=="nan" or str(val)=="NaN" or str(val)=="" or val==None:
 		return "background-color:grey"
 	#if exactly zero, forest green
 	elif val ==0:
@@ -81,7 +81,7 @@ def cc_rules_hilo_avg(val,sdev,savg):
 	"""decision making for colour coding measuring high/low values from
 		average"""
 	#if no value, colour grey
-	if val=="NaN":
+	if str(val)=="nan" or str(val)=="NaN" or str(val)=="" or val==None:
 		return "background-color:grey"
 	#if value significantly above, colour forest green
 	elif val>(savg+sdev):
@@ -102,8 +102,8 @@ def cc_rules_hilo_avg(val,sdev,savg):
 def colour_mx_EAP(input_obj):
 	"""colours series based on % meeting or exceeding EAP"""
 	if ">=" in input_obj.name:
-		output=['background-color:grey' if x=="" else 'background-color:' +set_colours['red'] if float(x) <80 else 'background-color:' +set_colours['amber'] if float(x) < 85 else 'background-color:' +set_colours['fgreen'] if float(x)==100 else 'background-color:' +set_colours['ligreen'] if float(x)>95 else "" for x in input_obj]
+		output=['background-color:grey' if (str(x)=="" or x==None or str(x)=="nan") else 'background-color:' +set_colours['red'] if float(x) <80 else 'background-color:' +set_colours['amber'] if float(x) < 85 else 'background-color:' +set_colours['fgreen'] if float(x)==100 else 'background-color:' +set_colours['ligreen'] if float(x)>95 else "" for x in input_obj]
 	else:
-		output=['background-color:grey' if x=="" else 'background-color:' +set_colours['red'] if float(x) ==0 else 'background-color:' +set_colours['amber'] if float(x) < 5 else 'background-color:' +set_colours['fgreen'] if float(x)==100 else 'background-color:' +set_colours['ligreen'] if float(x)>15 else "" for x in input_obj]
+		output=['background-color:grey' if (str(x)=="" or x==None or str(x)=="nan") else 'background-color:' +set_colours['red'] if float(x) ==0 else 'background-color:' +set_colours['amber'] if float(x) < 5 else 'background-color:' +set_colours['fgreen'] if float(x)==100 else 'background-color:' +set_colours['ligreen'] if float(x)>15 else "" for x in input_obj]
 	return output
 		

@@ -1,6 +1,7 @@
 from django.db import models
 import pandas
 from django.apps import apps
+import numpy as np
 # Create your models here.
 avg_headline_measures=["en_att8","ma_att8","eb_att8","op_att8",	
 	'attainment8','progress8','att8_progress',"eb_filled","op_filled",]
@@ -197,7 +198,7 @@ class studentGrouping(models.Model):
 		if not progress_avg is None:
 			return round(progress_avg,2)
 		else:
-			return "-"
+			return np.nan
 	
 	def avg_progress_template(self,**filters):
 		"""returns average progress for "default values without having to set 
@@ -245,7 +246,7 @@ class studentGrouping(models.Model):
 		if not hd_avg is None:
 			return round(hd_avg,4)
 		else:
-			return "-"
+			return np.nan
 	
 	def avg_headline_df(self, col_filters_dict,row_filters_dict,filters,
 		measure):
@@ -273,7 +274,7 @@ class studentGrouping(models.Model):
 		else:
 			num_meeting=filtered_grades.filter(value__progress_value__gte=models.F('EAPgrade__progress_value')).count()
 		if num_total==0:
-			return ""
+			return np.nan
 		else:
 			return round((num_meeting/num_total)*100,1)
 			
@@ -299,7 +300,7 @@ class studentGrouping(models.Model):
 		num_total=filtered_headlines.count()
 		num_meeting=filtered_headlines.filter(**{measure:True}).count()
 		if num_total==0:
-			return ""
+			return np.nan
 		else:
 			return round((num_meeting/num_total)*100,1)
 	
@@ -503,7 +504,7 @@ class classgroup(studentGrouping):
 			return round(self.avg_progress(**filters) - \
 				self.avg_progress_att8bucket(**filters),2)
 		except TypeError:
-			return "-"
+			return ""
 
 class student(models.Model):
 	"""A pupil at the school"""
