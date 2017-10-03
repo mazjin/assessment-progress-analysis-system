@@ -13,6 +13,8 @@ from .colourCodingRules import colour_progress,colour_pp_gap,colour_pp_gap_df,co
 import seaborn as sns
 import io
 from django.apps import apps
+import pickle
+import os
 #from data_interrogator import views
 
 # Create your views here.
@@ -113,17 +115,29 @@ def importPrompt(request):
 				print("<"+str(datetime.datetime.now()).split('.')[0]+">: "+\
 					"Data drop " + dd_name + " located for Year "+cohort+\
 					". Getting ready to update data...")
-			#open browser for SISRA access
-			browser=webdriver.Chrome()
-			"""use routines from sisraTools module to navigate to and retrieve
-			student data"""
-			logIntoSISRA(username,pw,browser)
-			openStudentReports(browser,cohort,dd_name)
-			students_df,grades_df,headlines_df=getStudentData(browser,cohort,dd_name)
-			
+			try:
+				print('Checking for unfinished imports...')
+				with open("lastUnfinishedImportCuY" + cohort + dd_name +".p","rb") as fp:
+					impDict=pickle.load(fp)
+					students_df=impDict['students']
+					grades_df=impDict['grades']
+					headlines_df=impDict['headlines']
+				print('Found! Continuing last unfinished import...')
+			except:
+				print('No unfinished imports found, importing from SISRA...')
+				#open browser for SISRA access
+				browser=webdriver.Chrome()
+				"""use routines from sisraTools module to navigate to and retrieve
+				student data"""
+				logIntoSISRA(username,pw,browser)
+				openStudentReports(browser,cohort,dd_name)
+				students_df,grades_df,headlines_df=getStudentData(browser,cohort,dd_name)
+				impDict={'students':students_df,'grades':grades_df,'headlines':headlines_df}
+				with open("lastUnfinishedImportCuY" + cohort + dd_name +".p","wb") as fp:
+					pickle.dump(impDict,fp)
+				#close browser
+				browser.close()
 			students_df['cohort']=form.cleaned_data.get('cohort')
-			#close browser
-			browser.close()
 			print("<"+str(datetime.datetime.now()).split('.')[0]+">: "+\
 				"Student records retrieved, importing...")
 			#instantiate lists for feedback output
@@ -351,9 +365,17 @@ def importPrompt(request):
 					hd['id']=hd['upn']+"/"+hd['datadrop']
 					hd['upn']=student.objects.get(upn=hd['upn'])
 					hd['datadrop'] =dd_obj
-					created_headline=headline.objects.update_or_create(id=hd[id],defaults=hd)
-					created_headline.save()
+					if str(hd['eb_filled'])=="nan":
+						hd['eb_filled']=None
+					if str(hd['op_filled'])=="nan":
+						hd['op_filled']=None
+					try:
+						created_headline,was_headline_created=headline.objects.update_or_create(id=hd["id"],defaults=hd.to_dict())
+						created_headline.save()
+					except:
+						pass
 				except:
+					raise
 					failed_headlines.append((hd['upn'],hd['datadrop']))
 					
 			#print saved feedback output from relevant lists
@@ -364,9 +386,9 @@ def importPrompt(request):
 					print(student.objects.get(upn=u))
 			if len(failed_headlines)>0:
 				print("<"+str(datetime.datetime.now()).split('.')[0]+">: "+\
-				"Importing failed on headline measures for:")
+				"Importing failed on headline measures for "+ str(len(failed_headlines)) + "students:")
 				for h in failed_headlines:
-					print(u)
+					print(h)
 			if len(failed_grades)>0:
 				print("<"+str(datetime.datetime.now()).split('.')[0]+">: "+  \
 					"Importing failed on following grades:")
@@ -389,6 +411,10 @@ def importPrompt(request):
 				"The following students had multiple classes for a subject:")
 				for m in multiple_classes:
 					print(m)
+			try:
+				os.remove("lastUnfinishedImportCuY" + cohort + dd_name +".p")
+			except:
+				pass
 			#render page showing imported students, grades
 			students_table=students_df.to_html
 			grades_table=new_grades_df.to_html
