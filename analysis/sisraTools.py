@@ -337,6 +337,7 @@ def openStudentReports(browser,year,dd):
 		compareOpts=compareSelect.find_elements_by_css_selector('*')
 		for opt in compareOpts:
 			if comparison_dd.lower() in opt.text.lower():
+				browser.execute_script("arguments[0].scrollIntoView();", opt)
 				opt.click()
 				break
 	
@@ -360,6 +361,7 @@ def openStudentReports(browser,year,dd):
 			foundButton=navButtons[i]
 			foundGrid=navGrids[i]
 			break
+	browser.execute_script("arguments[0].scrollIntoView();", foundButton)
 	foundButton.click()
 	#click correct button in gradesGrid
 	time.sleep(0.5)
@@ -369,6 +371,7 @@ def openStudentReports(browser,year,dd):
 			filtersRow=reptype.find_element_by_xpath('..')
 
 	filtersButtons=filtersRow.find_elements_by_link_text('Go!')
+	browser.execute_script("arguments[0].scrollIntoView();", filtersButtons[0])
 	filtersButtons[0].click()
 	time.sleep(1.0)
 
