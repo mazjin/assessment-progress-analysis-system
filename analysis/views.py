@@ -652,14 +652,14 @@ start_dd="",**filters):
 	else:
 		# get starting datadrop & get list of datadrops to use
 		if start_dd=="":
-			start_dd="Y" + str(int(cohort.current_year)-1) + " DD3"
+			start_dd="Y7 DD2"
 		start_dd=datadrop.objects.filter(cohort=cohort,
 			name=start_dd).first()
 		if start_dd is None:
-			start_dd=datadrop.objects.get(cohort=cohort,
-				name="Y" + cohort.current_year + " DD1")
+			start_dd=datadrop.objects.filter(cohort=cohort).order_by('date')[0]
 		datadrops=datadrop.objects.filter(date__gte=start_dd.date,cohort=cohort).order_by('date')
-
+		if len(datadrops)>=3:
+			datadrops=list(datadrops)[-3:]
 		#populate dataframe
 		if view_cols=="progress":
 			for d in datadrops:
