@@ -16,6 +16,9 @@ urlpatterns=[
 	#url(r'^quickquery/$',views.quickDisplayDF, name="quickDisplayDF"),
 	url(r'^classes/(?P<cohort_string>\d{4}-\d{4})/(?P<subject_string>.*)$',views.subjAssessment,name='subjAssessment'),
 	url(r'^interrogate/export$',views.interrogateExport,name="interrogateExport"),
-	url(r'^view/subject/(?P<row_type>.*)/(?P<col_type>.*)$',views.stdTable_sub_getsession,name="stdTable_sub_getsession"),
-	url(r'^view/subject/$',views.stdTable_sub, name="stdTable_sub"),
+	url(r'^view/(?P<focus>.*)/(?P<row_type>.*)/(?P<col_type>.*)$',views.stdTable_gen_getsession,name="stdTable_gen_getsession"),
+	url(r'^view/(?P<focus>.*)/$',views.stdTable_gen,name="stdTable_gen"),
+	#url(r'^view/subject/(?P<row_type>.*)/(?P<col_type>.*)$',views.stdTable_sub_getsession,name="stdTable_sub_getsession"),
+	#url(r'^view/subject/$',views.stdTable_sub, name="stdTable_sub"),
+
 ]
