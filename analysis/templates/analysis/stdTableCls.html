@@ -1,0 +1,34 @@
+{% extends 'analysis/base.html' %}
+
+{% load bootstrap3 %}
+{% load static from staticfiles %}
+
+{% block header %}
+  <h2> Classgroup Analysis - {{ row_type }} - {{ col_type }} </h2>
+{% endblock header %}
+
+{%block jquery%}
+{%endblock jquery%}
+
+{% block content %}
+<div class="form">
+  <form action = "{% url 'analysis:stdTable_gen' focus='classgroup' %}" method ="post" class="form">
+    {% csrf_token %}
+    {% bootstrap_form form %}
+
+    {% buttons %}
+      <button type="submit" name="show_table" class="btn btn-primary">
+      {% bootstrap_icon "circle-arrow-right" %} Get Table</button>
+      <button type="submit" name="export_table" class="btn btn-primary" disabled>{%bootstrap_icon "download-alt" %} Export to Excel</button>
+    {% endbuttons %}
+  </form>
+</div>
+<br>
+<div class="table-responsive" style="padding:10pt;">
+  <h3 id="tableTitle"></h3>
+  {{outputTable|safe}}
+</div>
+
+{% include "analysis/classgroupFilterByYeargroupSubject.html" %}
+
+{%endblock content%}

@@ -2,7 +2,8 @@ from django.shortcuts import render
 from .models import *
 from .sisraTools import *
 from selenium import webdriver
-from .forms import importForm,interrogatorForm,standardTableForm_subject
+from .forms import importForm,interrogatorForm,standardTableForm_subject,\
+	standardTableForm_classgroup
 from django.http import HttpResponseRedirect,HttpResponse
 from assessment import settings
 import sqlite3
@@ -604,7 +605,7 @@ start_dd="",**filters):
 	output_df=pd.DataFrame()
 
 	#get row filter conditions
-	if view_cols == "headlines":
+	if view_cols == "headline":
 		measure="progress8"
 	else:
 		measure=view_cols
@@ -813,11 +814,14 @@ def stdTable_gen(request,focus):
 		if form.is_valid():
 			request.session['subject_selected']=form.cleaned_data.get(
 				"subject_selected")
-			request.session['yeargroup_selected']=form.cleaned_data.get(
-				'yeargroup_selected')
+			if request.session['row_type']=="yeargroup":
+				year=""
+			else:
+				request.session['yeargroup_selected']=form.cleaned_data.get(
+					'yeargroup_selected')
+				year=yeargroup.objects.get(cohort=request.session['yeargroup_selected'][0:9])
 			request.session['classgroup_selected']=form.cleaned_data.get(
 				"classgroup_selected")
-			year=yeargroup.objects.get(cohort=request.session['yeargroup_selected'][0:9])
 			if focus=="subject":
 				pass_filters={'name':request.session['subject_selected']}
 			elif focus=="classgroup":
@@ -839,7 +843,7 @@ def stdTable_gen(request,focus):
 			except TypeError as err:
 				print(outputTable)
 				print(err)
-				outputTable=outputTable.to_html.replace('nan','')
+				outputTable=outputTable.to_html().replace('nan','')
 	context={'form':form,'outputTable':outputTable,
 		'row_type':request.session['row_type'],
 		'col_type':request.session['col_type'],
