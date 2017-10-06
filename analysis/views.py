@@ -2,7 +2,8 @@ from django.shortcuts import render
 from .models import *
 from .sisraTools import *
 from selenium import webdriver
-from .forms import importForm,interrogatorForm,standardTableForm_subject
+from .forms import importForm,interrogatorForm,standardTableForm_subject,\
+	standardTableForm_classgroup
 from django.http import HttpResponseRedirect,HttpResponse
 from assessment import settings
 import sqlite3
@@ -53,7 +54,7 @@ def subjAssessment(request,cohort_string,subject_string):
 	return render(request,'analysis/subjAssessment.html',context)
 
 def get_subject_type_info(subj_name):
-	"""returns set of values that define groupings for subjects based on name 
+	"""returns set of values that define groupings for subjects based on name
 	for importation"""
 	ebacc_bool=False
 	option_bool=True
@@ -94,7 +95,7 @@ def get_subject_type_info(subj_name):
 	return ebacc_bool,option_bool,faculty,bkt
 
 def importPrompt(request):
-	"""for none-POST requests, renders input form to start importation, for 
+	"""for none-POST requests, renders input form to start importation, for
 	POST requests, imports data from SISRA using entered values"""
 	if request.method !="POST":
 		form=importForm()
@@ -113,7 +114,7 @@ def importPrompt(request):
 					"New data drop " + dd_name + " created for Year "+cohort+\
 					". Getting ready to import data...")
 			else:
-			
+
 				print("<"+str(datetime.datetime.now()).split('.')[0]+">: "+\
 					"Data drop " + dd_name + " located for Year "+cohort+\
 					". Getting ready to update data...")
@@ -161,7 +162,7 @@ def importPrompt(request):
 			student_milestone=int(student_number/15)
 			if student_milestone<2:
 				student_milestone=1
-			"""loop through rows in returned student dataframe, format and 
+			"""loop through rows in returned student dataframe, format and
 			add to db"""
 			for u,stu in students_df.iterrows():
 				if student_position % student_milestone==1:
@@ -198,26 +199,26 @@ def importPrompt(request):
 						lac=stu['lac']=="Yes",
 						fsm_ever=stu['fsm_ever']=="Yes")
 					created_student.save()
-					
+
 					if reg_created:#add to output
 						created_classes.append(created_student.reg.class_code)
 					student_position+=1
 				except:#add to output
 					failed_upns.append(u)
-			
-			#instantiate formatted grades dataframe 
+
+			#instantiate formatted grades dataframe
 			new_grades_df=pd.DataFrame(columns=['upn','Qualification Name',
 				'Basket','Class','Type','Grade','Att8 Points','EAP Grade',
 				'staff','Compare Grade','progress','method','subject',
 				'classgroup','datadrop','value','EAPgrade'])
-			
+
 			#variables to track progress though grades importation routine
 			ii=0 #counter for valid grades
 			grade_number=len(grades_df.index)
 			grade_milestone=int(grade_number/15)
 			if grade_milestone<2:
 				grade_milestone=1
-			"""loop through retrieved grades dataframe by row, format and put 
+			"""loop through retrieved grades dataframe by row, format and put
 			into new dataframe"""
 			for i, gr in grades_df.iterrows():
 				if ii % grade_milestone==0:
@@ -233,7 +234,7 @@ def importPrompt(request):
 					gr['method']=gr['subject'].method
 					if gr['subject'].name=="English Literature":
 						class_subject=[gr['subject'],
-							subject.objects.get(name="English Language", 
+							subject.objects.get(name="English Language",
 							cohort=form.cleaned_data.get('cohort'))]
 					elif gr['subject'].name=="English Language":
 						class_subject=[gr['subject'],
@@ -263,11 +264,11 @@ def importPrompt(request):
 										'faculty':faculty,
 										'ebacc_subject':ebacc_bool,
 										'option_subject':option_bool})
-					
+
 					if subject_created:#add to output
 						created_subjects.append(gr['subject'].__str__())
-					
-					"""for KS4 English subjects, if one is created, also create 
+
+					"""for KS4 English subjects, if one is created, also create
 					the other, use both in when creating classes"""
 					if "English L" in gr['Qualification Name']:
 						if "Literature" in gr['Qualification Name']:
@@ -279,7 +280,7 @@ def importPrompt(request):
 									'faculty':faculty,
 									'ebacc_subject':ebacc_bool,
 									'option_subject':option_bool})
-									
+
 						elif "Language" in gr['Qualification Name']:
 							other_subj, subject_created=subject.objects\
 								.get_or_create(name="English Literature",
@@ -294,7 +295,7 @@ def importPrompt(request):
 							created_subjects.append(other_subj.__str__())
 					else:
 						class_subject=[gr['subject']]
-				#retrieve grade value 
+				#retrieve grade value
 				try:
 					gr_value=gr['Grade']
 					if isinstance(gr_value,float):
@@ -311,13 +312,13 @@ def importPrompt(request):
 					print()
 					print()
 					raise
-				"""get EAP grade associated with datadrop & subject - if 
-				Combined Science, need to split grade - SISRA returns a 
+				"""get EAP grade associated with datadrop & subject - if
+				Combined Science, need to split grade - SISRA returns a
 				doubled 9-1 grade"""
 				if isinstance(gr['EAP Grade'],float):
 					gr['EAPgrade']=gradeValue.objects.get(
 						name=str(gr['EAP Grade'])[0])
-				
+
 				elif gr['Qualification Name']=='Combined Science' and \
 				str(gr['EAP Grade']).isnumeric():
 					gr['EAPgrade']=gradeValue.objects.get(
@@ -359,7 +360,7 @@ def importPrompt(request):
 			new_grades_df.drop(['Qualification Name','Basket','Class','Type',
 				'Att8 Points','staff','Compare Grade','Grade','EAP Grade'],
 				axis=1,inplace=True)
-			
+
 			print("<"+str(datetime.datetime.now()).split('.')[0]+\
 			">: Processing " + str(len(grades_df)) + " imports...")
 			#loop through new grades dataframe, save each grade to db
@@ -367,7 +368,7 @@ def importPrompt(request):
 				selected_grade,grade_created=grade.objects.update_or_create(upn=gr['upn'],
 				datadrop=gr['datadrop'],subject=gr['subject'],defaults=gr.to_dict())
 				selected_grade.save()
-			
+
 			for i,hd in headlines_df.iterrows():
 				try:
 					hd['id']=hd['upn']+"/"+hd['datadrop']
@@ -385,7 +386,7 @@ def importPrompt(request):
 				except:
 					raise
 					failed_headlines.append((hd['upn'],hd['datadrop']))
-					
+
 			#print saved feedback output from relevant lists
 			if len(failed_upns)>0:
 				print("<"+str(datetime.datetime.now()).split('.')[0]+">: "+\
@@ -445,7 +446,7 @@ def interrogate(request):
 		if form.is_valid():
 			outputTable=get_formatted_output_table(form)
 			#outputTable.fillna(value="-",inplace=True)
-			
+
 			#change output dataframe table to html format
 			outputTable.set_table_attributes('class="table table-striped\
 				table-hover table-bordered"')
@@ -455,7 +456,7 @@ def interrogate(request):
 			return render(request,'analysis/interrogatorNew.html',context)
 	context={'form':form,'outputTable':""}
 	return render(request,'analysis/interrogatorNew.html',context)
-	
+
 def getInterrogatorOutput(form):
 	"""given valid form from interrogator template, retrieves and formats
 	output dataframe"""
@@ -470,19 +471,19 @@ def getInterrogatorOutput(form):
 		elif form.cleaned_data.get(grp[0]+"_selected"):
 			filters[grp[1]]=form.cleaned_data.get(grp[0]+'_selected')
 	#determine filters for rows & columns based on selected values
-	
+
 	measure=form.cleaned_data.get('val_choice')
 	rfilters=get_default_filters_dict(form.cleaned_data\
 		.get('row_choice'),measure,**filters)
 	cfilters=get_default_filters_dict(form.cleaned_data\
 		.get('col_choice'),measure,**filters)
-	
+
 	#set/edit filters for use directly on grades
 	if "cohort" in filters:
 		filters['datadrop__cohort']=filters['cohort']
 		filters.pop('cohort')
 	filters=clean_filters(filters,measure)
-	
+
 	#get dataframe of values matching every combination of filters
 	if measure in ['attainment8','progress8',
 		'en_att8','ma_att8','eb_att8','op_att8','eb_filled','op_filled','att8_progress']:
@@ -528,7 +529,7 @@ def getInterrogatorOutput(form):
 			residual_mask.loc[c]=outputTable.loc['All']
 		outputTable=outputTable-residual_mask
 	return outputTable
-	
+
 def interrogateExport(request):
 	"""takes POST request and serves excel file of returned dataframe"""
 	form=interrogatorForm(data=request.POST)
@@ -538,16 +539,16 @@ def interrogateExport(request):
 		filename=filename.replace(" ","").replace(":","")
 		sio=io.BytesIO()
 		writer=pd.ExcelWriter(sio,engine='openpyxl')
-		
+
 		outputTable=get_formatted_output_table(form)
-		
+
 		outputTable.to_excel(writer,sheet_name="Sheet1")
 		writer.save()
-		
+
 		sio.seek(0)
 		workbook=sio.getvalue()
-		
-		
+
+
 		response= HttpResponse(workbook,
 			content_type='application/vnd.ms-excel')
 		response['Content-Disposition']='attachment; filename="' +\
@@ -560,12 +561,12 @@ def get_formatted_output_table(form):
 		if (form.cleaned_data.get('residual_toggle_row') and form.cleaned_data.get('residual_toggle_col')) or (not form.cleaned_data.get('residual_toggle_row') and not form.cleaned_data.get('residual_toggle_col')):
 			outputTable=outputTable.style.apply(colour_progress_df,axis=None)
 			#outputTable=outputTable.style.bar(align='mid',color=['red','green'])
-			
+
 		elif form.cleaned_data.get('residual_toggle_row'):
 			outputTable=outputTable.style.apply(colour_progress,axis=0)
 		else:
 			outputTable=outputTable.style.apply(colour_progress,axis=1)
-	
+
 	else:
 		if (form.cleaned_data.get('residual_toggle_row') and form.cleaned_data.get('residual_toggle_col')) or (not form.cleaned_data.get('residual_toggle_row') and not form.cleaned_data.get('residual_toggle_col')):
 			outputTable=outputTable.style.apply(colour_pp_gap_df,axis=None)
@@ -573,31 +574,28 @@ def get_formatted_output_table(form):
 			outputTable=outputTable.style.apply(colour_pp_gap,axis=0)
 		else:
 			outputTable=outputTable.style.apply(colour_pp_gap,axis=1)
-	
+
 	outputTable=outputTable.highlight_null(null_color="grey")
 	return outputTable
 
-	
-
 def get_standard_table(view_focus,view_rows,view_cols,cohort="",
 start_dd="",**filters):
-	"""view focus can be "classgroup", "subject" or "datadrop". 
-	rows can be "student" (VGs),"classgroup","yeargroup", "datadrop", 
-	or "subject". 
+	"""view focus can be "classgroup", "subject" or "datadrop".
+	rows can be "student" (VGs),"classgroup","yeargroup", "datadrop",
+	or "subject".
 	columns can be "progress","attainment" (EAP), "headline" (A8/P8) or
 	(for datadrops) "all" ."""
 
-	
 	if view_rows!="yeargroup" and cohort!="":
 		filters['cohort']=cohort
-	
-	
-	
+
+
+
 	#get focus object and datadrop (if applicable)
-	
+
 	focus_model=apps.get_model(model_name=view_focus,app_label="analysis")
 	focus_object=focus_model.objects.filter(**filters)[0]
-	
+
 	if "name" in filters.keys(): #and view_focus=="subject":
 		filters[view_focus + "__name"]=filters.pop('name')
 	#elif "name" in filters.keys() and view_focus=="datadrop":
@@ -611,11 +609,11 @@ start_dd="",**filters):
 	if view_rows=="student" and "cohort" in filters.keys():
 		filters["upn__cohort"]=cohort
 		filters.pop("cohort")
-	
+
 	output_df=pd.DataFrame()
-	
+
 	#get row filter conditions
-	if view_cols == "headlines":
+	if view_cols == "headline":
 		measure="progress8"
 	else:
 		measure=view_cols
@@ -623,12 +621,12 @@ start_dd="",**filters):
 	if view_cols=="headline" and view_focus!="datadrop":
 		filters['upn__grade__' + view_focus]=focus_object
 		filters.pop(view_focus)
-	
+
 	if "upn__cohort" not in filters.keys() and "cohort" in filters.keys():
 		filters["upn__cohort"]=cohort
 		filters.pop("cohort")
-	
-	#set columns 
+
+	#set columns
 	if view_focus=="datadrop" or view_rows=="yeargroup":
 		if view_rows=="yeargroup":
 			new_rf={"All":{}}
@@ -654,7 +652,7 @@ start_dd="",**filters):
 				focus_object.pct_EAP_series(False,row_filters,filters)
 			output_df[focus_object.name+" >EAP"]=\
 				focus_object.pct_EAP_series(True,row_filters,filters)
-				
+
 		if view_cols=="headline" or view_cols=="all":
 			output_df[focus_object.name+" Att8"]=\
 				focus_object.avg_headline_series(row_filters,filters,"attainment8")
@@ -687,7 +685,7 @@ start_dd="",**filters):
 						output_df.loc["All",d.name +" Avg Progress"]
 					except:
 						output_df.loc[i,d.name +" Residual"]="-"
-				
+
 		elif view_cols=="attainment":
 			for d in datadrops:
 				filters['datadrop']=d
@@ -695,7 +693,7 @@ start_dd="",**filters):
 					focus_object.pct_EAP_series(False,row_filters,filters)
 				output_df[d.name+" >EAP"]=\
 					focus_object.pct_EAP_series(True,row_filters,filters)
-				
+
 		elif view_cols=="headline":
 			for d in datadrops:
 				filters['datadrop']=d
@@ -705,17 +703,34 @@ start_dd="",**filters):
 					focus_object.avg_headline_series(row_filters,filters,"progress8")
 	output_df=output_df.reindex(index=row_filters.keys())
 	return output_df
-	
+
 def stdTable_sub_getsession(request,row_type,col_type):
 	request.session['row_type']=row_type
 	request.session['col_type']=col_type
 	if "subject_selected" not in request.session:
 		request.session['subject_selected']=""
-		
+
 	if "yeargroup_selected" not in request.session:
 		request.session['yeargroup_selected']=""
-		
+
+	if "classgroup_selected" not in request.session:
+		request.session['classgroup_selected']=""
+
 	return HttpResponseRedirect('/view/subject/')
+
+def stdTable_gen_getsession(request,focus,row_type,col_type):
+	request.session['row_type']=row_type
+	request.session['col_type']=col_type
+	if "subject_selected" not in request.session:
+		request.session['subject_selected']=""
+
+	if "yeargroup_selected" not in request.session:
+		request.session['yeargroup_selected']=""
+
+	if "classgroup_selected" not in request.session:
+		request.session['classgroup_selected']=""
+
+	return HttpResponseRedirect('/view/'+focus+'/')
 
 def stdTable_sub(request):
 	if request.method!="POST":
@@ -740,7 +755,7 @@ def stdTable_sub(request):
 			else:
 				outputTableSt=outputTable.style.apply(colour_progress,axis=0)
 			outputTableSt.set_table_attributes('class="table table-striped\
-			# table-hover table-bordered"')
+			 table-hover table-bordered"')
 			try:
 				outputTable=outputTableSt.render().replace('nan','')
 			except TypeError as err:
@@ -749,3 +764,106 @@ def stdTable_sub(request):
 				outputTable=outputTable.to_html
 	context={'form':form,'outputTable':outputTable,'row_type':request.session['row_type'],'col_type':request.session['col_type'],'subject_selected':request.session['subject_selected'],'yeargroup_selected':request.session['yeargroup_selected']}
 	return render(request,'analysis/stdTableSub.html',context)
+
+def stdTable_cls(request):
+	if request.method!="POST":
+		form=standardTableForm_classgroup()
+		outputTable=""
+	else:
+		form=standardTableForm_subject(data=request.POST)
+		#set session variables
+		request.session['yeargroup_selected']=""
+		request.session['subject_selected']=""
+		request.session['classgroup_selected']=""
+		if form.is_valid():
+			request.session['subject_selected']=form.cleaned_data.get("subject_selected")
+			request.session['yeargroup_selected']=form.cleaned_data.get('yeargroup_selected')
+			request.session['classgroup_selected']=form.cleaned_data.get("classgroup_selected")
+			year=yeargroup.objects.get(cohort=request.session['yeargroup_selected'][0:9])
+			outputTable=get_standard_table("classgroup",request.session['row_type'],
+				request.session['col_type'],year,
+				subject__name=form.cleaned_data.get("subject_selected"),
+				class_code=form.cleaned_data.get("classgroup_selected"))
+			if request.session['col_type']=="attainment":
+				outputTableSt=outputTable.style.apply(colour_mx_EAP,axis=0)
+			else:
+				outputTableSt=outputTable.style.apply(colour_progress,axis=0)
+			outputTableSt.set_table_attributes('class="table table-striped table-hover table-bordered"')
+			try:
+				outputTable=outputTableSt.render().replace('nan','')
+			except TypeError as err:
+				print(outputTable)
+				print(err)
+				outputTable=outputTable.to_html
+	context={'form':form,'outputTable':outputTable,'row_type':request.session['row_type'],'col_type':request.session['col_type'],'subject_selected':request.session['subject_selected'],'yeargroup_selected':request.session['yeargroup_selected'],'classgroup_selected':request.session['classgroup_selected']}
+	return render(request,'analysis/stdTableCls.html',context)
+def stdTable_gen(request,focus):
+	form=""
+	if request.method!="POST":
+		outputTable=""
+		if focus == "subject":
+			form=standardTableForm_subject()
+		elif focus == "classgroup":
+			form=standardTableForm_classgroup()
+		elif focus == "datadrop":
+			form=standardTableForm_datadrop()
+	else:
+
+		if focus == "subject":
+			form=standardTableForm_subject(data=request.POST)
+		elif focus == "classgroup":
+			form=standardTableForm_classgroup(data=request.POST)
+		elif focus == "datadrop":
+			form=standardTableForm_datadrop(data=request.POST)
+
+		request.session['yeargroup_selected']=""
+		request.session['subject_selected']=""
+		request.session['classgroup_selected']=""
+		if form.is_valid():
+			request.session['subject_selected']=form.cleaned_data.get(
+				"subject_selected")
+			if request.session['row_type']=="yeargroup":
+				year=""
+			else:
+				request.session['yeargroup_selected']=form.cleaned_data.get(
+					'yeargroup_selected')
+				year=yeargroup.objects.get(cohort=request.session['yeargroup_selected'][0:9])
+			request.session['classgroup_selected']=form.cleaned_data.get(
+				"classgroup_selected")
+			if focus=="subject":
+				pass_filters={'name':request.session['subject_selected']}
+			elif focus=="classgroup":
+				pass_filters={'class_code':request.session['classgroup_selected'],
+					'subject__name':request.session['subject_selected'],
+					}
+			elif focus=="datadrop":
+				pass_filters={}
+			outputTable=get_standard_table(focus,request.session['row_type'],
+				request.session['col_type'],year,**pass_filters)
+			if request.session['col_type']=="attainment":
+				outputTableSt=outputTable.style.apply(colour_mx_EAP,axis=0)
+			else:
+				outputTableSt=outputTable.style.apply(colour_progress,axis=0)
+			outputTableSt.set_table_attributes('class="table table-striped\
+			 table-hover table-bordered"')
+			try:
+				outputTable=outputTableSt.render().replace('nan','')
+			except TypeError as err:
+				print(outputTable)
+				print(err)
+				outputTable=outputTable.to_html().replace('nan','')
+	context={'form':form,'outputTable':outputTable,
+		'row_type':request.session['row_type'],
+		'col_type':request.session['col_type'],
+		'subject_selected':request.session['subject_selected'],
+		'yeargroup_selected':request.session['yeargroup_selected'],
+		'classgroup_selected':request.session['classgroup_selected']
+	}
+	template=""
+	if focus=="subject":
+		template="analysis/stdTableSub.html"
+	elif focus=="classgroup":
+		template="analysis/stdTableCls.html"
+	elif focus=="datadrop":
+		template="analysis/stdTableDdp.html"
+	return render(request,template,context)

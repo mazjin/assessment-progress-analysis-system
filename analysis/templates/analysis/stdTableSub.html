@@ -12,10 +12,10 @@
 
 {% block content %}
 <div class="form">
-	<form action ="{% url 'analysis:stdTable_sub' %}" method="post" class="form">
+	<form action ="{% url 'analysis:stdTable_gen' focus='subject' %}" method="post" class="form">
 		{% csrf_token %}
 		{% bootstrap_form form %}
-		
+
 		{% buttons %}
 			<button type="submit" name="show_table" class="btn btn-primary">
 			{% bootstrap_icon "circle-arrow-right" %} Get Table</button>
