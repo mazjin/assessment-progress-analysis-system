@@ -294,6 +294,8 @@ def importPrompt(request):
 						gr_value=str(int(gr_value))
 					else:
 						gr_value=str(gr_value)
+					if "=" in gr_value:
+						gr_value.replace("=","")
 					gr['value']=gr['method'].vals.get(name=gr_value)
 				except:
 					print("<"+str(datetime.datetime.now()).split('.')[0]+">: "+\
@@ -312,15 +314,17 @@ def importPrompt(request):
 						name=str(gr['EAP Grade'])[0])
 
 				elif gr['Qualification Name']=='Combined Science' and \
-				str(gr['EAP Grade']).isnumeric():
+				str(gr['EAP Grade'].replace("=","")).isnumeric():
 					gr['EAPgrade']=gradeValue.objects.get(
 						name=str(gr['EAP Grade'])[0])
 				else:
-					gr['EAPgrade']=gradeValue.objects.get(name=gr['EAP Grade'])
+					gr['EAPgrade']=gradeValue.objects.get(name=gr['EAP Grade'].replace("=",""))
 				#get baseline grade
 				baseline_grade=gr['Compare Grade']
 				if isinstance(baseline_grade,float):
 					baseline_grade=str(int(baseline_grade))
+				if "=" in str(baseline_grade):
+					baseline_grade=str(baseline_grade).replace("=","")
 				#calculate progress from baseline grade
 				try:
 					gr['progress']=gr['value'].progress_value - gr['method'] \
