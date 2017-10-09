@@ -578,15 +578,18 @@ start_dd="",**filters):
 	columns can be "progress","attainment" (EAP), "headline" (A8/P8) or
 	(for datadrops) "all" ."""
 
+
 	if view_rows!="yeargroup" and cohort!="":
 		filters['cohort']=cohort
-
-
 
 	#get focus object and datadrop (if applicable)
 
 	focus_model=apps.get_model(model_name=view_focus,app_label="analysis")
 	focus_object=focus_model.objects.filter(**filters)[0]
+	if view_focus=="classgroup":
+		focus_label=focus_object.class_code
+	else:
+		focus_label=focus_object.name
 
 	if "name" in filters.keys(): #and view_focus=="subject":
 		filters[view_focus + "__name"]=filters.pop('name')
@@ -627,28 +630,28 @@ start_dd="",**filters):
 					new_rf[y]={'datadrop':datadrop.objects.filter(cohort=val).order_by("date")[0]}
 			row_filters=new_rf
 		if view_cols=="progress" or view_cols=="all":
-			output_df[focus_object.name + " Avg Progress"] =\
+			output_df[focus_label + " Avg Progress"] =\
 				focus_object.avg_progress_series(group_filters_dict=row_filters,filters=filters)
 			#avg=output_df[focus_object.name +" Avg Progress"].mean()
 			#output_df[focus_object.name +" Residual"] = \
 				#output_df[focus_object.name+" Avg Progress"] - output_df.loc["All",focus_object.name+" Avg Progress"]
 			for i in output_df.index:
 				try:
-					output_df.loc[i,focus_object.name +" Residual"]=\
-					output_df.loc[i,focus_object.name +" Avg Progress"] -\
-					output_df.loc["All",focus_object.name +" Avg Progress"]
+					output_df.loc[i,focus_label +" Residual"]=\
+					output_df.loc[i,focus_label +" Avg Progress"] -\
+					output_df.loc["All",focus_label +" Avg Progress"]
 				except:
-					output_df.loc[i,focus_object.name +" Residual"]=""
+					output_df.loc[i,focus_label +" Residual"]=""
 		if view_cols=="attainment" or view_cols=="all":
-			output_df[focus_object.name+" >=EAP"]=\
+			output_df[focus_label+" >=EAP"]=\
 				focus_object.pct_EAP_series(False,row_filters,filters)
-			output_df[focus_object.name+" >EAP"]=\
+			output_df[focus_label+" >EAP"]=\
 				focus_object.pct_EAP_series(True,row_filters,filters)
 
 		if view_cols=="headline" or view_cols=="all":
-			output_df[focus_object.name+" Att8"]=\
+			output_df[focus_label+" Att8"]=\
 				focus_object.avg_headline_series(row_filters,filters,"attainment8")
-			output_df[focus_object.name+" P8"]=\
+			output_df[focus_label+" P8"]=\
 				focus_object.avg_headline_series(row_filters,filters,"progress8")
 	else:
 		# get starting datadrop & get list of datadrops to use
