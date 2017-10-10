@@ -335,8 +335,8 @@ def importPrompt(request):
 					baseline_grade=str(baseline_grade).replace("=","")
 				#calculate progress from baseline grade
 				try:
-					gr['progress']=gr['value'].progress_value - gr['method'] \
-					.vals.get(name=baseline_grade).progress_value
+					gr['progress']=gr['value'].progress_value - gradeValue.objects\
+					.filter(name=baseline_grade)[0].progress_value
 				except:
 					raise
 				#handle pupils with multiple classes for one subject
