@@ -7,7 +7,7 @@ import time,datetime,pandas as pd
 
 
 def logIntoSISRA(uname,pword,browser):
-	"""given a username, password and webdriver object, navigates webdriver 
+	"""given a username, password and webdriver object, navigates webdriver
 	through SISRA log in process"""
 	print("<"+str(datetime.datetime.now()).split('.')[0]+">: "+ \
 		"Creating browser instance...")
@@ -29,7 +29,7 @@ def logIntoSISRA(uname,pword,browser):
 	except:
 		pass
 	time.sleep(0.5)
-	
+
 def setMegDD(year):
 	"""used to identify MEG targets for a given year group"""
 		#decide & select relevant target data set for comparison
@@ -40,7 +40,7 @@ def setMegDD(year):
 	return meg_dd
 
 def openDDReport(browser,year, dd):
-	"""navigates browser webdriver to the correct SISRA report for populating 
+	"""navigates browser webdriver to the correct SISRA report for populating
 	the SLT overview table"""
 	#navigate to reports from home screen, if error then quit
 	print("<"+str(datetime.datetime.now()).split('.')[0]+">: "+\
@@ -53,15 +53,15 @@ def openDDReport(browser,year, dd):
 		time.sleep(5)
 		sys.exit(2)
 	time.sleep(0.5)
-	
+
 	#open EAP area if not already open, else do nothing
 	try:
 		browser.find_element_by_link_text('KS 3/4').click()
 	except:
 		pass
 	time.sleep(0.5)
-	
-	
+
+
 	# check & select year group tab based on variables
 	try:
 		#loops through available yeargroups to find correct one
@@ -71,7 +71,7 @@ def openDDReport(browser,year, dd):
 			if ('Yr ' + year) in yeartab.text:
 				yeartab.click()
 				break
-		
+
 		selectedDD=browser.find_element_by_css_selector(
 			'.eapPub.active .eapInfo .line')
 		time.sleep(0.5)
@@ -92,7 +92,7 @@ def openDDReport(browser,year, dd):
 	except:
 		print ("can't find report button")
 	time.sleep(.5)
-	
+
 	#identify meg name,use it to select comparison dataset
 	meg_dd=setMegDD(str(year).strip())
 	try:
@@ -130,19 +130,19 @@ def openDDReport(browser,year, dd):
 	for reptype in repTypes:
 		if "totals" in reptype.text.lower():
 			filtersRow=reptype.find_element_by_xpath('..')
-	
+
 	filtersButtons=filtersRow.find_elements_by_link_text('Go!')
 	filtersButtons[0].click()
 	time.sleep(1.0)
 
 def sltOverview(browser,year,dd):
-	"""generates table populated with percentage of each student group 
+	"""generates table populated with percentage of each student group
 	(boys, girls, disadvantaged, EAL,etc.) meeting and exceeding MEG targets for
 	each subject"""
 	print("<"+str(datetime.datetime.now()).split('.')[0]+">: "+\
 		"Collecting performance data for subjects...")
 	meg_dd=setMegDD(str(year).strip())
-	"""set report for correct values, get dictionaries of subjects and students 
+	"""set report for correct values, get dictionaries of subjects and students
 	and their selection values"""
 	repQualBox=browser.find_element_by_id('ReportOptions_Qual_ID')
 	subjOptions=repQualBox.find_elements_by_css_selector('*')
@@ -160,11 +160,11 @@ def sltOverview(browser,year,dd):
 		wbdsel(browser.find_element_by_id('ReportOptions_Qual_ID'))\
 			.select_by_value(str(key))
 		time.sleep(.5)
-		
+
 		#read table into pandas DataFrame
 		subject_df=pd.read_html(browser.find_element_by_tag_name('html')\
 			.get_attribute('innerHTML'),header=0,index_col=1)[8]
-		
+
 		"""clean strings in column and index names - need to rewrite this to use
 			pandas object.str accessor!"""
 		newnames=[]
@@ -182,14 +182,14 @@ def sltOverview(browser,year,dd):
 			n=n.strip()
 			newnames.append(n)
 		subject_df['Name']=newnames
-		
+
 		"""discard entries in dataframe containing irrelevant comparison data,
 		attach subject name to index names, add to results dictionary"""
 		subject_df=subject_df[subject_df['Name'] != 'Difference >']
 		subject_df=subject_df[subject_df['Name'] != meg_dd+ ' MEGs >']
 		subject_df.index=subject_df['Name'] + "_" + subject_df.index
 		resultsDict[subj]=subject_df.iloc[:,11:15]
-	
+
 	#populate new dataframe with collated results
 	results_df=pd.DataFrame()
 	for sub in resultsDict.keys():
@@ -201,15 +201,15 @@ def sltOverview(browser,year,dd):
 	print("<"+str(datetime.datetime.now()).split('.')[0]+">: "+\
 		'Done! Results collated and output to ' + dd + '.csv')
 	return results_df
-	
+
 def main():
-	"""takes username, password, selected webdriver method, datadrop name and 
+	"""takes username, password, selected webdriver method, datadrop name and
 	relevant yeargroup and returns/exports an SLT overview table """
-	
+
 	helpMessage="Usage: sisraTools -u/--user <username> -p/-pass <password> \
 	-b/--browser <browser> -y/--year <cohort year> -d/--datadrop \
 	<data drop name>"
-	
+
 	try:
 		opts,args=getopt.getopt(sys.argv[1:],'u:p:b:y:d:dd:',
 			['user=','username=','pass=','password=','browser=','year=',
@@ -223,7 +223,7 @@ def main():
 	brwsr=''
 	year=""
 	dd=""
-	
+
 	for opt,arg in opts:
 		if opt in ('-u','--username','--user'):
 			uname=arg
@@ -235,27 +235,27 @@ def main():
 			dd=arg
 		elif opt in ('-y','--year'):
 			year=arg
-	
+
 	if uname=="":
 		print("<"+str(datetime.datetime.now()).split('.')[0]+">: "+\
 			'Please enter your SISRA username.')
 		uname=input()
-	
+
 	if year=="":
 		print("<"+str(datetime.datetime.now()).split('.')[0]+">: "+\
 			"Please enter the current year group for the cohort, e.g. if \
 			accessing info for the current Year 8, enter 8.")
 		year=input()
-		
+
 	if dd=="":
 		print("<"+str(datetime.datetime.now()).split('.')[0]+">: "+\
 			"Please enter the name of the data drop to access, e.g. Y7 DD3, \
 			Y11 DD2, PPEs, Exams")
 		dd=input()
-	
+
 	if pword=="":
 		pword=getpass.getpass('Please enter your SISRA password.\n')
-	
+
 	if brwsr=='' or brwsr.lower()=='chrome':
 		browser=webdriver.Chrome()
 	elif brwsr.lower()=='ff' or brwsr.lower()=='firefox':
@@ -263,8 +263,8 @@ def main():
 	else:
 		print("<"+str(datetime.datetime.now()).split('.')[0]+">: "+helpMessage)
 		sys.exit(2)
-	
-	
+
+
 	logIntoSISRA(uname,pword,browser)
 	openDDReport(browser,year,dd)
 	sltOverview(browser,year,dd)
@@ -285,15 +285,15 @@ def openStudentReports(browser,year,dd):
 		time.sleep(5)
 		sys.exit(2)
 	time.sleep(0.5)
-	
+
 	#open EAP area if not already open, else do nothing
 	try:
 		browser.find_element_by_link_text('KS 3/4').click()
 	except:
 		pass
 	time.sleep(0.5)
-	
-	
+
+
 	# check & select year group tab based on variables
 	try:
 		#loops through available yeargroups to find correct one
@@ -322,17 +322,19 @@ def openStudentReports(browser,year,dd):
 			"something else went wrong?")
 		raise
 	time.sleep(0.5)
-	
+
 	#open relevant data drop dataset
 	try:
-		browser.find_element_by_css_selector(
-			'.eapPub.active .EAPRptBtn .button').click()
+		openRepButton=browser.find_element_by_css_selector(
+			'.eapPub.active .EAPRptBtn .button')
+		browser.execute_script("arguments[0].scrollIntoView();",openRepButton)
+		openRepButton.click()
 	except:
 		print ("Can't find report button!")
 	time.sleep(.5)
-	
+
 	comparison_dd="Baseline"
-	
+
 	try:
 		compareSelect=browser.find_element_by_id('compareSelect')
 		compareOpts=compareSelect.find_elements_by_css_selector('*')
@@ -341,13 +343,13 @@ def openStudentReports(browser,year,dd):
 				browser.execute_script("arguments[0].scrollIntoView();", opt)
 				opt.click()
 				break
-	
+
 	except:
 		print("<"+str(datetime.datetime.now()).split('.')[0]+">: "+\
 			"Can't find baseline dataset!")
 		raise
 	time.sleep(0.5)
-	
+
 	#select correct report type
 	navButtons=browser.find_elements_by_css_selector('#reportNavWrapper .rept')
 	navGrids=browser.find_elements_by_css_selector(
@@ -377,19 +379,19 @@ def openStudentReports(browser,year,dd):
 	time.sleep(1.0)
 
 def getStudentData(browser,year,dd):
-	"""loops through all students in a year, retrieves student and grade data 
+	"""loops through all students in a year, retrieves student and grade data
 	and returns dataframe"""
 	comparison_dd="Baseline"
 	#getting dictionary of student names & upns to value in dropdown selector
 	studentList=browser.find_element_by_css_selector('#ReportOptions_Stu_ID')\
 		.find_elements_by_css_selector('*')
-	"""while the dropdown element referened above is reused in the loop below, 
+	"""while the dropdown element referened above is reused in the loop below,
 	not registering it as an object, as it needs reinitialising every loop"""
 	studentDict={}
 	for stu in studentList:
 		if stu.text!="":
 			studentDict[stu.get_attribute('value')]=stu.text
-	
+
 	#initialising dataframes to be returned
 	student_df=pd.DataFrame(columns=['upn','forename','surname','gender','reg',
 		'banding','pp','eal','fsm_ever','lac','sen','homestatus','attendance',
@@ -437,7 +439,7 @@ def getStudentData(browser,year,dd):
 		for c in range(1,8,2):
 			for r in range(0,3):
 				vgFilters[filterTable.iloc[r,c-1]]=filterTable.iloc[r,c]
-		
+
 		#get KS2 and basics data table, clean up column names and indexing
 		ks2Table=pd.read_html(browser\
 			.find_element_by_css_selector("#page.closed")\
@@ -452,7 +454,7 @@ def getStudentData(browser,year,dd):
 		#construct series to be entered as a row in the student dataframe
 		studentEntry=pd.Series({'upn':upn,'forename':forename,'surname':surname,
 			'gender':vgFilters['Gender'],
-			'reg':vgFilters['Reg Group'],  
+			'reg':vgFilters['Reg Group'],
 			'banding':vgFilters['Banding'],
 			'pp':vgFilters['PP'],
 			'eal':vgFilters['EAL'],
@@ -464,7 +466,7 @@ def getStudentData(browser,year,dd):
 			'ks2_reading':ks2Table['KS2'].loc['English'],
 			'ks2_maths':ks2Table['KS2'].loc['Maths']})
 		student_df.loc[upn]=studentEntry
-		
+
 		#get grades table from page, clean columns and add to grades dataframe
 		gradesTable=pd.read_html(browser\
 			.find_element_by_css_selector("#page.closed")
@@ -476,9 +478,9 @@ def getStudentData(browser,year,dd):
 		del gradesTable['Eligibility']
 		del gradesTable['Results Date']
 		grades_df=grades_df.append(gradesTable)
-		
+
 		student_position+=1
-		
+
 		a8p8Table=pd.read_html(browser\
 			.find_element_by_css_selector('#page.closed')
 			.get_attribute('innerHTML'),header=0,index_col=0)[9]
@@ -519,14 +521,14 @@ def getStudentData(browser,year,dd):
 	grades_df['Grade'].fillna("X",inplace=True)
 	grades_df['EAP Grade'].fillna("X",inplace=True)
 	grades_df['Compare Grade'].fillna("X",inplace=True)
-	
+
 	#may reimplement these, but remove for now
 	del student_df['attendance']
 	del student_df['homestatus']
-	
+
 	#calculate average ks2 for students
 	student_df['ks2_average']=round((student_df['ks2_maths']+\
-		student_df['ks2_reading'])*10/2.0)/10.0 
+		student_df['ks2_reading'])*10/2.0)/10.0
 		#dividing & multiplying by 10s needed to get decimal values from round
 	for colname in ['ebacc_entered','ebacc_achieved_std','ebacc_achieved_stg',
 	'basics_9to4','basics_9to5']:
