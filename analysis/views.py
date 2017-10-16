@@ -587,8 +587,10 @@ start_dd="",**filters):
 	if view_rows!="yeargroup" and cohort!="":
 		filters['cohort']=cohort
 	if view_focus=="datadrop":
-		extra_filters['subject__name']=filters.pop('subject__name')
-		extra_filters['classgroup__class_code']=filters.pop('classgroup__class_code')
+		if "subject__name" in filters:
+			extra_filters['subject__name']=filters.pop('subject__name')
+		if "classgroup__class_code" in filters:
+			extra_filters['classgroup__class_code']=filters.pop('classgroup__class_code')
 
 
 	#get focus object and datadrop (if applicable)
@@ -851,10 +853,11 @@ def stdTable_gen(request,focus):
 					}
 			elif focus=="datadrop":
 				pass_filters={'name':request.session['datadrop_selected'],
-					'subject__name':request.session['subject_selected'],
-					'classgroup__class_code':request.session[
-						'classgroup_selected'],
 					}
+				if request.session['subject_selected']!="":
+					pass_filters['subject__name']=request.session['subject_selected']
+				if request.session['classgroup_selected']!="":
+					pass_filters['classgroup__class_code']=request.session['classgroup_selected']
 
 			outputTable=get_standard_table(focus,request.session['row_type'],
 				request.session['col_type'],year,**pass_filters)
