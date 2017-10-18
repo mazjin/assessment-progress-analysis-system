@@ -3,7 +3,7 @@ from .models import *
 from .sisraTools import *
 from selenium import webdriver
 from .forms import importForm,interrogatorForm,standardTableForm_subject,\
-	standardTableForm_classgroup
+	standardTableForm_classgroup,standardTableForm_datadrop
 from django.http import HttpResponseRedirect,HttpResponse
 from assessment import settings
 import sqlite3
@@ -582,14 +582,22 @@ start_dd="",**filters):
 	columns can be "progress","attainment" (EAP), "headline" (A8/P8) or
 	(for datadrops) "all" ."""
 
+	extra_filters={}
 
 	if view_rows!="yeargroup" and cohort!="":
 		filters['cohort']=cohort
+	if view_focus=="datadrop":
+		if "subject__name" in filters:
+			extra_filters['subject__name']=filters.pop('subject__name')
+		if "classgroup__class_code" in filters:
+			extra_filters['classgroup__class_code']=filters.pop('classgroup__class_code')
+
 
 	#get focus object and datadrop (if applicable)
 
 	focus_model=apps.get_model(model_name=view_focus,app_label="analysis")
 	focus_object=focus_model.objects.filter(**filters)[0]
+	filters={**filters,**extra_filters}
 	if view_focus=="classgroup":
 		focus_label=focus_object.class_code
 	else:
@@ -616,7 +624,10 @@ start_dd="",**filters):
 		measure="progress8"
 	else:
 		measure=view_cols
-	row_filters=get_default_filters_dict(view_rows,measure,**filters)
+	if view_rows=="yeargroup" and view_focus=="datadrop":
+		row_filters=getLatestDatadropPerYeargroup()
+	else:
+		row_filters=get_default_filters_dict(view_rows,measure,**filters)
 	if view_cols=="headline" and view_focus!="datadrop":
 		filters['upn__grade__' + view_focus]=focus_object
 		filters.pop(view_focus)
@@ -729,6 +740,9 @@ def stdTable_gen_getsession(request,focus,row_type,col_type):
 	if "classgroup_selected" not in request.session:
 		request.session['classgroup_selected']=""
 
+	if "datadrop_selected" not in request.session:
+		request.session['datadrop_selected']=""
+
 	return HttpResponseRedirect('/view/'+focus+'/')
 
 def stdTable_sub(request):
@@ -818,17 +832,22 @@ def stdTable_gen(request,focus):
 		request.session['yeargroup_selected']=""
 		request.session['subject_selected']=""
 		request.session['classgroup_selected']=""
+		request.session['datadrop_selected']=""
+
 		if form.is_valid():
 			request.session['subject_selected']=form.cleaned_data.get(
 				"subject_selected")
+			request.session['yeargroup_selected']=form.cleaned_data.get(
+				'yeargroup_selected')
+			request.session['classgroup_selected']=form.cleaned_data.get(
+				"classgroup_selected")
+			request.session['datadrop_selected']=form.cleaned_data.get(
+				"datadrop_selected")
 			if request.session['row_type']=="yeargroup":
 				year=""
 			else:
-				request.session['yeargroup_selected']=form.cleaned_data.get(
-					'yeargroup_selected')
-				year=yeargroup.objects.get(cohort=request.session['yeargroup_selected'][0:9])
-			request.session['classgroup_selected']=form.cleaned_data.get(
-				"classgroup_selected")
+				year=yeargroup.objects.get(cohort=\
+					request.session['yeargroup_selected'][0:9])
 			if focus=="subject":
 				pass_filters={'name':request.session['subject_selected']}
 			elif focus=="classgroup":
@@ -836,7 +855,13 @@ def stdTable_gen(request,focus):
 					'subject__name':request.session['subject_selected'],
 					}
 			elif focus=="datadrop":
-				pass_filters={}
+				pass_filters={'name':request.session['datadrop_selected'],
+					}
+				if request.session['subject_selected']!="":
+					pass_filters['subject__name']=request.session['subject_selected']
+				if request.session['classgroup_selected']!="":
+					pass_filters['classgroup__class_code']=request.session['classgroup_selected']
+
 			outputTable=get_standard_table(focus,request.session['row_type'],
 				request.session['col_type'],year,**pass_filters)
 			if request.session['col_type']=="attainment":
@@ -866,3 +891,12 @@ def stdTable_gen(request,focus):
 	elif focus=="datadrop":
 		template="analysis/stdTableDdp.html"
 	return render(request,template,context)
+
+def getLatestDatadropPerYeargroup():
+	row_filter={}
+	for y in yeargroup.objects.all().order_by('-current_year'):
+		dd=datadrop.objects.filter(cohort=y)
+		if dd.count()>0:
+			dd=dd.order_by('-date')[0]
+			row_filter[y]={'cohort':y,'datadrop':dd}
+	return row_filter

@@ -150,9 +150,9 @@
 												</div>
 											<div class="panel-collapse collapse" id="collapseOneDdp">
 												<ul class="list-group">
-													<li class="list-group-item"><a href="#">{% bootstrap_icon "chevron-right" %}in Progress Points</a></li>
-													<li class="list-group-item"><a href="#">{% bootstrap_icon "chevron-right" %}in Estimated Attainment</a></li>
-													<li class="list-group-item"><a href="#">{% bootstrap_icon "chevron-right" %}in Headline Measures</a></li>
+													<li class="list-group-item"><a href="{% url 'analysis:stdTable_gen_getsession' focus='datadrop' row_type='student' col_type='progress' %}">{% bootstrap_icon "chevron-right" %}in Progress Points</a></li>
+													<li class="list-group-item"><a href="{% url 'analysis:stdTable_gen_getsession' focus='datadrop' row_type='student' col_type='attainment' %}">{% bootstrap_icon "chevron-right" %}in Estimated Attainment</a></li>
+													<li class="list-group-item"><a href="{% url 'analysis:stdTable_gen_getsession' focus='datadrop' row_type='student' col_type='headline' %}">{% bootstrap_icon "chevron-right" %}in Headline Measures</a></li>
 
 												</ul>
 											</div>
@@ -164,9 +164,9 @@
 												</div>
 											<div class="panel-collapse collapse" id="collapseTwoDdp">
 												<ul class="list-group">
-													<li class="list-group-item"><a href="#">{% bootstrap_icon "chevron-right" %}in Progress Points</a></li>
-													<li class="list-group-item"><a href="#">{% bootstrap_icon "chevron-right" %}in Estimated Attainment</a></li>
-													<li class="list-group-item"><a href="#">{% bootstrap_icon "chevron-right" %}in Headline Measures</a></li>
+													<li class="list-group-item"><a href="{% url 'analysis:stdTable_gen_getsession' focus='datadrop' row_type='classgroup' col_type='progress' %}">{% bootstrap_icon "chevron-right" %}in Progress Points</a></li>
+													<li class="list-group-item"><a href="{% url 'analysis:stdTable_gen_getsession' focus='datadrop' row_type='classgroup' col_type='attainment' %}">{% bootstrap_icon "chevron-right" %}in Estimated Attainment</a></li>
+													<li class="list-group-item"><a href="{% url 'analysis:stdTable_gen_getsession' focus='datadrop' row_type='classgroup' col_type='headline' %}">{% bootstrap_icon "chevron-right" %}in Headline Measures</a></li>
 												</ul>
 											</div>
 											<div class="panel panel-default">
@@ -177,9 +177,9 @@
 												</div>
 											<div class="panel-collapse collapse" id="collapseThreeDdp">
 												<ul class="list-group">
-													<li class="list-group-item"><a href="#">{% bootstrap_icon "chevron-right" %}in Progress Points</a></li>
-													<li class="list-group-item"><a href="#">{% bootstrap_icon "chevron-right" %}in Estimated Attainment</a></li>
-													<li class="list-group-item"><a href="#">{% bootstrap_icon "chevron-right" %}in Headline Measures</a></li>
+													<li class="list-group-item"><a href="{% url 'analysis:stdTable_gen_getsession' focus='datadrop' row_type='yeargroup' col_type='progress' %}">{% bootstrap_icon "chevron-right" %}in Progress Points</a></li>
+													<li class="list-group-item"><a href="{% url 'analysis:stdTable_gen_getsession' focus='datadrop' row_type='yeargroup' col_type='attainment' %}">{% bootstrap_icon "chevron-right" %}in Estimated Attainment</a></li>
+													<li class="list-group-item"><a href="{% url 'analysis:stdTable_gen_getsession' focus='datadrop' row_type='yeargroup' col_type='headline' %}">{% bootstrap_icon "chevron-right" %}in Headline Measures</a></li>
 												</ul>
 											</div>
 										</div>

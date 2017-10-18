@@ -94,7 +94,7 @@ class standardTableForm_subject(forms.Form):
 
 	years=[year.__str__() for year in yeargroup.objects.all()]
 	list_subs=sorted(list(set(list_subs)))
-	yeargroup_selected= forms.ChoiceField(choices=([(year,year) for year in years]),required=False)
+	yeargroup_selected= forms.ChoiceField(choices=([(year,year) for year in years]))
 	subject_selected=forms.ChoiceField(choices=(list_subs))
 
 	years=json.dumps(years)
@@ -127,10 +127,44 @@ class standardTableForm_classgroup(forms.Form):
 
 	years=[year.__str__() for year in yeargroup.objects.all()]
 
-	yeargroup_selected=forms.ChoiceField(choices=([(year,year) for year in years]), required=False)
+	yeargroup_selected=forms.ChoiceField(choices=([(year,year) for year in years]))
 	subject_selected=forms.ChoiceField(choices=(list_subs))
 	classgroup_selected=forms.ChoiceField(choices=(list_classes))
 
 	years=json.dumps(years)
 	subs=json.dumps(dsubs)
 	classes=json.dumps(dclasses)
+
+class standardTableForm_datadrop(forms.Form):
+	years=[year.__str__() for year in yeargroup.objects.all()]
+	ddrops={}
+	list_drops=[]
+	for drop in datadrop.objects.all().order_by('name'):
+		if drop.cohort.__str__() in ddrops:
+			ddrops[drop.cohort.__str__()].append(drop.name)
+		else:
+			ddrops[drop.cohort.__str__()]=[drop.name]
+		list_drops.append((drop.name,drop.name))
+
+	dsubs={}
+	list_subs=[]
+	for sub in subject.objects.all().order_by('name'):
+		if sub.cohort.__str__() in dsubs:
+			dsubs[sub.cohort.__str__()].append(sub.name)
+		else:
+			dsubs[sub.cohort.__str__()]=[sub.name]
+		list_subs.append((sub.name,sub.name))
+
+	dclasses={}
+	list_classes=[]
+	for clsgp in classgroup.objects.all().order_by('class_code').exclude(subject=None):
+		for sub in clsgp.subject.all():
+			if (clsgp.cohort.__str__()+","+sub.name) in dclasses:
+				dclasses[clsgp.cohort.__str__()+","+sub.name].append(clsgp.class_code)
+			else:
+				dclasses[clsgp.cohort.__str__()+","+sub.name]=[clsgp.class_code]
+		list_classes.append((clsgp.class_code,clsgp.class_code))
+	yeargroup_selected=forms.ChoiceField(choices=([(year,year) for year in years]))
+	datadrop_selected=forms.ChoiceField(choices=(list_drops))
+	subject_selected=forms.ChoiceField(choices=(list_subs),required=False)
+	classgroup_selected=forms.ChoiceField(choices=(list_classes),required=False)
