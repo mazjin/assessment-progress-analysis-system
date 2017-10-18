@@ -17,6 +17,7 @@ class interrogatorForm(forms.Form):
 	"""takes input to dictate query for interrogator table"""
 	GROUPINGS=(#possible row or column queries
 		('student','Student Attributes'),
+		('extended_student','Full Student Attributes'),
 		('yeargroup','Yeargroups'),
 		('datadrop','Data Drops'),
 		('classgroup','Class groups'),
