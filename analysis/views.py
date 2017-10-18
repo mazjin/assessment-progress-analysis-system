@@ -624,7 +624,10 @@ start_dd="",**filters):
 		measure="progress8"
 	else:
 		measure=view_cols
-	row_filters=get_default_filters_dict(view_rows,measure,**filters)
+	if view_rows=="yeargroup" and view_focus=="datadrop":
+		row_filters=getLatestDatadropPerYeargroup()
+	else:
+		row_filters=get_default_filters_dict(view_rows,measure,**filters)
 	if view_cols=="headline" and view_focus!="datadrop":
 		filters['upn__grade__' + view_focus]=focus_object
 		filters.pop(view_focus)
@@ -888,3 +891,12 @@ def stdTable_gen(request,focus):
 	elif focus=="datadrop":
 		template="analysis/stdTableDdp.html"
 	return render(request,template,context)
+
+def getLatestDatadropPerYeargroup():
+	row_filter={}
+	for y in yeargroup.objects.all().order_by('-current_year'):
+		dd=datadrop.objects.filter(cohort=y)
+		if dd.count()>0:
+			dd=dd.order_by('-date')[0]
+			row_filter[y]={'cohort':y,'datadrop':dd}
+	return row_filter
