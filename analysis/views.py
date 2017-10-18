@@ -638,7 +638,7 @@ start_dd="",**filters):
 
 	#set columns
 	if view_focus=="datadrop" or view_rows=="yeargroup":
-		if view_rows=="yeargroup":
+		if view_rows=="yeargroup" and view_focus!='datadrop':
 			new_rf={"All":{}}
 			for y,inner_dict in row_filters.items():
 				for val in inner_dict.values():
@@ -833,7 +833,6 @@ def stdTable_gen(request,focus):
 		request.session['subject_selected']=""
 		request.session['classgroup_selected']=""
 		request.session['datadrop_selected']=""
-
 		if form.is_valid():
 			request.session['subject_selected']=form.cleaned_data.get(
 				"subject_selected")
@@ -855,8 +854,9 @@ def stdTable_gen(request,focus):
 					'subject__name':request.session['subject_selected'],
 					}
 			elif focus=="datadrop":
-				pass_filters={'name':request.session['datadrop_selected'],
-					}
+				pass_filters={}
+				if request.session['row_type']!="yeargroup":
+					pass_filters['name']=request.session['datadrop_selected']
 				if request.session['subject_selected']!="":
 					pass_filters['subject__name']=request.session['subject_selected']
 				if request.session['classgroup_selected']!="":
@@ -898,5 +898,5 @@ def getLatestDatadropPerYeargroup():
 		dd=datadrop.objects.filter(cohort=y)
 		if dd.count()>0:
 			dd=dd.order_by('-date')[0]
-			row_filter[y]={'cohort':y,'datadrop':dd}
+			row_filter[y]={'upn__cohort':y,'datadrop':dd}
 	return row_filter

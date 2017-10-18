@@ -1,0 +1,10 @@
+*.sqlite3
+__pycache__/
+*.csv
+django-data-interrogator/
+data_interrogator/
+django-spaghetti-and-meatballs/
+*.log
+*.p
+*.json
+project_log.txt
