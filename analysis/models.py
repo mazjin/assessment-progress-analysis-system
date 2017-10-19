@@ -31,7 +31,7 @@ def get_default_filters_dict(class_of_filters,measure,**filters):
 	used in functions of the studentGrouping class"""
 	if "datadrop__in" in filters:
 		filters.pop("datadrop__in")
-	if class_of_filters=="student":
+	if class_of_filters=="short_student":
 		returnDict= {'All':{},
 			'Male':{'upn__gender':"M"},
 			'Female':{'upn__gender':"F"},
@@ -48,7 +48,7 @@ def get_default_filters_dict(class_of_filters,measure,**filters):
 			'Higher':{'upn__banding':"H"},
 			'No Band':{'upn__banding':"N"}
 			}
-	elif class_of_filters=="extended_student":
+	elif class_of_filters=="student":
 		returnDict= {'All':{},
 			'Male':{'upn__gender':"M"},
 			'Female':{'upn__gender':"F"},

@@ -927,5 +927,5 @@ def getLatestDatadropPerYeargroup():
 		dd=datadrop.objects.filter(cohort=y)
 		if dd.count()>0:
 			dd=dd.order_by('-date')[0]
-			row_filter[y+", "+dd]={'upn__cohort':y,'datadrop':dd}
+			row_filter[y.__str__()+", "+dd.name]={'upn__cohort':y,'datadrop':dd}
 	return row_filter
