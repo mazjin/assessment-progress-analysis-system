@@ -1,0 +1,30 @@
+<script language ="javascript">
+  if ("{{row_type}}"=="classgroup"){
+    $('#id_classgroup_selected')
+      .empty()
+      .hide()
+      .append('<option value="" selected></option>');
+    $('[for="id_classgroup_selected"]').hide();
+
+  }
+  else{
+    $('#id_classgroup_selected').append('<option value="" selected>Optional</option>');
+  }
+  if ("{{row_type}}"=="yeargroup") {
+    $('#id_yeargroup_selected')
+      // .empty()
+      .hide();
+      // .append('<option value="all" selected></option>');
+    $('#id_yeargroup_selected option:first').attr('selected','selected');
+    $('[for="id_yeargroup_selected"]').hide();
+    $('#id_datadrop_selected')
+      // .empty()
+      .hide();
+      // .append('<option value="latest" selected></option>');
+    $('#id_datadrop_selected option:first').attr('selected','selected');
+    $('[for="id_datadrop_selected"]').hide();
+
+  }
+  $('#id_subject_selected').append('<option value="" selected>Optional</option>');
+
+</script>

@@ -3,7 +3,7 @@ from .models import *
 from .sisraTools import *
 from selenium import webdriver
 from .forms import importForm,interrogatorForm,standardTableForm_subject,\
-	standardTableForm_classgroup
+	standardTableForm_classgroup,standardTableForm_datadrop
 from django.http import HttpResponseRedirect,HttpResponse
 from assessment import settings
 import sqlite3
@@ -475,7 +475,34 @@ def getInterrogatorOutput(form):
 		elif form.cleaned_data.get(grp[0]+"_selected"):
 			filters[grp[1]]=form.cleaned_data.get(grp[0]+'_selected')
 	#determine filters for rows & columns based on selected values
-
+	if "datadrop__name" in filters:
+		if filters['datadrop__name']=="latest":
+			filters.pop('datadrop__name')
+			if "cohort" in filters:
+				filters['datadrop__name']=datadrop.objects.filter(
+					cohort=filters['cohort']).latest('date').name
+			else:
+				dds=[]
+				for y in yeargroup.objects.all():
+					dds_found=datadrop.objects.filter(cohort=y)
+					if dds_found.count()>0:
+						dds.append(dds_found.latest('date'))
+				if len(dds)>0:
+					filters['datadrop__in']=dds
+	elif "datadrop" in filters:
+		if filters['datadrop']=="latest":
+			filters.pop('datadrop')
+			if "cohort" in filters:
+				filters['datadrop']=datadrop.objects.filter(
+					cohort=filters['cohort']).latest('date')
+			else:
+				dds=[]
+				for y in yeargroup.objects.all():
+					dds_found=datadrop.objects.filter(cohort=y)
+					if dds_found.count()>0:
+						dds.append(dds_found.latest('date'))
+				if len(dds)>0:
+					filters['datadrop__in']=dds
 	measure=form.cleaned_data.get('val_choice')
 	rfilters=get_default_filters_dict(form.cleaned_data\
 		.get('row_choice'),measure,**filters)
@@ -590,16 +617,26 @@ start_dd="",**filters):
 	columns can be "progress","attainment" (EAP), "headline" (A8/P8) or
 	(for datadrops) "all" ."""
 
+	extra_filters={}
 
 	if view_rows!="yeargroup" and cohort!="":
 		filters['cohort']=cohort
+	if view_focus=="datadrop":
+		if "subject__name" in filters:
+			extra_filters['subject__name']=filters.pop('subject__name')
+		if "classgroup__class_code" in filters:
+			extra_filters['classgroup__class_code']=filters.pop('classgroup__class_code')
+
 
 	#get focus object and datadrop (if applicable)
 
 	focus_model=apps.get_model(model_name=view_focus,app_label="analysis")
 	focus_object=focus_model.objects.filter(**filters)[0]
+	filters={**filters,**extra_filters}
 	if view_focus=="classgroup":
 		focus_label=focus_object.class_code
+	elif view_focus=="datadrop" and view_rows=="yeargroup":
+		focus_label="Latest Ddp"
 	else:
 		focus_label=focus_object.name
 
@@ -624,7 +661,10 @@ start_dd="",**filters):
 		measure="progress8"
 	else:
 		measure=view_cols
-	row_filters=get_default_filters_dict(view_rows,measure,**filters)
+	if view_rows=="yeargroup" and view_focus=="datadrop":
+		row_filters=getLatestDatadropPerYeargroup()
+	else:
+		row_filters=get_default_filters_dict(view_rows,measure,**filters)
 	if view_cols=="headline" and view_focus!="datadrop":
 		filters['upn__grade__' + view_focus]=focus_object
 		filters.pop(view_focus)
@@ -635,7 +675,7 @@ start_dd="",**filters):
 
 	#set columns
 	if view_focus=="datadrop" or view_rows=="yeargroup":
-		if view_rows=="yeargroup":
+		if view_rows=="yeargroup" and view_focus!='datadrop':
 			new_rf={"All":{}}
 			for y,inner_dict in row_filters.items():
 				for val in inner_dict.values():
@@ -737,6 +777,9 @@ def stdTable_gen_getsession(request,focus,row_type,col_type):
 	if "classgroup_selected" not in request.session:
 		request.session['classgroup_selected']=""
 
+	if "datadrop_selected" not in request.session:
+		request.session['datadrop_selected']=""
+
 	return HttpResponseRedirect('/view/'+focus+'/')
 
 def stdTable_sub(request):
@@ -826,17 +869,21 @@ def stdTable_gen(request,focus):
 		request.session['yeargroup_selected']=""
 		request.session['subject_selected']=""
 		request.session['classgroup_selected']=""
+		request.session['datadrop_selected']=""
 		if form.is_valid():
 			request.session['subject_selected']=form.cleaned_data.get(
 				"subject_selected")
+			request.session['yeargroup_selected']=form.cleaned_data.get(
+				'yeargroup_selected')
+			request.session['classgroup_selected']=form.cleaned_data.get(
+				"classgroup_selected")
+			request.session['datadrop_selected']=form.cleaned_data.get(
+				"datadrop_selected")
 			if request.session['row_type']=="yeargroup":
 				year=""
 			else:
-				request.session['yeargroup_selected']=form.cleaned_data.get(
-					'yeargroup_selected')
-				year=yeargroup.objects.get(cohort=request.session['yeargroup_selected'][0:9])
-			request.session['classgroup_selected']=form.cleaned_data.get(
-				"classgroup_selected")
+				year=yeargroup.objects.get(cohort=\
+					request.session['yeargroup_selected'][0:9])
 			if focus=="subject":
 				pass_filters={'name':request.session['subject_selected']}
 			elif focus=="classgroup":
@@ -845,6 +892,13 @@ def stdTable_gen(request,focus):
 					}
 			elif focus=="datadrop":
 				pass_filters={}
+				if request.session['row_type']!="yeargroup":
+					pass_filters['name']=request.session['datadrop_selected']
+				if request.session['subject_selected']!="":
+					pass_filters['subject__name']=request.session['subject_selected']
+				if request.session['classgroup_selected']!="":
+					pass_filters['classgroup__class_code']=request.session['classgroup_selected']
+
 			outputTable=get_standard_table(focus,request.session['row_type'],
 				request.session['col_type'],year,**pass_filters)
 			if request.session['col_type']=="attainment":
@@ -874,3 +928,12 @@ def stdTable_gen(request,focus):
 	elif focus=="datadrop":
 		template="analysis/stdTableDdp.html"
 	return render(request,template,context)
+
+def getLatestDatadropPerYeargroup():
+	row_filter={'All':{},}
+	for y in yeargroup.objects.all().order_by('-current_year'):
+		dd=datadrop.objects.filter(cohort=y)
+		if dd.count()>0:
+			dd=dd.order_by('-date')[0]
+			row_filter[y+", "+dd]={'upn__cohort':y,'datadrop':dd}
+	return row_filter
