@@ -467,7 +467,34 @@ def getInterrogatorOutput(form):
 		elif form.cleaned_data.get(grp[0]+"_selected"):
 			filters[grp[1]]=form.cleaned_data.get(grp[0]+'_selected')
 	#determine filters for rows & columns based on selected values
-
+	if "datadrop__name" in filters:
+		if filters['datadrop__name']=="latest":
+			filters.pop('datadrop__name')
+			if "cohort" in filters:
+				filters['datadrop__name']=datadrop.objects.filter(
+					cohort=filters['cohort']).latest('date').name
+			else:
+				dds=[]
+				for y in yeargroup.objects.all():
+					dds_found=datadrop.objects.filter(cohort=y)
+					if dds_found.count()>0:
+						dds.append(dds_found.latest('date'))
+				if len(dds)>0:
+					filters['datadrop__in']=dds
+	elif "datadrop" in filters:
+		if filters['datadrop']=="latest":
+			filters.pop('datadrop')
+			if "cohort" in filters:
+				filters['datadrop']=datadrop.objects.filter(
+					cohort=filters['cohort']).latest('date')
+			else:
+				dds=[]
+				for y in yeargroup.objects.all():
+					dds_found=datadrop.objects.filter(cohort=y)
+					if dds_found.count()>0:
+						dds.append(dds_found.latest('date'))
+				if len(dds)>0:
+					filters['datadrop__in']=dds
 	measure=form.cleaned_data.get('val_choice')
 	rfilters=get_default_filters_dict(form.cleaned_data\
 		.get('row_choice'),measure,**filters)
@@ -900,5 +927,5 @@ def getLatestDatadropPerYeargroup():
 		dd=datadrop.objects.filter(cohort=y)
 		if dd.count()>0:
 			dd=dd.order_by('-date')[0]
-			row_filter[y]={'upn__cohort':y,'datadrop':dd}
+			row_filter[y+", "+dd]={'upn__cohort':y,'datadrop':dd}
 	return row_filter

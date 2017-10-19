@@ -29,7 +29,8 @@ def clean_filters(dict,measure):
 def get_default_filters_dict(class_of_filters,measure,**filters):
 	"""defines a row or column query as a dictionary of filter conditions, to be
 	used in functions of the studentGrouping class"""
-
+	if "datadrop__in" in filters:
+		filters.pop("datadrop__in")
 	if class_of_filters=="student":
 		returnDict= {'All':{},
 			'Male':{'upn__gender':"M"},

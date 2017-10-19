@@ -72,8 +72,9 @@ class interrogatorForm(forms.Form):
 		queryset=subject.objects.all(),required=False)
 	classgroup_selected=forms.ModelChoiceField(label="Class/Form group",
 		queryset=classgroup.objects.all(), required=False)
-	datadrop_selected=forms.ModelChoiceField(label="Datadrop",
-		queryset=datadrop.objects.all(),required=False)
+	dd_choices=(("","--------"),("latest","Latest Datadrop"),)+tuple([(d.id,d) for d in datadrop.objects.all()])
+	datadrop_selected=forms.ChoiceField(label="Datadrop",choices=dd_choices,
+		required=False)
 
 	"""when filtering for a specific subject/data drop, decides whether to match
 	grades with the same name instead of the same specific object - allows
