@@ -600,6 +600,8 @@ start_dd="",**filters):
 	filters={**filters,**extra_filters}
 	if view_focus=="classgroup":
 		focus_label=focus_object.class_code
+	elif view_focus=="datadrop" and view_rows=="yeargroup":
+		focus_label="Latest Ddp"
 	else:
 		focus_label=focus_object.name
 
@@ -893,7 +895,7 @@ def stdTable_gen(request,focus):
 	return render(request,template,context)
 
 def getLatestDatadropPerYeargroup():
-	row_filter={}
+	row_filter={'All':{},}
 	for y in yeargroup.objects.all().order_by('-current_year'):
 		dd=datadrop.objects.filter(cohort=y)
 		if dd.count()>0:
