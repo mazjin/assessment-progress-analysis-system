@@ -314,9 +314,10 @@ def importPrompt(request):
 						name=str(gr['EAP Grade'])[0])
 
 				elif gr['Qualification Name']=='Combined Science' and \
-				str(gr['EAP Grade'].replace("=","")).isnumeric():
+				str(gr['EAP Grade'][:-1]).isnumeric() and \
+				"0" not in str(gr['EAP Grade']):
 					gr['EAPgrade']=gradeValue.objects.get(
-						name=str(gr['EAP Grade'])[0])
+						name=str(gr['EAP Grade'])[1:].replace("=",""))
 				else:
 					gr['EAPgrade']=gradeValue.objects.get(name=gr['EAP Grade'].replace("=",""))
 				#get baseline grade
