@@ -518,9 +518,9 @@ def getStudentData(browser,year,dd):
 	#clean and parse grades dataframe
 	grades_df['staff']=grades_df['Class'].str.split().str[1:]
 	grades_df['Class']=grades_df['Class'].str.split().str[0]
-	grades_df['Grade'].fillna("X",inplace=True)
-	grades_df['EAP Grade'].fillna("X",inplace=True)
-	grades_df['Compare Grade'].fillna("X",inplace=True)
+	# grades_df['Grade'].fillna("X",inplace=True)
+	# grades_df['EAP Grade'].fillna("X",inplace=True)
+	# grades_df['Compare Grade'].fillna("X",inplace=True)
 
 	#may reimplement these, but remove for now
 	del student_df['attendance']

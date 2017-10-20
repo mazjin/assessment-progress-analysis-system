@@ -223,7 +223,7 @@ class studentGrouping(models.Model):
 
 	def avg_progress(self,**filters):
 		"""returns average progress score of set of grades defined by filters"""
-		progress_avg=self.get_grades(**filters).aggregate(
+		progress_avg=self.get_grades(**filters).exclude.aggregate(
 			models.Avg('progress'))['progress__avg']
 		if not progress_avg is None:
 			return round(progress_avg,2)
@@ -606,11 +606,10 @@ class grade(models.Model):
 	subject=models.ForeignKey(subject,
 		help_text="The subject the grade was given in.")
 	progress=models.IntegerField(blank=True,
-		help_text="The progress the student has made from their baseline.",
-		default=0)
+		help_text="The progress the student has made from their baseline.", null=True)
 	EAPgrade=models.ForeignKey(gradeValue,
 		help_text="The estimated attainment for the student in this data drop.",
-		related_name="EAP")
+		related_name="EAP",null=True,blank=True)
 	classgroup=models.ForeignKey(classgroup,
 		help_text="The class the grade was given in",null=True)
 	def __str__(self):
