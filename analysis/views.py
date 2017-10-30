@@ -338,6 +338,7 @@ def importPrompt(request):
 					print("Empty baseline for " +gr['upn'].surname+", "+\
 						gr['upn'].forename + " in " +gr['Qualification Name']+\
 						" with entered value " + baseline_grade)
+					gr['progress']=None
 				#handle pupils with multiple classes for one subject
 				if "(Multiple)" in gr['Class']:
 					gr['staff']=['-']

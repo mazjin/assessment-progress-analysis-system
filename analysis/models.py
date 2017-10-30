@@ -223,7 +223,7 @@ class studentGrouping(models.Model):
 
 	def avg_progress(self,**filters):
 		"""returns average progress score of set of grades defined by filters"""
-		progress_avg=self.get_grades(**filters).exclude.aggregate(
+		progress_avg=self.get_grades(**filters).aggregate(
 			models.Avg('progress'))['progress__avg']
 		if not progress_avg is None:
 			return round(progress_avg,2)
