@@ -751,19 +751,7 @@ start_dd="",**filters):
 	output_df=output_df.reindex(index=row_filters.keys())
 	return output_df
 
-def stdTable_sub_getsession(request,row_type,col_type):
-	request.session['row_type']=row_type
-	request.session['col_type']=col_type
-	if "subject_selected" not in request.session:
-		request.session['subject_selected']=""
 
-	if "yeargroup_selected" not in request.session:
-		request.session['yeargroup_selected']=""
-
-	if "classgroup_selected" not in request.session:
-		request.session['classgroup_selected']=""
-
-	return HttpResponseRedirect('/view/subject/')
 
 def stdTable_gen_getsession(request,focus,row_type,col_type):
 	request.session['row_type']=row_type
@@ -782,71 +770,6 @@ def stdTable_gen_getsession(request,focus,row_type,col_type):
 
 	return HttpResponseRedirect('/view/'+focus+'/')
 
-def stdTable_sub(request):
-	if request.method!="POST":
-		form=standardTableForm_subject()
-		outputTable=""
-	else:
-		form=standardTableForm_subject(data=request.POST)
-		request.session['yeargroup_selected']=""
-		request.session['subject_selected']=""
-		if form.is_valid():
-			request.session['subject_selected']=form.cleaned_data.get("subject_selected")
-			if request.session['row_type']=="yeargroup":
-				year=""
-			else:
-				request.session['yeargroup_selected']=form.cleaned_data.get("yeargroup_selected")
-				year=yeargroup.objects.get(cohort=form.cleaned_data.get("yeargroup_selected")[0:9])
-			outputTable=get_standard_table("subject",request.session['row_type'],request.session['col_type'],
-				year,name=form.cleaned_data.get("subject_selected"))
-			#outputTable.replace(to_replace='-',value=float(''),inplace=True)
-			if request.session['col_type']=="attainment":
-				outputTableSt=outputTable.style.apply(colour_mx_EAP,axis=0)
-			else:
-				outputTableSt=outputTable.style.apply(colour_progress,axis=0)
-			outputTableSt.set_table_attributes('class="table table-striped\
-			 table-hover table-bordered"')
-			try:
-				outputTable=outputTableSt.render().replace('nan','')
-			except TypeError as err:
-				print(outputTable)
-				print(err)
-				outputTable=outputTable.to_html
-	context={'form':form,'outputTable':outputTable,'row_type':request.session['row_type'],'col_type':request.session['col_type'],'subject_selected':request.session['subject_selected'],'yeargroup_selected':request.session['yeargroup_selected']}
-	return render(request,'analysis/stdTableSub.html',context)
-
-def stdTable_cls(request):
-	if request.method!="POST":
-		form=standardTableForm_classgroup()
-		outputTable=""
-	else:
-		form=standardTableForm_subject(data=request.POST)
-		#set session variables
-		request.session['yeargroup_selected']=""
-		request.session['subject_selected']=""
-		request.session['classgroup_selected']=""
-		if form.is_valid():
-			request.session['subject_selected']=form.cleaned_data.get("subject_selected")
-			request.session['yeargroup_selected']=form.cleaned_data.get('yeargroup_selected')
-			request.session['classgroup_selected']=form.cleaned_data.get("classgroup_selected")
-			year=yeargroup.objects.get(cohort=request.session['yeargroup_selected'][0:9])
-			outputTable=get_standard_table("classgroup",request.session['row_type'],
-				request.session['col_type'],year,
-				subject__name=form.cleaned_data.get("subject_selected"),
-				class_code=form.cleaned_data.get("classgroup_selected"))
-			if request.session['col_type']=="attainment":
-				outputTableSt=outputTable.style.apply(colour_mx_EAP,axis=0)
-			else:
-				outputTableSt=outputTable.style.apply(colour_progress,axis=0)
-			outputTableSt.set_table_attributes('class="table table-striped table-hover table-bordered"')
-			try:
-				outputTable=outputTableSt.render().replace('nan','')
-			except TypeError as err:
-				print(outputTable)
-				print(err)
-				outputTable=outputTable.to_html
-	context={'form':form,'outputTable':outputTable,'row_type':request.session['row_type'],'col_type':request.session['col_type'],'subject_selected':request.session['subject_selected'],'yeargroup_selected':request.session['yeargroup_selected'],'classgroup_selected':request.session['classgroup_selected']}
-	return render(request,'analysis/stdTableCls.html',context)
 def stdTable_gen(request,focus):
 	form=""
 	if request.method!="POST":
