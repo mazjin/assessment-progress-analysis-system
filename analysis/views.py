@@ -802,34 +802,7 @@ def stdTable_gen(request,focus):
 				"classgroup_selected")
 			request.session['datadrop_selected']=form.cleaned_data.get(
 				"datadrop_selected")
-			if request.session['row_type']=="yeargroup":
-				year=""
-			else:
-				year=yeargroup.objects.get(cohort=\
-					request.session['yeargroup_selected'][0:9])
-			if focus=="subject":
-				pass_filters={'name':request.session['subject_selected']}
-			elif focus=="classgroup":
-				pass_filters={'class_code':request.session['classgroup_selected'],
-					'subject__name':request.session['subject_selected'],
-					}
-			elif focus=="datadrop":
-				pass_filters={}
-				if request.session['row_type']!="yeargroup":
-					pass_filters['name']=request.session['datadrop_selected']
-				if request.session['subject_selected']!="":
-					pass_filters['subject__name']=request.session['subject_selected']
-				if request.session['classgroup_selected']!="":
-					pass_filters['classgroup__class_code']=request.session['classgroup_selected']
-
-			outputTable=get_standard_table(focus,request.session['row_type'],
-				request.session['col_type'],year,**pass_filters)
-			if request.session['col_type']=="attainment":
-				outputTableSt=outputTable.style.apply(colour_mx_EAP,axis=0)
-			else:
-				outputTableSt=outputTable.style.apply(colour_progress,axis=0)
-			outputTableSt.set_table_attributes('class="table table-striped\
-			 table-hover table-bordered"')
+			outputTable,outputTableSt=get_formatted_standard_view_table(request,focus)
 			try:
 				outputTable=outputTableSt.render().replace('nan','')
 			except TypeError as err:
@@ -852,6 +825,37 @@ def stdTable_gen(request,focus):
 	elif focus=="datadrop":
 		template="analysis/stdTableDdp.html"
 	return render(request,template,context)
+
+def get_formatted_standard_view_table(request,focus):
+	if request.session['row_type']=="yeargroup":
+		year=""
+	else:
+		year=yeargroup.objects.get(cohort=\
+			request.session['yeargroup_selected'][0:9])
+	if focus=="subject":
+		pass_filters={'name':request.session['subject_selected']}
+	elif focus=="classgroup":
+		pass_filters={'class_code':request.session['classgroup_selected'],
+			'subject__name':request.session['subject_selected'],
+			}
+	elif focus=="datadrop":
+		pass_filters={}
+		if request.session['row_type']!="yeargroup":
+			pass_filters['name']=request.session['datadrop_selected']
+		if request.session['subject_selected']!="":
+			pass_filters['subject__name']=request.session['subject_selected']
+		if request.session['classgroup_selected']!="":
+			pass_filters['classgroup__class_code']=request.session['classgroup_selected']
+
+	outputTable=get_standard_table(focus,request.session['row_type'],
+		request.session['col_type'],year,**pass_filters)
+	if request.session['col_type']=="attainment":
+		outputTableSt=outputTable.style.apply(colour_mx_EAP,axis=0)
+	else:
+		outputTableSt=outputTable.style.apply(colour_progress,axis=0)
+	outputTableSt.set_table_attributes('class="table table-striped\
+	 table-hover table-bordered"')
+	return outputTable,outputTableSt
 
 def getLatestDatadropPerYeargroup():
 	row_filter={'All':{},}
