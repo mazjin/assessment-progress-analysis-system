@@ -25,6 +25,119 @@
     $('[for="id_datadrop_selected"]').hide();
 
   }
+  $('#id_yeargroup_selected').change(function(){
+    populateSubs(this);
+    populateClasses(this);
+    populateDDs(this);
+  });
+  $('#id_subject_selected').change(function(){
+    populateClasses(this);
+  });
+  $('#id_classgroup_selected').change(function(){enableQuery()});
+  $('#id_datadrop_selected').change(function(){enableQuery()});
+  $('#id_description').addClass('descriptions');
   $('#id_subject_selected').append('<option value="" selected>Optional</option>');
+  years={{form.years|safe}}
+  subs={{form.subs|safe}}
+  classes={{form.classes|safe}}
+  dds={{form.dds|safe}}
+  populateYear();
+  populateSubs();
+  populateDDs();
+  populateClasses();
+
+  if ("{{yeargroup_selected}}"!=""){
+    $('#id_yeargroup_selected option:contains({{yeargroup_selected}})').attr("selected","selected").change();
+  }
+  if ("{{subject_selected}}"!=""){
+    $('#id_subject_selected option:contains({{subject_selected}})').attr("selected","selected").change();
+  }
+  if ("{{classgroup_selected}}"!=""){
+    $('#id_classgroup_selected option:contains({{classgroup_selected}})').attr("selected","selected").change();
+  }
+  if ("{{datadrop_selected}}"!=""){
+    $('#id_datadrop_selected option:contains({{datadrop_selected}})').attr("selected","selected").change();
+  }
+
+  function populateYear(){
+    $('#id_yeargroup_selected')
+      .empty()
+      .append('<option value="">Select a yeargroup</option>');
+    $.each(years,function(v){
+      $('#id_yeargroup_selected')
+        .append($("<option></option>")
+      .attr("value",years[v])
+      .text(years[v]));
+    });
+  }
+
+  function populateDDs(event) {
+    year=$('#id_yeargroup_selected option:selected').text();
+    yearval=$('#id_yeargroup_selected option:selected').val();
+    $("#id_datadrop_selected").empty();
+    $('#id_datadrop_selected').append('<option value="" disabled selected>Select a datadrop</option>');
+    for (let [y,ydds] of Object.entries(dds)){
+      if (y==year || yearval=="") {
+          for (dd in ydds){
+            $('#id_datadrop_selected')
+              .append($("<option></option>")
+              .attr("value",ydds[dd])
+              .text(ydds[dd]));
+
+          }
+      }
+    }
+  }
+  function populateSubs(event) {
+    year= $('#id_yeargroup_selected option:selected').text();
+    yearval=$('#id_yeargroup_selected option:selected').val();
+    $("#id_subject_selected").empty();
+    $("#id_subject_selected").append('<option value="" disabled selected>Optional</option>');
+
+    enableQuery();
+    for (let [y,ysubs] of Object.entries(subs)){
+      if ((y==year && yearval!="")||(yearval=="")) {
+        for (sub in ysubs) {
+          $('#id_subject_selected')
+            .append($("<option></option>")
+              .attr("value",ysubs[sub])
+              .text(ysubs[sub]));
+        }
+      }
+    }
+  }
+  function populateClasses(event) {
+    if ($('#id_classgroup_selected').is(":visible")){
+      year=$('#id_yeargroup_selected option:selected').text();
+      yearval=$('#id_yeargroup_selected option:selected').val();
+      sub=$('#id_subject_selected option:selected').text();
+      subval=$('#id_subject_selected option:selected').val();
+      $('#id_classgroup_selected').empty();
+      $('#id_classgroup_selected').append('<option value="" disabled selected>Optional</option>');
+      enableQuery();
+      for (let[ys,ysclasses] of Object.entries(classes)){
+        if (ys==year+","+sub||(subval=="" && ys.indexOf(year)!=-1 && yearval!="")||
+          (yearval=="" && ys.indexOf(sub)!=-1 && subval!="") || (subval=="" && yearval=="")){
+          for (cls in ysclasses){
+            $('#id_classgroup_selected')
+              .append($("<option></option>")
+              .attr("value",ysclasses[cls])
+              .text(ysclasses[cls]));
+          }
+        }
+      }
+    }
+  }
+  function enableQuery(){
+    yearval=$('#id_yeargroup_selected option:selected').val();
+    ddval=$('#id_datadrop_selected option:selected').val();
+    if(("{{row_type}}"=="yeargroup") || (yearval!="" && ddval!="")){
+      $('[name="show_table"]').removeAttr('disabled');
+    }
+    else{
+      $('[name="show_table"]').attr('disabled','disabled');
+    }
+  }
+
 
 </script>

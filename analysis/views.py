@@ -918,7 +918,8 @@ def stdTable_gen(request,focus):
 		'col_type':request.session['col_type'],
 		'subject_selected':request.session['subject_selected'],
 		'yeargroup_selected':request.session['yeargroup_selected'],
-		'classgroup_selected':request.session['classgroup_selected']
+		'classgroup_selected':request.session['classgroup_selected'],
+		'datadrop_selected':request.session['datadrop_selected'],
 	}
 	template=""
 	if focus=="subject":
