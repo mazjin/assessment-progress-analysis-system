@@ -317,21 +317,25 @@ def importPrompt(request):
 				"""get EAP grade associated with datadrop & subject - if
 				Combined Science, need to split grade - SISRA returns a
 				doubled 9-1 grade"""
-				if isinstance(gr['EAP Grade'],float):
-					gr['EAPgrade']=gradeValue.objects.get(
-						name=str(gr['EAP Grade'])[0])
+				try:
+					if isinstance(gr['EAP Grade'],float):
+						gr['EAPgrade']=gradeValue.objects.get(
+							name=str(gr['EAP Grade'])[0])
 
-				elif gr['Qualification Name']=='Combined Science' and \
-				str(gr['EAP Grade'][:-1]).isnumeric() and \
-				"0" not in str(gr['EAP Grade']):
-					gr['EAPgrade']=gradeValue.objects.get(
-						name=str(gr['EAP Grade'])[1:].replace("=",""))
-				else:
-					gr['EAPgrade']=gradeValue.objects.get(name=gr['EAP Grade'].replace("=",""))
+					elif gr['Qualification Name']=='Combined Science' and \
+					str(gr['EAP Grade'][:-1]).isnumeric() and \
+					"0" not in str(gr['EAP Grade']):
+						gr['EAPgrade']=gradeValue.objects.get(
+							name=str(gr['EAP Grade'])[1:].replace("=",""))
+					else:
+						gr['EAPgrade']=gradeValue.objects.get(name=gr['EAP Grade'].replace("=",""))
+				except:
+					pass
 				#get baseline grade
-				baseline_grade=gr['Compare Grade']
-				if isinstance(baseline_grade,float):
-					baseline_grade=str(int(baseline_grade))
+				baseline_grade=str(gr['Compare Grade'])
+				# if isinstance(baseline_grade,float):
+				# 	baseline_grade=str(int(baseline_grade))
+
 				if "=" in str(baseline_grade):
 					baseline_grade=str(baseline_grade).replace("=","")
 				#calculate progress from baseline grade
@@ -339,7 +343,10 @@ def importPrompt(request):
 					gr['progress']=gr['value'].progress_value - gradeValue.objects\
 					.filter(name=baseline_grade)[0].progress_value
 				except:
-					raise
+					print("Empty baseline for " +gr['upn'].surname+", "+\
+						gr['upn'].forename + " in " +gr['Qualification Name']+\
+						" with entered value " + baseline_grade)
+					gr['progress']=None
 				#handle pupils with multiple classes for one subject
 				if "(Multiple)" in gr['Class']:
 					gr['staff']=['-']
@@ -919,7 +926,8 @@ def stdTable_gen(request,focus):
 		'col_type':request.session['col_type'],
 		'subject_selected':request.session['subject_selected'],
 		'yeargroup_selected':request.session['yeargroup_selected'],
-		'classgroup_selected':request.session['classgroup_selected']
+		'classgroup_selected':request.session['classgroup_selected'],
+		'datadrop_selected':request.session['datadrop_selected'],
 	}
 	template=""
 	if focus=="subject":

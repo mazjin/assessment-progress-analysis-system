@@ -170,3 +170,7 @@ class standardTableForm_datadrop(forms.Form):
 	datadrop_selected=forms.ChoiceField(choices=(list_drops))
 	subject_selected=forms.ChoiceField(choices=(list_subs),required=False)
 	classgroup_selected=forms.ChoiceField(choices=(list_classes),required=False)
+	years=json.dumps(years)
+	subs=json.dumps(dsubs)
+	classes=json.dumps(dclasses)
+	dds=json.dumps(ddrops)

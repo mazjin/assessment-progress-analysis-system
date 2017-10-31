@@ -23,6 +23,7 @@ def logIntoSISRA(uname,pword,browser):
 	except:
 		print("<"+str(datetime.datetime.now()).split('.')[0]+">: "+  "ERR")
 		browser.close()
+	time.sleep(0.5)
 	try:
 		browser.find_element_by_css_selector('.green').click()
 	except:
@@ -302,79 +303,74 @@ def openStudentReports(browser,year,dd):
 			if ('Yr ' + year) in yeartab.text:
 				yeartab.click()
 				break
-		try:
-			selectedDD=browser.find_element_by_css_selector(
-			'.eapPub.active .eapInfo .line')
-		except:
-			selectedDD=browser.find_element_by_css_selector(
-			'.eapPub .eapInfo .line')
 		time.sleep(0.5)
-		if dd not in selectedDD.text and dd!=selectedDD.text:
-			ddList=browser.find_elements_by_css_selector(
-				'.eapPub .eapInfo .line')
-			for ddbox in ddList:
-				if dd in ddbox.text or dd==ddbox.text:
-					browser.execute_script("arguments[0].scrollIntoView();", ddbox)
-					ddbox.find_element_by_xpath("..").click()
+		#loop through available year data to find correct collection
+		try:
+			collection_year=dd.split(" ")[0].replace("Y","")
+		except:
+			collection_year=year
+		if not collection_year.isnumeric():
+			collection_year=year
+		try:
+			coll_selected=browser.find_element_by_css_selector(\
+				".eapYear.open .eapYearTitle")
+		except:
+			coll_selected=browser.find_element_by_css_selector(\
+				".eapYear .eapYearTitle")
+		if collection_year not in coll_selected.text:
+			coll_spans=browser.find_elements_by_css_selector(".eapYear\
+			.eapYearTitle")
+			for collection in coll_spans:
+				if collection_year in collection.text:
+						collection.click()
+		else:
+			coll_selected.click()
+		#loop through datadrops available to find relevant one
+		ddboxes=browser.find_elements_by_css_selector(".eapPub")
+		for ddbox in ddboxes:
+			if dd in ddbox.text:
+				ddbox.click()
+				break
+		time.sleep(0.5)
+		student_button=browser.find_element_by_css_selector(".eapPub.active")\
+			.find_element_by_link_text("Students")
+		student_button.click()
 	except:
 		print("<"+str(datetime.datetime.now()).split('.')[0]+">: "+\
 			"something else went wrong?")
 		raise
 	time.sleep(0.5)
 
-	#open relevant data drop dataset
-	try:
-		openRepButton=browser.find_element_by_css_selector(
-			'.eapPub.active .EAPRptBtn .button')
-		browser.execute_script("arguments[0].scrollIntoView();",openRepButton)
-		openRepButton.click()
-	except:
-		print ("Can't find report button!")
-	time.sleep(.5)
-
+	#open relevant comparison dataset
 	comparison_dd="Baseline"
-
-	try:
-		compareSelect=browser.find_element_by_id('compareSelect')
-		compareOpts=compareSelect.find_elements_by_css_selector('*')
-		for opt in compareOpts:
-			if comparison_dd.lower() in opt.text.lower():
-				browser.execute_script("arguments[0].scrollIntoView();", opt)
-				opt.click()
-				break
-
-	except:
-		print("<"+str(datetime.datetime.now()).split('.')[0]+">: "+\
-			"Can't find baseline dataset!")
-		raise
+	comp_select=browser.find_element_by_css_selector(
+		".dsListTitle.comp + .datasetList")
+	comp_select.click()
 	time.sleep(0.5)
-
-	#select correct report type
-	navButtons=browser.find_elements_by_css_selector('#reportNavWrapper .rept')
-	navGrids=browser.find_elements_by_css_selector(
-		'#reportNavWrapper .list-grid')
-
-	if len(navButtons)!=len(navGrids):
-		print ('more grids than buttons, exiting')
-		sys.exit(2)
-
-	for i in range(len(navButtons)):
-		if "student" in navButtons[i].text.lower():
-			foundButton=navButtons[i]
-			foundGrid=navGrids[i]
+	comp_dds=browser.find_element_by_css_selector(".dsListTitle.comp ~ div")\
+		.find_elements_by_css_selector("ul>li")
+	for comp_dd in comp_dds:
+		if comparison_dd in comp_dd.text:
+			comp_dd.click()
 			break
-	browser.execute_script("arguments[0].scrollIntoView();", foundButton)
-	foundButton.click()
-	#click correct button in gradesGrid
+	found_dd=browser.find_element_by_css_selector(".flyOut .cdsItemBtn")
+	found_dd.click()
 	time.sleep(0.5)
-	repTypes=foundGrid.find_elements_by_css_selector('.title-y')
-	for reptype in repTypes:
-		if "headlines" in reptype.text.lower():
-			filtersRow=reptype.find_element_by_xpath('..')
 
-	filtersButtons=filtersRow.find_elements_by_link_text('Go!')
-	browser.execute_script("arguments[0].scrollIntoView();", filtersButtons[0])
-	filtersButtons[0].click()
+	#open student details area of reports
+	stu_det_button=browser.find_element_by_css_selector("[data-name='Student Detail']")
+	stu_det_button.click()
+	time.sleep(0.5)
+	stu_det_options=browser.find_elements_by_css_selector(".area.selected .rptBtn span")
+	for opt in stu_det_options:
+		if "Headlines" in opt.text:
+			opt.click()
+			break
+	time.sleep(0.5)
+	open_stu_det_button=browser.find_element_by_css_selector(".rptBtn.selected")\
+		.find_element_by_xpath(
+		"preceding-sibling::div[1][contains(@class,'lvls')]")
+	open_stu_det_button.click()
 	time.sleep(1.0)
 
 def getStudentData(browser,year,dd):
@@ -429,9 +425,7 @@ def getStudentData(browser,year,dd):
 		wbdsel(browser.find_element_by_css_selector('#ReportOptions_Stu_ID'))\
 			.select_by_value(str(key))
 		#get vulnerable grouping info from table on profile
-		filterTable=pd.read_html(browser\
-			.find_element_by_css_selector("#page.closed")\
-			.get_attribute('innerHTML'))[7]
+		filterTable=pd.read_html(browser.find_element_by_css_selector("#page.closed").get_attribute('innerHTML'))[0]
 		"""rearrange info from dataframe as series - table is irregularly
 		organised so must be reconstructed"""
 		vgFilters=pd.Series()
@@ -442,7 +436,7 @@ def getStudentData(browser,year,dd):
 		#get KS2 and basics data table, clean up column names and indexing
 		ks2Table=pd.read_html(browser\
 			.find_element_by_css_selector("#page.closed")\
-			.get_attribute('innerHTML'),header=0)[11]
+			.get_attribute('innerHTML'),header=0)[4]
 		if "KS2" not in ks2Table.columns: #for pupils with no grades,skip
 			continue
 		ks2Table.columns.str.replace("\n","")
@@ -469,7 +463,7 @@ def getStudentData(browser,year,dd):
 		#get grades table from page, clean columns and add to grades dataframe
 		gradesTable=pd.read_html(browser\
 			.find_element_by_css_selector("#page.closed")
-			.get_attribute('innerHTML'),header=0)[10]
+			.get_attribute('innerHTML'),header=0)[3]
 		gradesTable.columns=gradesTable.columns.str.replace("\n","")
 		gradesTable.columns=gradesTable.columns.str.replace("%","")
 		gradesTable.columns=gradesTable.columns.str.strip()
@@ -482,13 +476,13 @@ def getStudentData(browser,year,dd):
 
 		a8p8Table=pd.read_html(browser\
 			.find_element_by_css_selector('#page.closed')
-			.get_attribute('innerHTML'),header=0,index_col=0)[9]
+			.get_attribute('innerHTML'),header=0,index_col=0)[2]
 		basicsTable=pd.read_html(browser\
 			.find_element_by_css_selector('#page.closed')
-			.get_attribute('innerHTML'),header=0,index_col=0)[11]
+			.get_attribute('innerHTML'),header=0,index_col=0)[4]
 		ebaccTable=pd.read_html(browser\
 			.find_element_by_css_selector('#page.closed')
-			.get_attribute('innerHTML'),header=0,index_col=0)[12]
+			.get_attribute('innerHTML'),header=0,index_col=0)[5]
 		a8p8Table.columns.str.strip()
 		a8p8Table.index.str.strip()
 		basicsTable.columns.str.strip()
@@ -517,9 +511,9 @@ def getStudentData(browser,year,dd):
 	#clean and parse grades dataframe
 	grades_df['staff']=grades_df['Class'].str.split().str[1:]
 	grades_df['Class']=grades_df['Class'].str.split().str[0]
-	grades_df['Grade'].fillna("X",inplace=True)
-	grades_df['EAP Grade'].fillna("X",inplace=True)
-	grades_df['Compare Grade'].fillna("X",inplace=True)
+	# grades_df['Grade'].fillna("X",inplace=True)
+	# grades_df['EAP Grade'].fillna("X",inplace=True)
+	# grades_df['Compare Grade'].fillna("X",inplace=True)
 
 	#may reimplement these, but remove for now
 	del student_df['attendance']
