@@ -93,6 +93,7 @@
     yearval=$('#id_yeargroup_selected option:selected').val();
     $("#id_subject_selected").empty();
     $("#id_subject_selected").append('<option value="" disabled selected>Optional</option>');
+    $("#id_subject_selected").append('<option value="">---</option>');
 
     enableQuery();
     for (let [y,ysubs] of Object.entries(subs)){
@@ -114,6 +115,8 @@
       subval=$('#id_subject_selected option:selected').val();
       $('#id_classgroup_selected').empty();
       $('#id_classgroup_selected').append('<option value="" disabled selected>Optional</option>');
+      $('#id_classgroup_selected').append('<option value="">---</option>');
+
       enableQuery();
       for (let[ys,ysclasses] of Object.entries(classes)){
         if (ys==year+","+sub||(subval=="" && ys.indexOf(year)!=-1 && yearval!="")||
@@ -133,9 +136,11 @@
     ddval=$('#id_datadrop_selected option:selected').val();
     if(("{{row_type}}"=="yeargroup") || (yearval!="" && ddval!="")){
       $('[name="show_table"]').removeAttr('disabled');
+      $('[name="export_table"]').removeAttr('disabled');
     }
     else{
       $('[name="show_table"]').attr('disabled','disabled');
+      $('[name="export_table"]').attr('disabled','disabled');
     }
   }
 

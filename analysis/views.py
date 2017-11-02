@@ -803,6 +803,8 @@ def stdTable_gen(request,focus):
 			request.session['datadrop_selected']=form.cleaned_data.get(
 				"datadrop_selected")
 			outputTable,outputTableSt=get_formatted_standard_view_table(request,focus)
+			if "export_table" in request.POST:
+				return stdTable_export(outputTableSt)
 			try:
 				outputTable=outputTableSt.render().replace('nan','')
 			except TypeError as err:
@@ -856,6 +858,27 @@ def get_formatted_standard_view_table(request,focus):
 	outputTableSt.set_table_attributes('class="table table-striped\
 	 table-hover table-bordered"')
 	return outputTable,outputTableSt
+
+def stdTable_export(outputTableSt):
+
+		filename="scapasStdView-" + str(datetime.datetime.now()).split(".")[0] \
+			+ ".xlsx"
+		filename=filename.replace(" ","").replace(":","")
+		sio=io.BytesIO()
+		writer=pd.ExcelWriter(sio,engine='openpyxl')
+
+		outputTableSt.to_excel(writer,sheet_name="Sheet1")
+		writer.save()
+
+		sio.seek(0)
+		workbook=sio.getvalue()
+
+
+		response= HttpResponse(workbook,
+			content_type='application/vnd.ms-excel')
+		response['Content-Disposition']='attachment; filename="' +\
+			filename + '"'
+		return response
 
 def getLatestDatadropPerYeargroup():
 	row_filter={'All':{},}
