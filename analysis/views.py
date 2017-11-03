@@ -2,8 +2,8 @@ from django.shortcuts import render
 from .models import *
 from .sisraTools import *
 from selenium import webdriver
-from .forms import importForm,interrogatorForm,standardTableForm_subject,\
-	standardTableForm_classgroup,standardTableForm_datadrop
+#from .forms import importForm,interrogatorForm,standardTableForm_subject,\
+	#standardTableForm_classgroup,standardTableForm_datadrop
 from django.http import HttpResponseRedirect,HttpResponse
 from assessment import settings
 import sqlite3
@@ -94,6 +94,7 @@ def get_subject_type_info(subj_name):
 	return ebacc_bool,option_bool,faculty,bkt
 
 def importPrompt(request):
+	from .forms import importForm
 	"""for none-POST requests, renders input form to start importation, for
 	POST requests, imports data from SISRA using entered values"""
 	if request.method !="POST":
@@ -241,9 +242,12 @@ def importPrompt(request):
 					mtd=gradeMethod.objects.filter(text=gr['Type'])
 					if len(mtd)<1:
 						mtd=gradeMethod.objects.filter(
-							vals__name__contains=gr['Grade'])
+							vals__name=gr['Grade'])
 					if len(mtd)>=1:
 						gr['method']=mtd[0]
+						print("<"+str(datetime.datetime.now()).split('.')[0]+\
+						">: Assigning method "+gr['method'].text+" to subject "\
+						+gr['Qualification Name'])
 					#determines various subject values using subject name
 					ebacc_bool,option_bool,faculty,bkt=get_subject_type_info(
 						gr['Qualification Name'])
@@ -299,7 +303,7 @@ def importPrompt(request):
 					gr['value']=gr['method'].vals.get(name=gr_value)
 				except:
 					print("<"+str(datetime.datetime.now()).split('.')[0]+">: "+\
-						type(gr['Grade']))
+						str(type(gr['Grade'])))
 					print(gr['method'])
 					for gv in gr['method'].vals.all():
 						print(type(gv.name),gv.name)
@@ -352,8 +356,10 @@ def importPrompt(request):
 				#get or create correct classgroup for grade
 				gr['classgroup'],classgroup_created=classgroup.objects\
 					.get_or_create(class_code=gr['Class'],
-						defaults={'cohort':form.cleaned_data.get('cohort'),
-							'staff':staff_string,'subject':class_subject})
+					cohort=form.cleaned_data.get('cohort'),
+						defaults={'staff':staff_string})
+				gr['classgroup'].subject=class_subject
+				gr['classgroup'].save()
 				if classgroup_created:
 					created_classes.append(gr['Class'])
 				#put formatted grade into new grades dataframe
@@ -369,6 +375,8 @@ def importPrompt(request):
 			">: Processing " + str(len(grades_df)) + " imports...")
 			#loop through new grades dataframe, save each grade to db
 			for i,gr in new_grades_df.iterrows():
+				if type(gr['EAPgrade'])!=gradeValue:
+					gr['EAPgrade']=None
 				selected_grade,grade_created=grade.objects.update_or_create(upn=gr['upn'],
 				datadrop=gr['datadrop'],subject=gr['subject'],defaults=gr.to_dict())
 				selected_grade.save()
@@ -439,18 +447,21 @@ def importPrompt(request):
 	return render(request,'analysis/importPrompt.html',context)
 
 def interrogate(request):
+	from .forms import interrogatorForm
 	"""if not POST, renders blank interrogator page, if POST, retrieve and show
 	dataframe based on entered query"""
 	if request.method !="POST":
 		form=interrogatorForm()
-	elif 'export_table' in request.POST:
-		return interrogateExport(request)
 	else:
 		form=interrogatorForm(data=request.POST)
 		if form.is_valid():
 			outputTable=get_formatted_output_table(form)
 			#outputTable.fillna(value="-",inplace=True)
-
+			if 'export_table' in request.POST:
+				filename="scapasQuery-" + str(datetime.datetime.now()).split(".")[0] \
+					+ ".xlsx"
+				filename=filename.replace(" ","").replace(":","")
+				return export_excel(outputTable,filename)
 			#change output dataframe table to html format
 			outputTable.set_table_attributes('class="table table-striped\
 				table-hover table-bordered"')
@@ -462,6 +473,7 @@ def interrogate(request):
 	return render(request,'analysis/interrogatorNew.html',context)
 
 def getInterrogatorOutput(form):
+	from .forms import interrogatorForm
 	"""given valid form from interrogator template, retrieves and formats
 	output dataframe"""
 	filters={}
@@ -561,32 +573,8 @@ def getInterrogatorOutput(form):
 		outputTable=outputTable-residual_mask
 	return outputTable
 
-def interrogateExport(request):
-	"""takes POST request and serves excel file of returned dataframe"""
-	form=interrogatorForm(data=request.POST)
-	if form.is_valid():
-		filename="scapasQuery-" + str(datetime.datetime.now()).split(".")[0] \
-			+ ".xlsx"
-		filename=filename.replace(" ","").replace(":","")
-		sio=io.BytesIO()
-		writer=pd.ExcelWriter(sio,engine='openpyxl')
-
-		outputTable=get_formatted_output_table(form)
-
-		outputTable.to_excel(writer,sheet_name="Sheet1")
-		writer.save()
-
-		sio.seek(0)
-		workbook=sio.getvalue()
-
-
-		response= HttpResponse(workbook,
-			content_type='application/vnd.ms-excel')
-		response['Content-Disposition']='attachment; filename="' +\
-			filename + '"'
-		return response
-
 def get_formatted_output_table(form):
+	from .forms import interrogatorForm
 	outputTable=getInterrogatorOutput(form)
 	if form.cleaned_data.get("val_choice")!="ppGap":
 		if (form.cleaned_data.get('residual_toggle_row') and form.cleaned_data.get('residual_toggle_col')) or (not form.cleaned_data.get('residual_toggle_row') and not form.cleaned_data.get('residual_toggle_col')):
@@ -771,6 +759,8 @@ def stdTable_gen_getsession(request,focus,row_type,col_type):
 	return HttpResponseRedirect('/view/'+focus+'/')
 
 def stdTable_gen(request,focus):
+	from .forms import standardTableForm_subject,standardTableForm_classgroup,\
+		standardTableForm_datadrop
 	form=""
 	if request.method!="POST":
 		outputTable=""
@@ -804,7 +794,10 @@ def stdTable_gen(request,focus):
 				"datadrop_selected")
 			outputTable,outputTableSt=get_formatted_standard_view_table(request,focus)
 			if "export_table" in request.POST:
-				return stdTable_export(outputTableSt)
+				filename="scapasStdView-" + str(datetime.datetime.now()).split(".")[0] \
+					+ ".xlsx"
+				filename=filename.replace(" ","").replace(":","")
+				return export_excel(outputTableSt,filename)
 			try:
 				outputTable=outputTableSt.render().replace('nan','')
 			except TypeError as err:
@@ -859,27 +852,6 @@ def get_formatted_standard_view_table(request,focus):
 	 table-hover table-bordered"')
 	return outputTable,outputTableSt
 
-def stdTable_export(outputTableSt):
-
-		filename="scapasStdView-" + str(datetime.datetime.now()).split(".")[0] \
-			+ ".xlsx"
-		filename=filename.replace(" ","").replace(":","")
-		sio=io.BytesIO()
-		writer=pd.ExcelWriter(sio,engine='openpyxl')
-
-		outputTableSt.to_excel(writer,sheet_name="Sheet1")
-		writer.save()
-
-		sio.seek(0)
-		workbook=sio.getvalue()
-
-
-		response= HttpResponse(workbook,
-			content_type='application/vnd.ms-excel')
-		response['Content-Disposition']='attachment; filename="' +\
-			filename + '"'
-		return response
-
 def getLatestDatadropPerYeargroup():
 	row_filter={'All':{},}
 	for y in yeargroup.objects.all().order_by('-current_year'):
@@ -888,3 +860,20 @@ def getLatestDatadropPerYeargroup():
 			dd=dd.order_by('-date')[0]
 			row_filter[y.__str__()+", "+dd.name]={'upn__cohort':y,'datadrop':dd}
 	return row_filter
+
+def export_excel(output_data,filename):
+	sio=io.BytesIO()
+	writer=pd.ExcelWriter(sio,engine='openpyxl')
+
+	output_data.to_excel(writer,sheet_name="Sheet1")
+	writer.save()
+
+	sio.seek(0)
+	workbook=sio.getvalue()
+
+
+	response= HttpResponse(workbook,
+		content_type='application/vnd.ms-excel')
+	response['Content-Disposition']='attachment; filename="' +\
+		filename + '"'
+	return response
