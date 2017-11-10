@@ -173,8 +173,7 @@ def get_default_filters_dict(class_of_filters,measure,**filters):
 			class_of_filters="subject__faculty"
 		#populate returning dictionary with set/queryset
 		returnDict={}
-		if len(qset)>=2:
-			returnDict['All']={}
+		returnDict['All']={}
 		if class_of_filters=="subject":
 			for q in qset:
 				returnDict[q.name]={'subject__name':q.name}
@@ -364,7 +363,7 @@ class gradeValue(models.Model):
 		help_text="The value of the grade towards Attainment 8.",blank=True)
 
 	def __str__(self):
-		return self.name
+		return self.name + "(P"+str(self.progress_value) +", A"+str(self.att8_value)+")"
 
 class gradeMethod(models.Model):
 	"""the grading method associated with a subject group"""
@@ -483,7 +482,7 @@ class subject(studentGrouping):
 
 class classgroup(studentGrouping):
 	"""A timetabled class or registration group."""
-	class_code=models.CharField(max_length=10,primary_key=True,
+	class_code=models.CharField(max_length=10,
 		help_text="The class group's unique identifier code.")
 	cohort=models.ForeignKey(yeargroup,
 		help_text="The yeargroup that the class group's students belong to.")
@@ -493,7 +492,7 @@ class classgroup(studentGrouping):
 		help_text="The subject(s) studied by the group.",blank=True)
 
 	def __str__(self):
-		return self.class_code
+		return self.class_code + "(Y"+self.cohort.current_year+")"
 
 	@property
 	def class_size(self):

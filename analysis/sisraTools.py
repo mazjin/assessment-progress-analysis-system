@@ -28,7 +28,7 @@ def logIntoSISRA(uname,pword,browser):
 		browser.find_element_by_css_selector('.green').click()
 	except:
 		pass
-	time.sleep(0.5)
+	time.sleep(1)
 
 def setMegDD(year):
 	"""used to identify MEG targets for a given year group"""

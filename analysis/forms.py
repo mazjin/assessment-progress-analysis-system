@@ -131,7 +131,7 @@ class standardTableForm_classgroup(forms.Form):
 
 	yeargroup_selected=forms.ChoiceField(choices=([(year,year) for year in years]))
 	subject_selected=forms.ChoiceField(choices=(list_subs))
-	classgroup_selected=forms.ChoiceField(choices=(list_classes))
+	classgroup_selected=forms.ChoiceField(choices=(list_classes),required=False)
 
 	years=json.dumps(years)
 	subs=json.dumps(dsubs)

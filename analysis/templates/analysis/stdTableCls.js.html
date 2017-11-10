@@ -73,13 +73,13 @@
     }
 
     function enableQuery(){
-      if ($('#id_classgroup_selected option:selected').text()!="Select your option"
-      && $('#id_classgroup_selected option:selected').text()!="Please select a yeargroup"
-      && $('#id_classgroup_selected option:selected').text()!="Please select a subject"){
+      if ($('#id_classgroup_selected option:selected').val()!=""){
         $('[name="show_table"]').removeAttr('disabled');
+        $('[name="export_table"]').removeAttr('disabled');
         }
       else{
         $('[name="show_table"]').attr('disabled','disabled');
+        $('[name="export_table"]').attr('disabled','disabled');
       }
     }
 
