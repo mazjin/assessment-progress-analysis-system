@@ -606,6 +606,8 @@ class grade(models.Model):
 		help_text="The subject the grade was given in.")
 	progress=models.IntegerField(blank=True,
 		help_text="The progress the student has made from their baseline.", null=True)
+	baseline_grade=models.ForeignKey(gradeValue,help_text="The grade attained \
+	by the student in baseline testing.", null=True,blank=True,related_name="BL")
 	EAPgrade=models.ForeignKey(gradeValue,
 		help_text="The estimated attainment for the student in this data drop.",
 		related_name="EAP",null=True,blank=True)

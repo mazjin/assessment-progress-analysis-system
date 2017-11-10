@@ -203,7 +203,7 @@ def importPrompt(request):
 			new_grades_df=pd.DataFrame(columns=['upn','Qualification Name',
 				'Basket','Class','Type','Grade','Att8 Points','EAP Grade',
 				'staff','Compare Grade','progress','method','subject',
-				'classgroup','datadrop','value','EAPgrade'])
+				'classgroup','datadrop','value','EAPgrade','baseline_grade'])
 
 			#variables to track progress though grades importation routine
 			ii=0 #counter for valid grades
@@ -336,13 +336,17 @@ def importPrompt(request):
 					baseline_grade=str(baseline_grade).replace("=","")
 				#calculate progress from baseline grade
 				try:
-					gr['progress']=gr['value'].progress_value - gradeValue.objects\
-					.filter(name=baseline_grade)[0].progress_value
+					gr['baseline_grade']= gr['method'].vals.get(\
+						name=baseline_grade)
+					gr['progress']=gr['value'].progress_value -\
+						gr['baseline_grade'].progress_value
 				except:
 					print("Empty baseline for " +gr['upn'].surname+", "+\
 						gr['upn'].forename + " in " +gr['Qualification Name']+\
 						" with entered value " + baseline_grade)
+					gr['baseline_grade']=None
 					gr['progress']=None
+
 				#handle pupils with multiple classes for one subject
 				if "(Multiple)" in gr['Class']:
 					gr['staff']=['-']
