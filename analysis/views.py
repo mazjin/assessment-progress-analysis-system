@@ -336,8 +336,14 @@ def importPrompt(request):
 					baseline_grade=str(baseline_grade).replace("=","")
 				#calculate progress from baseline grade
 				try:
-					gr['baseline_grade']= gr['method'].vals.get(\
+					try:
+						gr['baseline_grade']= gr['method'].vals.get(\
 						name=baseline_grade)
+					except:
+						gr['baseline_grade']=gradeMethod.objects.get(text="9-1").\
+							vals.get(name=baseline_grade)
+						#gr['baseline_grade']=grade.objects.filter(
+							#name=baseline_grade)[0]
 					gr['progress']=gr['value'].progress_value -\
 						gr['baseline_grade'].progress_value
 				except:
