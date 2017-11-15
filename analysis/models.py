@@ -351,6 +351,196 @@ class studentGrouping(models.Model):
 			results[group_key]=self.pct_headline(measure,**joined_filters)
 		return pandas.Series(results)
 
+	def avg_baseline_attainment(self,**filters):
+		"""returns average attainment of baseline grade for set of grades
+		defined by filters"""
+		bl_a8_avg=self.get_grades(**filters).aggregate(models.Avg(
+		'baseline_grade__att8_value'))['baseline_grade__att8_value__avg']
+		if bl_a8_avg is None:
+			return np.nan
+		else:
+			return round(bl_a8_avg,2)
+
+	def avg_baseline_attainment_series(self,group_filters_dict,filters):
+		results={}
+		for group_key,group_filter in group_filters_dict.items():
+			joined_filters={**group_filter,**filters}
+			results[group_key]=self.avg_baseline_attainment(**joined_filters)
+		return pandas.Series(results)
+
+	def subj_residual_progress(self,**filters):
+		grade_set_group=self.get_grades(**filters)
+		if grade_set_group.count()<=0:
+			return np.nan
+		group_avg=grade_set_group.aggregate(models.Avg('progress'))\
+			['progress__avg']
+		student_set=[]
+		for g in grade_set_group:
+			student_set.append(g.upn)
+		subject_set=subject.objects.filter(cohort=student_set[0].cohort)
+		grade_set_all=grade.objects.filter(upn__in=student_set)
+		subject_avgs=[]
+		for sub in subject_set:
+			if grade_set_all.filter(subject=sub).count()>0:
+				sub_avg=grade_set_all.filter(subject=sub).aggregate(
+					models.Avg('progress'))['progress__avg']
+				if not sub_avg is None:
+					subject_avgs.append(sub_avg)
+		try:
+			avg_subject_avg=sum(subject_avgs)/len(subject_avgs)
+			return round(group_avg-avg_subject_avg,2)
+		except:
+			print("error accessing data with filters " + str(filters) )
+			return np.nan
+
+	def subj_residual_attainment(self, **filters):
+		grade_set_group=self.get_grades(**filters)
+		if grade_set_group.count()<=0:
+			return np.nan
+		group_avg=grade_set_group.aggregate(models.Avg('value__att8_value'))\
+			['value__att8_value__avg']
+		student_set=[]
+		for g in grade_set_group:
+			student_set.append(g.upn)
+		subject_set=subject.objects.filter(cohort=student_set[0].cohort)
+		grade_set_all=grade.objects.filter(upn__in=student_set)
+		subject_avgs=[]
+		for sub in subject_set:
+			if grade_set_all.filter(subject=sub).count()>0:
+				subject_avgs.append(grade_set_all.filter(subject=sub).aggregate(
+					models.Avg('value__att8_value'))['value__att8_value__avg'])
+		if None in subject_avgs:
+			import pdb; pdb.set_trace()
+		avg_subject_avg=sum(subject_avgs)/len(subject_avgs)
+		return round(group_avg-avg_subject_avg,2)
+
+	def subj_residual_attainment_series(self, group_filters_dict,filters):
+		results={}
+		for group_key,group_filter in group_filters_dict.items():
+			joined_filters={**group_filter,**filters}
+			results[group_key]=self.subj_residual_attainment(**joined_filters)
+		return pandas.Series(results)
+
+	def subj_residual_progress_series(self, group_filters_dict,filters):
+		results={}
+		for group_key,group_filter in group_filters_dict.items():
+			joined_filters={**group_filter,**filters}
+			results[group_key]=self.subj_residual_progress(**joined_filters)
+		return pandas.Series(results)
+
+	def avg_grade_attainment(self,**filters):
+		"""returns average attainment of baseline grade for set of grades
+		defined by filters"""
+		gr_a8_avg=self.get_grades(**filters).aggregate(models.Avg(
+		'value__att8_value'))['value__att8_value__avg']
+		if gr_a8_avg is None:
+			return np.nan
+		else:
+			return round(gr_a8_avg,2)
+
+	def avg_grade_attainment_series(self,group_filters_dict,filters):
+		results={}
+		for group_key,group_filter in group_filters_dict.items():
+			joined_filters={**group_filter,**filters}
+			results[group_key]=self.avg_grade_attainment(**joined_filters)
+		return pandas.Series(results)
+
+	def grade_count(self,**filters):
+		return self.get_grades(**filters).count()
+
+	def grade_count_series(self,group_filters_dict,filters):
+		results={}
+		for group_key,group_filter in group_filters_dict.items():
+			joined_filters={**group_filter,**filters}
+			results[group_key]=self.grade_count(**joined_filters)
+		return pandas.Series(results)
+
+	def analysis_sheet_df(self,**filters):
+		row_filters=get_default_filters_dict("short_student","progress",\
+			**filters)
+		out=pandas.DataFrame(index=row_filters.keys())
+		out['#']=self.grade_count_series(row_filters,filters)
+		out['Baseline A8 Grade']=self.avg_baseline_attainment_series(
+			row_filters,filters)
+		#out['Previous Attainment'] ---- COMING SOON
+		#out['Expected Attainment'] ---- COMING SOON
+		out['Current A8 Grade']=self.avg_grade_attainment_series(
+			row_filters, filters)
+		out['Residual A8 Grade']=self.subj_residual_attainment_series(
+			row_filters,filters)
+		out['Baseline Grade Pts']=self.avg_baseline_points_series(row_filters,
+			filters)
+		out['Current Grade Pts']=self.avg_grade_points_series(row_filters,
+			filters)
+		out['Residual Grade Pts']=self.subj_residual_points_series(row_filters,
+			filters)
+		#out['Previous Progress'] ---- COMING SOON
+		out['Current Progress']=self.avg_progress_series(row_filters,filters)
+		out['Residual Progress']=self.subj_residual_progress_series(
+			row_filters,filters)
+		return out
+
+	def avg_grade_points(self,**filters):
+		"""returns average attainment of baseline grade for set of grades
+		defined by filters"""
+		gr_pr_avg=self.get_grades(**filters).aggregate(models.Avg(
+		'value__progress_value'))['value__progress_value__avg']
+		if gr_pr_avg is None:
+			return np.nan
+		else:
+			return round(gr_pr_avg,2)
+
+	def avg_grade_points_series(self,group_filters_dict,filters):
+		results={}
+		for group_key,group_filter in group_filters_dict.items():
+			joined_filters={**group_filter,**filters}
+			results[group_key]=self.avg_grade_points(**joined_filters)
+		return pandas.Series(results)
+
+	def subj_residual_points(self, **filters):
+		grade_set_group=self.get_grades(**filters)
+		if grade_set_group.count()<=0:
+			return np.nan
+		group_avg=grade_set_group.aggregate(models.Avg('value__progress_value'))\
+			['value__progress_value__avg']
+		student_set=[]
+		for g in grade_set_group:
+			student_set.append(g.upn)
+		subject_set=subject.objects.filter(cohort=student_set[0].cohort)
+		grade_set_all=grade.objects.filter(upn__in=student_set)
+		subject_avgs=[]
+		for sub in subject_set:
+			if grade_set_all.filter(subject=sub).count()>0:
+				subject_avgs.append(grade_set_all.filter(subject=sub).aggregate(
+					models.Avg('value__progress_value'))['value__progress_value__avg'])
+		if None in subject_avgs:
+			import pdb; pdb.set_trace()
+		avg_subject_avg=sum(subject_avgs)/len(subject_avgs)
+		return round(group_avg-avg_subject_avg,2)
+
+	def subj_residual_points_series(self, group_filters_dict,filters):
+		results={}
+		for group_key,group_filter in group_filters_dict.items():
+			joined_filters={**group_filter,**filters}
+			results[group_key]=self.subj_residual_points(**joined_filters)
+		return pandas.Series(results)
+
+	def avg_baseline_points(self,**filters):
+		"""returns average attainment of baseline grade for set of grades
+		defined by filters"""
+		bl_pt_avg=self.get_grades(**filters).aggregate(models.Avg(
+		'baseline_grade__progress_value'))['baseline_grade__progress_value__avg']
+		if bl_pt_avg is None:
+			return np.nan
+		else:
+			return round(bl_pt_avg,2)
+
+	def avg_baseline_points_series(self,group_filters_dict,filters):
+		results={}
+		for group_key,group_filter in group_filters_dict.items():
+			joined_filters={**group_filter,**filters}
+			results[group_key]=self.avg_baseline_points(**joined_filters)
+		return pandas.Series(results)
 
 class gradeValue(models.Model):
 	"""A definition of a grade for use in a grade method (NOT an instance of a
@@ -606,6 +796,8 @@ class grade(models.Model):
 		help_text="The subject the grade was given in.")
 	progress=models.IntegerField(blank=True,
 		help_text="The progress the student has made from their baseline.", null=True)
+	baseline_grade=models.ForeignKey(gradeValue,help_text="The grade attained \
+	by the student in baseline testing.", null=True,blank=True,related_name="BL")
 	EAPgrade=models.ForeignKey(gradeValue,
 		help_text="The estimated attainment for the student in this data drop.",
 		related_name="EAP",null=True,blank=True)

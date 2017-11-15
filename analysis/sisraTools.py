@@ -518,7 +518,6 @@ def getStudentData(browser,year,dd):
 	#may reimplement these, but remove for now
 	del student_df['attendance']
 	del student_df['homestatus']
-
 	#calculate average ks2 for students
 	student_df['ks2_average']=round((student_df['ks2_maths']+\
 		student_df['ks2_reading'])*10/2.0)/10.0
