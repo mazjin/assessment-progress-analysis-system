@@ -11,6 +11,7 @@ https://docs.djangoproject.com/en/1.11/ref/settings/
 """
 
 import os
+from assessment.personal_settings import *
 
 # Build paths inside the project like this: os.path.join(BASE_DIR, ...)
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -25,7 +26,6 @@ SECRET_KEY = ')9di26o6jj(iob5)367rrtdm5w0isr&i6hf)q)&#p@xcef5045'
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = []
 
 
 # Application definition
@@ -69,6 +69,8 @@ TEMPLATES = [
                 'django.template.context_processors.request',
                 'django.contrib.auth.context_processors.auth',
                 'django.contrib.messages.context_processors.messages',
+                #added#
+                'django_settings_export.settings_export',
             ],
         },
     },
@@ -140,3 +142,10 @@ BOOTSTRAP3 = {
 
 STATIC_PATH=os.path.join(BASE_DIR,'static')
 STATICFILES_DIRS=[STATIC_PATH,]
+
+#settings available for use in templates
+SETTINGS_EXPORT=[
+    'ADMIN',
+    'SCHOOL_NAME',
+    'SCHOOL_INITIAL',
+]
