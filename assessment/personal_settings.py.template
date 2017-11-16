@@ -1,0 +1,24 @@
+#hostnames that the server will allow connections on
+ALLOWED_HOSTS = [
+    ]
+#the school's identifying name (does not need to be a full name)
+SCHOOL_NAME="Xavier Yotsky Secondary"
+
+#school initial (used to form name of site/app)
+SCHOOL_INITIAL="XY"
+
+#contact details for email help
+ADMIN={
+    #short name, used in help link
+    "short_name":"Admin",
+    #full name
+    "full_name":"Admin Admin",
+    #honourific
+    "honourific":"Mrs. Admin",
+    #default greeting used in generated help email
+    "greeting":"Hello Admin,\n",
+    #email address for equiries to be sent to
+    "email":"default@admin.com",
+    #phone extension of admin
+    "phone_ext":"000",
+    }

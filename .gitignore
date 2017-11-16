@@ -8,3 +8,5 @@ django-spaghetti-and-meatballs/
 *.p
 *.json
 project_log.txt
+*.xlsx
+assessment/personal_settings.py

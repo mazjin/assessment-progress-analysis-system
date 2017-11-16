@@ -8,7 +8,7 @@
 		<meta name="viewport" content="width=device-width, initial-scale=1">
 		<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.2.1/jquery.min.js"></script>
 
-		<title>SCAPAS</title>
+		<title>{{settings.SCHOOL_INITIAL}}APAS</title>
 
 		{% bootstrap_css %}
 		{% bootstrap_javascript %}
@@ -208,8 +208,8 @@
 									{% bootstrap_icon "question-sign" %} HELP<span class="caret"></span>
 								</a>
 								<ul class="dropdown-menu" role="menu" aria-labelledby="dLabel">
-									<li><a href="#">{% bootstrap_icon "info-sign" %} FAQ</a></li>
-									<li><a href="#">{% bootstrap_icon "envelope" %} Contact us</a></li>
+									<li><a href="#">{% bootstrap_icon "info-sign" %} FAQ (coming soon)</a></li>
+									<li><a href='mailto:{{settings.ADMIN.email}}&subject=<{{settings.SCHOOL_INITIAL}}APAS Enquiry>&body={{settings.ADMIN.greeting}}'>{% bootstrap_icon "envelope" %} Ask {{settings.ADMIN.short_name}}</a></li>
 								</ul>
 							</div>
 						</li>
