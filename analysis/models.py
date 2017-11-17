@@ -463,13 +463,16 @@ class studentGrouping(models.Model):
 		out['Baseline A8 Grade']=self.avg_baseline_attainment_series(
 			row_filters,filters)
 		#out['Previous Attainment'] ---- COMING SOON
-		#out['Expected Attainment'] ---- COMING SOON
+		out['Expected Attainment']=self.avg_estimated_attainment_series(
+			row_filters, filters)
 		out['Current A8 Grade']=self.avg_grade_attainment_series(
 			row_filters, filters)
 		out['Residual A8 Grade']=self.subj_residual_attainment_series(
 			row_filters,filters)
 		out['Baseline Grade Pts']=self.avg_baseline_points_series(row_filters,
 			filters)
+		out['Expected Grade Pts']=self.avg_estimated_points_series(
+			row_filters, filters)
 		out['Current Grade Pts']=self.avg_grade_points_series(row_filters,
 			filters)
 		out['Residual Grade Pts']=self.subj_residual_points_series(row_filters,
@@ -540,6 +543,40 @@ class studentGrouping(models.Model):
 		for group_key,group_filter in group_filters_dict.items():
 			joined_filters={**group_filter,**filters}
 			results[group_key]=self.avg_baseline_points(**joined_filters)
+		return pandas.Series(results)
+
+	def avg_estimated_points(self,**filters):
+		"""returns average attainment of baseline grade for set of grades
+		defined by filters"""
+		est_pt_avg=self.get_grades(**filters).aggregate(models.Avg(
+		'EAPgrade__progress_value'))['EAPgrade__progress_value__avg']
+		if est_pt_avg is None:
+			return np.nan
+		else:
+			return round(est_pt_avg,2)
+
+	def avg_estimated_points_series(self,group_filters_dict,filters):
+		results={}
+		for group_key,group_filter in group_filters_dict.items():
+			joined_filters={**group_filter,**filters}
+			results[group_key]=self.avg_estimated_points(**joined_filters)
+		return pandas.Series(results)
+
+	def avg_estimated_attainment(self,**filters):
+		"""returns average attainment of baseline grade for set of grades
+		defined by filters"""
+		est_a8_avg=self.get_grades(**filters).aggregate(models.Avg(
+		'EAPgrade__att8_value'))['EAPgrade__att8_value__avg']
+		if est_a8_avg is None:
+			return np.nan
+		else:
+			return round(est_a8_avg,2)
+
+	def avg_estimated_attainment_series(self,group_filters_dict,filters):
+		results={}
+		for group_key,group_filter in group_filters_dict.items():
+			joined_filters={**group_filter,**filters}
+			results[group_key]=self.avg_estimated_attainment(**joined_filters)
 		return pandas.Series(results)
 
 class gradeValue(models.Model):
