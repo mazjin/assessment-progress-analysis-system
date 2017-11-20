@@ -579,6 +579,39 @@ class studentGrouping(models.Model):
 			results[group_key]=self.avg_estimated_attainment(**joined_filters)
 		return pandas.Series(results)
 
+	def get_dd_analysis_yeargroup_subjects(self,current_year,datadrop_name):
+		row_filters=get_default_filters_dict("short_student","progress")
+		y=yeargroup.objects.get(current_year=current_year)
+		dd=datadrop.objects.get(cohort=y,name=datadrop_name)
+		subs=subject.objects.filter(cohort=y)
+		for s in subs:
+			print(s.name + "...",end="")
+			try:
+				out_df=y.analysis_sheet_df(subject=s,datadrop=dd)
+				out_df.to_excel(s.name+" "+ datadrop_name +" Analysis.xlsx")
+				print("Done!")
+			except:
+				print("ran into a problem.")
+		print("Finished!")
+
+	def get_dd_analysis_subject_classgroups(self,current_year,datadrop_name,subject_name):
+		row_filters=get_default_filters_dict("short_student","progress")
+		y=yeargroup.objects.get(current_year=current_year)
+		dd=datadrop.objects.get(cohort=y,name=datadrop_name)
+		s=subject.objects.get(cohort=y,name=subject_name)
+		clss=classgroup.objects.filter(cohort=y,subject=s)
+		for c in clss:
+			print(c.class_code + ", "+ s.name + "...",end="")
+			try:
+				out_df=y.analysis_sheet_df(subject=s,datadrop=dd,classgroup=c)
+				out_df.to_excel(s.name+" "+c.class_code.replace("/","")+" "+ datadrop_name +" Analysis.xlsx")
+				print("Done!")
+			except:
+				print("ran into a problem.")
+		print("Finished!")
+
+
+
 class gradeValue(models.Model):
 	"""A definition of a grade for use in a grade method (NOT an instance of a
 	grade, see  grade class instead)"""
