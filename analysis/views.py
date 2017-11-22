@@ -651,6 +651,9 @@ start_dd="",**filters):
 	if view_rows=="student" and "cohort" in filters.keys():
 		filters["upn__cohort"]=cohort
 		filters.pop("cohort")
+	if view_cols=="sheet":
+		output_df=datadrop.objects.all()[0].analysis_sheet_df(view_rows,**filters)
+		return output_df
 
 	output_df=pd.DataFrame()
 

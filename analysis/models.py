@@ -455,8 +455,8 @@ class studentGrouping(models.Model):
 			results[group_key]=self.grade_count(**joined_filters)
 		return pandas.Series(results)
 
-	def analysis_sheet_df(self,**filters):
-		row_filters=get_default_filters_dict("short_student","progress",\
+	def analysis_sheet_df(self,row_type,**filters):
+		row_filters=get_default_filters_dict(row_type,"progress",\
 			**filters)
 		out=pandas.DataFrame(index=row_filters.keys())
 		out['#']=self.grade_count_series(row_filters,filters)
@@ -587,7 +587,7 @@ class studentGrouping(models.Model):
 		for s in subs:
 			print(s.name + "...",end="")
 			try:
-				out_df=y.analysis_sheet_df(subject=s,datadrop=dd)
+				out_df=y.analysis_sheet_df("short_student",subject=s,datadrop=dd)
 				out_df.to_excel(s.name+" "+ datadrop_name +" Analysis.xlsx")
 				print("Done!")
 			except:
@@ -603,7 +603,7 @@ class studentGrouping(models.Model):
 		for c in clss:
 			print(c.class_code + ", "+ s.name + "...",end="")
 			try:
-				out_df=y.analysis_sheet_df(subject=s,datadrop=dd,classgroup=c)
+				out_df=y.analysis_sheet_df("short_student",subject=s,datadrop=dd,classgroup=c)
 				out_df.to_excel(s.name+" "+c.class_code.replace("/","")+" "+ datadrop_name +" Analysis.xlsx")
 				print("Done!")
 			except:
