@@ -22,3 +22,6 @@ ADMIN={
     #phone extension of admin
     "phone_ext":"000",
     }
+    
+#text displayed on index page
+WELCOME_TEXT="Welcome to "+ SCHOOL_INITIAL + "APAS!"
