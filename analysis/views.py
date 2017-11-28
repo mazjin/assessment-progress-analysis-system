@@ -690,11 +690,11 @@ start_dd="",**filters):
 				#output_df[focus_object.name+" Avg Progress"] - output_df.loc["All",focus_object.name+" Avg Progress"]
 			for i in output_df.index:
 				try:
-					output_df.loc[i,focus_label +" Residual"]=\
+					output_df.loc[i,focus_label +" Difference"]=\
 					output_df.loc[i,focus_label +" Avg Progress"] -\
 					output_df.loc["All",focus_label +" Avg Progress"]
 				except:
-					output_df.loc[i,focus_label +" Residual"]=""
+					output_df.loc[i,focus_label +" Difference"]=""
 		if view_cols=="attainment" or view_cols=="all":
 			output_df[focus_label+" >=EAP"]=\
 				focus_object.pct_EAP_series(False,row_filters,filters)
@@ -728,11 +728,11 @@ start_dd="",**filters):
 					# output_df[d.name+" Avg Progress"] - output_df.loc["All",d.name+" Avg Progress"]
 				for i in output_df.index:
 					try:
-						output_df.loc[i,d.name +" Residual"]=\
+						output_df.loc[i,d.name +" Difference"]=\
 						output_df.loc[i,d.name +" Avg Progress"] -\
 						output_df.loc["All",d.name +" Avg Progress"]
 					except:
-						output_df.loc[i,d.name +" Residual"]="-"
+						output_df.loc[i,d.name +" Difference"]="-"
 
 		elif view_cols=="attainment":
 			for d in datadrops:

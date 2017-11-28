@@ -60,9 +60,9 @@ class interrogatorForm(forms.Form):
 		choices=VALUES,required=True)
 
 	#returns table values as a residual from the "All" column/row
-	residual_toggle_col=forms.BooleanField(label="Calculate residual by col",
+	residual_toggle_col=forms.BooleanField(label="Calculate difference by col",
 		required=False)
-	residual_toggle_row=forms.BooleanField(label="Calculate residual by row",
+	residual_toggle_row=forms.BooleanField(label="Calculate difference by row",
 		required=False)
 
 	"""below options limit query to specific objects/groups"""
