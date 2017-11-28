@@ -743,6 +743,10 @@ start_dd="",**filters):
 					focus_object.pct_EAP_series(True,row_filters,filters)
 
 		elif view_cols=="headline":
+			if "subject" in filters:
+				filters.pop('subject')
+			if "subject__name" in filters:
+				filters.pop('subject__name')
 			for d in datadrops:
 				filters['datadrop']=d
 				output_df[d.name+" Att8"]=\
