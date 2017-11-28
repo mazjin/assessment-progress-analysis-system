@@ -1,21 +1,32 @@
-beautifulsoup4
-bs4
-cycler
-Django
-django-model-utils
-django-spaghetti-and-meatballs
-html5lib
-Jinja2
-lxml
-MarkupSafe
-matplotlib
-numpy
-openpyxl
-pandas
-pyparsing
-python-dateutil
-pytz
-seaborn
-selenium
-six
-webencodings
+beautifulsoup4 (4.6.0)
+bs4 (0.0.1)
+cycler (0.10.0)
+Django (1.11.2)
+django-bootstrap3 (9.0.0)
+django-model-utils (3.0.0)
+django-settings-export (1.2.1)
+django-spaghetti-and-meatballs (0.2.2)
+et-xmlfile (1.0.1)
+ez-setup (0.9)
+html5lib (0.999999999)
+jdcal (1.3)
+Jinja2 (2.9.6)
+lxml (3.8.0)
+MarkupSafe (1.0)
+matplotlib (2.0.2)
+mysqlclient (1.3.10)
+numpy (1.13.0)
+openpyxl (2.4.8)
+pandas (0.20.2)
+pip (9.0.1)
+pyparsing (2.2.0)
+python-dateutil (2.6.0)
+pytz (2017.2)
+scipy (0.19.1)
+seaborn (0.8)
+selenium (3.4.3)
+setuptools (36.0.1)
+six (1.10.0)
+webencodings (0.5.1)
+wheel (0.29.0)
+xvfbwrapper (0.2.9)
