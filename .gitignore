@@ -10,3 +10,4 @@ django-spaghetti-and-meatballs/
 project_log.txt
 *.xlsx
 assessment/personal_settings.py
+fullExport.py
