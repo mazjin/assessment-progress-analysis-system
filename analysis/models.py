@@ -466,6 +466,8 @@ class studentGrouping(models.Model):
 	def analysis_sheet_df(self,row_type,**filters):
 		row_filters=get_default_filters_dict(row_type,"progress",\
 			**filters)
+		if "cohort" in filters and "classgroup" in row_type:
+			filters.pop("cohort")
 		out=pandas.DataFrame(index=row_filters.keys())
 		out['#']=self.grade_count_series(row_filters,filters)
 		out['Baseline Avg Attainment']=self.avg_baseline_attainment_series(

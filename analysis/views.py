@@ -821,6 +821,8 @@ def stdTable_gen(request,focus):
 				print(outputTable)
 				print(err)
 				outputTable=outputTable.to_html().replace('nan','')
+		else:
+			outputTable="Form not valid :("
 	context={'form':form,'outputTable':outputTable,
 		'row_type':request.session['row_type'],
 		'col_type':request.session['col_type'],
@@ -863,6 +865,8 @@ def get_formatted_standard_view_table(request,focus):
 		request.session['col_type'],year,**pass_filters)
 	if request.session['col_type']=="attainment":
 		outputTableSt=outputTable.style.apply(colour_mx_EAP,axis=0)
+	elif request.session['col_type']=="sheet":
+		outputTableSt=outputTable.style.apply(colour_progress,axis=0)
 	else:
 		outputTableSt=outputTable.style.apply(colour_progress,axis=0)
 	outputTableSt.set_table_attributes('class="table table-striped\
