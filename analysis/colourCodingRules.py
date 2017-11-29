@@ -12,12 +12,16 @@ def colour_progress(series):
 	#get std dev and average of input series
 	sdev=np.std(series)
 	savg=np.mean(series)
-	
+
 	#setup output list
 	output=[]
 	#iterate across each element in input series, add colour coding to output
-	for index,val in series.iteritems():
-		output.append(cc_rules_hilo_avg(val,sdev,savg))
+	if series.name=="#":
+		#exempt pupil count columns from being colour coded
+		output=["" for i in range(series.count())]
+	else:
+		for index,val in series.iteritems():
+			output.append(cc_rules_hilo_avg(val,sdev,savg))
 	return output
 
 def colour_progress_df(df):
@@ -26,7 +30,7 @@ def colour_progress_df(df):
 	savg=df.stack().mean()
 	#setup output dataframe
 	out=pd.DataFrame(columns=df.columns,index=df.index)
-	"""iterate across each element in input dataframe, add colour coding to 
+	"""iterate across each element in input dataframe, add colour coding to
 	output"""
 	for index,row in df.iterrows():
 		for column,val in row.iteritems():
@@ -86,24 +90,35 @@ def cc_rules_hilo_avg(val,sdev,savg):
 	#if value significantly above, colour forest green
 	elif val>(savg+sdev):
 		return "background-color:" + set_colours['fgreen']
-	#if value somewhat above, colour light green 
+	#if value somewhat above, colour light green
 	elif val>(savg+(sdev/2)):
 		return "background-color:" + set_colours['ligreen']
 	#if value significantly below, colour red
 	elif val<(savg-sdev):
 		return "background-color:" + set_colours['red']
 	#if value somewhat below, colour amber
-	elif val<(savg-(sdev/5)):
+	elif val<(savg-(sdev/2)):
 		return "background-color:" + set_colours['amber']
 	#otherwise no colour
 	else:
 		return ''
-		
+
 def colour_mx_EAP(input_obj):
 	"""colours series based on % meeting or exceeding EAP"""
 	if ">=" in input_obj.name:
-		output=['background-color:grey' if (str(x)=="" or x==None or str(x)=="nan") else 'background-color:' +set_colours['red'] if float(x) <80 else 'background-color:' +set_colours['amber'] if float(x) < 85 else 'background-color:' +set_colours['fgreen'] if float(x)==100 else 'background-color:' +set_colours['ligreen'] if float(x)>95 else "" for x in input_obj]
+		output=['background-color:grey' if (str(x)=="" or x==None \
+			or str(x)=="nan") \
+		else 'background-color:' +set_colours['red'] if float(x) <80 \
+		else 'background-color:' +set_colours['amber'] if float(x) < 85 \
+		else 'background-color:' +set_colours['fgreen'] if float(x)==100 \
+		else 'background-color:' +set_colours['ligreen'] if float(x)>95 \
+		else "" for x in input_obj]
 	else:
-		output=['background-color:grey' if (str(x)=="" or x==None or str(x)=="nan") else 'background-color:' +set_colours['red'] if float(x) ==0 else 'background-color:' +set_colours['amber'] if float(x) < 5 else 'background-color:' +set_colours['fgreen'] if float(x)==100 else 'background-color:' +set_colours['ligreen'] if float(x)>15 else "" for x in input_obj]
+		output=['background-color:grey' if (str(x)=="" or x==None \
+			or str(x)=="nan") \
+		else 'background-color:' +set_colours['red'] if float(x) ==0 \
+		else 'background-color:' +set_colours['amber'] if float(x) < 5 \
+		else 'background-color:' +set_colours['fgreen'] if float(x)>=30 \
+		else 'background-color:' +set_colours['ligreen'] if float(x)>15 \
+		else "" for x in input_obj]
 	return output
-		

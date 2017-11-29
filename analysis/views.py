@@ -659,6 +659,9 @@ start_dd="",**filters):
 	if view_rows=="student" and "cohort" in filters.keys():
 		filters["upn__cohort"]=cohort
 		filters.pop("cohort")
+	if view_cols=="sheet":
+		output_df=datadrop.objects.all()[0].analysis_sheet_df(view_rows,**filters)
+		return output_df
 
 	output_df=pd.DataFrame()
 
@@ -695,11 +698,11 @@ start_dd="",**filters):
 				#output_df[focus_object.name+" Avg Progress"] - output_df.loc["All",focus_object.name+" Avg Progress"]
 			for i in output_df.index:
 				try:
-					output_df.loc[i,focus_label +" Residual"]=\
+					output_df.loc[i,focus_label +" Difference"]=\
 					output_df.loc[i,focus_label +" Avg Progress"] -\
 					output_df.loc["All",focus_label +" Avg Progress"]
 				except:
-					output_df.loc[i,focus_label +" Residual"]=""
+					output_df.loc[i,focus_label +" Difference"]=""
 		if view_cols=="attainment" or view_cols=="all":
 			output_df[focus_label+" >=EAP"]=\
 				focus_object.pct_EAP_series(False,row_filters,filters)
@@ -733,11 +736,11 @@ start_dd="",**filters):
 					# output_df[d.name+" Avg Progress"] - output_df.loc["All",d.name+" Avg Progress"]
 				for i in output_df.index:
 					try:
-						output_df.loc[i,d.name +" Residual"]=\
+						output_df.loc[i,d.name +" Difference"]=\
 						output_df.loc[i,d.name +" Avg Progress"] -\
 						output_df.loc["All",d.name +" Avg Progress"]
 					except:
-						output_df.loc[i,d.name +" Residual"]="-"
+						output_df.loc[i,d.name +" Difference"]="-"
 
 		elif view_cols=="attainment":
 			for d in datadrops:
@@ -748,6 +751,10 @@ start_dd="",**filters):
 					focus_object.pct_EAP_series(True,row_filters,filters)
 
 		elif view_cols=="headline":
+			if "subject" in filters:
+				filters.pop('subject')
+			if "subject__name" in filters:
+				filters.pop('subject__name')
 			for d in datadrops:
 				filters['datadrop']=d
 				output_df[d.name+" Att8"]=\
@@ -822,6 +829,8 @@ def stdTable_gen(request,focus):
 				print(outputTable)
 				print(err)
 				outputTable=outputTable.to_html().replace('nan','')
+		else:
+			outputTable="Form not valid :("
 	context={'form':form,'outputTable':outputTable,
 		'row_type':request.session['row_type'],
 		'col_type':request.session['col_type'],
@@ -864,6 +873,8 @@ def get_formatted_standard_view_table(request,focus):
 		request.session['col_type'],year,**pass_filters)
 	if request.session['col_type']=="attainment":
 		outputTableSt=outputTable.style.apply(colour_mx_EAP,axis=0)
+	elif request.session['col_type']=="sheet":
+		outputTableSt=outputTable.style.apply(colour_progress,axis=0)
 	else:
 		outputTableSt=outputTable.style.apply(colour_progress,axis=0)
 	outputTableSt.set_table_attributes('class="table table-striped\

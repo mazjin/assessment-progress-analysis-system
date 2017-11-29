@@ -8,6 +8,14 @@ avg_headline_measures=["en_att8","ma_att8","eb_att8","op_att8",
 pct_headline_measures=["ebacc_achieved_std","ebacc_achieved_stg",
 	"ebacc_entered","basics_9to4","basics_9to5"]
 
+def avg_grade_filter_points(df):
+	for column in df:
+		if "Attainment +=-" in column:
+			df[column]=df[column].apply(lambda x: round((x-3)/9,2))
+		elif "Progress" in column:
+			df[column]=df[column].apply(lambda x: round(x/9,2))
+	return df
+
 def clean_filters(dict,measure):
 	for innerkey,val in dict.copy().items():
 		if innerkey[0:9]=="yeargroup":
@@ -455,32 +463,35 @@ class studentGrouping(models.Model):
 			results[group_key]=self.grade_count(**joined_filters)
 		return pandas.Series(results)
 
-	def analysis_sheet_df(self,**filters):
-		row_filters=get_default_filters_dict("short_student","progress",\
+	def analysis_sheet_df(self,row_type,**filters):
+		row_filters=get_default_filters_dict(row_type,"progress",\
 			**filters)
+		if "cohort" in filters and "classgroup" in row_type:
+			filters.pop("cohort")
 		out=pandas.DataFrame(index=row_filters.keys())
 		out['#']=self.grade_count_series(row_filters,filters)
-		out['Baseline A8 Grade']=self.avg_baseline_attainment_series(
+		out['Baseline Avg Attainment']=self.avg_baseline_attainment_series(
 			row_filters,filters)
 		#out['Previous Attainment'] ---- COMING SOON
-		out['Expected Attainment']=self.avg_estimated_attainment_series(
+		out['Expected Avg Attainment']=self.avg_estimated_attainment_series(
 			row_filters, filters)
-		out['Current A8 Grade']=self.avg_grade_attainment_series(
+		out['Current Avg Attainment']=self.avg_grade_attainment_series(
 			row_filters, filters)
-		out['Residual A8 Grade']=self.subj_residual_attainment_series(
+		out['Residual Avg Attainment']=self.subj_residual_attainment_series(
 			row_filters,filters)
-		out['Baseline Grade Pts']=self.avg_baseline_points_series(row_filters,
+		out['Baseline Avg Attainment +=-']=self.avg_baseline_points_series(row_filters,
 			filters)
-		out['Expected Grade Pts']=self.avg_estimated_points_series(
+		out['Expected Avg Attainment +=-']=self.avg_estimated_points_series(
 			row_filters, filters)
-		out['Current Grade Pts']=self.avg_grade_points_series(row_filters,
+		out['Current Avg Attainment +=-']=self.avg_grade_points_series(row_filters,
 			filters)
-		out['Residual Grade Pts']=self.subj_residual_points_series(row_filters,
+		out['Residual Avg Attainment +=-']=self.subj_residual_points_series(row_filters,
 			filters)
 		#out['Previous Progress'] ---- COMING SOON
 		out['Current Progress']=self.avg_progress_series(row_filters,filters)
 		out['Residual Progress']=self.subj_residual_progress_series(
 			row_filters,filters)
+		out=avg_grade_filter_points(out)
 		return out
 
 	def avg_grade_points(self,**filters):
@@ -578,6 +589,39 @@ class studentGrouping(models.Model):
 			joined_filters={**group_filter,**filters}
 			results[group_key]=self.avg_estimated_attainment(**joined_filters)
 		return pandas.Series(results)
+
+	def get_dd_analysis_yeargroup_subjects(self,current_year,datadrop_name):
+		row_filters=get_default_filters_dict("short_student","progress")
+		y=yeargroup.objects.get(current_year=current_year)
+		dd=datadrop.objects.get(cohort=y,name=datadrop_name)
+		subs=subject.objects.filter(cohort=y)
+		for s in subs:
+			print(s.name + "...",end="")
+			try:
+				out_df=y.analysis_sheet_df("short_student",subject=s,datadrop=dd)
+				out_df.to_excel(s.name+" "+ datadrop_name +" Analysis.xlsx")
+				print("Done!")
+			except:
+				print("ran into a problem.")
+		print("Finished!")
+
+	def get_dd_analysis_subject_classgroups(self,current_year,datadrop_name,subject_name):
+		row_filters=get_default_filters_dict("short_student","progress")
+		y=yeargroup.objects.get(current_year=current_year)
+		dd=datadrop.objects.get(cohort=y,name=datadrop_name)
+		s=subject.objects.get(cohort=y,name=subject_name)
+		clss=classgroup.objects.filter(cohort=y,subject=s)
+		for c in clss:
+			print(c.class_code + ", "+ s.name + "...",end="")
+			try:
+				out_df=y.analysis_sheet_df("short_student",subject=s,datadrop=dd,classgroup=c)
+				out_df.to_excel(s.name+" "+c.class_code.replace("/","")+" "+ datadrop_name +" Analysis.xlsx")
+				print("Done!")
+			except:
+				print("ran into a problem.")
+		print("Finished!")
+
+
 
 class gradeValue(models.Model):
 	"""A definition of a grade for use in a grade method (NOT an instance of a
