@@ -16,8 +16,12 @@ def colour_progress(series):
 	#setup output list
 	output=[]
 	#iterate across each element in input series, add colour coding to output
-	for index,val in series.iteritems():
-		output.append(cc_rules_hilo_avg(val,sdev,savg))
+	if series.name=="#":
+		#exempt pupil count columns from being colour coded
+		output=["" for i in range(series.count())]
+	else:
+		for index,val in series.iteritems():
+			output.append(cc_rules_hilo_avg(val,sdev,savg))
 	return output
 
 def colour_progress_df(df):
