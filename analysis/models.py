@@ -9,12 +9,18 @@ pct_headline_measures=["ebacc_achieved_std","ebacc_achieved_stg",
 	"ebacc_entered","basics_9to4","basics_9to5"]
 
 def avg_grade_filter_points(df):
+	new_df=pandas.DataFrame(index=df.index)
+	if "#" in df:
+		new_df['#']=df['#']
 	for column in df:
-		if "Attainment +=-" in column:
-			df[column]=df[column].apply(lambda x: round((x-3)/9,2))
+		new_column=column.replace("Score","Grade")
+		if "Attainment" in column and "+=-" in column:
+			new_df[new_column]=df[column].apply(lambda x: round((x-3)/9,2))
+		elif "Attainment" in column:
+			new_df[new_column]=df[column]
 		elif "Progress" in column:
-			df[column]=df[column].apply(lambda x: round(x/9,2))
-	return df
+			new_df[new_column]=df[column].apply(lambda x: round(x/9,2))
+	return new_df
 
 def clean_filters(dict,measure):
 	for innerkey,val in dict.copy().items():
@@ -470,26 +476,26 @@ class studentGrouping(models.Model):
 			filters.pop("cohort")
 		out=pandas.DataFrame(index=row_filters.keys())
 		out['#']=self.grade_count_series(row_filters,filters)
-		out['Baseline Avg Attainment']=self.avg_baseline_attainment_series(
+		out['Baseline Avg Attainment Score']=self.avg_baseline_attainment_series(
 			row_filters,filters)
 		#out['Previous Attainment'] ---- COMING SOON
-		out['Expected Avg Attainment']=self.avg_estimated_attainment_series(
+		out['Expected Avg Attainment Score']=self.avg_estimated_attainment_series(
 			row_filters, filters)
-		out['Current Avg Attainment']=self.avg_grade_attainment_series(
+		out['Current Avg Attainment Score']=self.avg_grade_attainment_series(
 			row_filters, filters)
-		out['Residual Avg Attainment']=self.subj_residual_attainment_series(
+		out['Residual Avg Attainment Score']=self.subj_residual_attainment_series(
 			row_filters,filters)
-		out['Baseline Avg Attainment +=-']=self.avg_baseline_points_series(row_filters,
+		out['Baseline Avg Attainment Score +=-']=self.avg_baseline_points_series(row_filters,
 			filters)
-		out['Expected Avg Attainment +=-']=self.avg_estimated_points_series(
+		out['Expected Avg Attainment Score +=-']=self.avg_estimated_points_series(
 			row_filters, filters)
-		out['Current Avg Attainment +=-']=self.avg_grade_points_series(row_filters,
+		out['Current Avg Attainment Score +=-']=self.avg_grade_points_series(row_filters,
 			filters)
-		out['Residual Avg Attainment +=-']=self.subj_residual_points_series(row_filters,
+		out['Residual Avg Attainment Score +=-']=self.subj_residual_points_series(row_filters,
 			filters)
-		#out['Previous Progress'] ---- COMING SOON
-		out['Current Progress']=self.avg_progress_series(row_filters,filters)
-		out['Residual Progress']=self.subj_residual_progress_series(
+		# out['Previous Progress Score'] ---- COMING SOON
+		out['Current Progress Score']=self.avg_progress_series(row_filters,filters)
+		out['Residual Progress Score']=self.subj_residual_progress_series(
 			row_filters,filters)
 		out=avg_grade_filter_points(out)
 		return out
