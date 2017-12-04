@@ -372,7 +372,7 @@ def openStudentReports(browser,year,dd):
 	open_stu_det_button=browser.find_element_by_css_selector(".rptBtn.selected")\
 		.find_element_by_xpath("preceding-sibling::div[1]")\
 		.find_element_by_css_selector("a")
-	browser.execute_script("arguments[0].scrollIntoView();",ope_stu_det_button)
+	browser.execute_script("arguments[0].scrollIntoView();",open_stu_det_button)
 	open_stu_det_button.click()
 	time.sleep(1.0)
 
