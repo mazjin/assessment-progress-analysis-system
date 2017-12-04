@@ -322,7 +322,8 @@ def importPrompt(request):
 				Combined Science, need to split grade - SISRA returns a
 				doubled 9-1 grade"""
 				try:
-					if isinstance(gr['EAP Grade'],float):
+					if isinstance(gr['EAP Grade'],float) or\
+					isinstance(gr['EAP Grade'],int):
 						gr['EAPgrade']=gradeValue.objects.get(
 							name=str(gr['EAP Grade'])[0])
 
@@ -332,7 +333,12 @@ def importPrompt(request):
 						gr['EAPgrade']=gradeValue.objects.get(
 							name=str(gr['EAP Grade'])[1:].replace("=",""))
 					else:
-						gr['EAPgrade']=gradeValue.objects.get(name=gr['EAP Grade'].replace("=",""))
+						try:
+							gr['EAPgrade']=gradeValue.objects.get(
+								name=gr['EAP Grade'].replace("=",""))
+						except:
+							gr['EAPgrade']=gr['method'].vals.get(
+									name=gr['EAP Grade'].replace("=",""))
 				except:
 					pass
 				#get baseline grade
