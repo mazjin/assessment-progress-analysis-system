@@ -24,6 +24,9 @@ from xvfbwrapper import Xvfb
 def index(request):
 	"""renders home page for assessment tools"""
 	return render(request, 'analysis/index.html')
+def faq(request):
+	"""renders faq page"""
+	return render(request,'analysis/faq.html')
 
 def yeargroups(request):
 	"""renders a page that lists all cohorts with available data."""

@@ -12,10 +12,10 @@
 
 		{% bootstrap_css %}
 		{% bootstrap_javascript %}
-		{%block jquery %} {%endblock jquery%}
 		<script src="{% static 'fixAccordionInDropdown.js' %}"></script>
 		<link href="{% static 'navbarstyling.css' %}" rel="stylesheet">
-
+		{%block css%}{%endblock css%}
+		{%block jquery %} {%endblock jquery%}
 	</head>
 	<body>
 		<!--static navbar-->
@@ -206,7 +206,7 @@
 									{% bootstrap_icon "question-sign" %} HELP<span class="caret"></span>
 								</a>
 								<ul class="dropdown-menu" role="menu" aria-labelledby="dLabel">
-									<li><a href="#">{% bootstrap_icon "info-sign" %} FAQ (coming soon)</a></li>
+									<li><a href="{% url 'analysis:faq'%}">{% bootstrap_icon "info-sign" %} FAQ</a></li>
 									<li><a href='mailto:{{settings.ADMIN.email}}&subject=<{{settings.SCHOOL_INITIAL}}APAS Enquiry>&body={{settings.ADMIN.greeting}}'>{% bootstrap_icon "envelope" %} Ask {{settings.ADMIN.short_name}}</a></li>
 								</ul>
 							</div>
