@@ -1,0 +1,449 @@
+{% extends 'analysis/base.html' %}
+
+{% load bootstrap3 %}
+
+{% block css %}
+<style>
+table,th,td,tr{
+  border: 1px solid grey;
+  padding: 5px;
+}
+table{
+  margin-left:auto;
+  margin-right:auto;
+}
+.red{
+  background-color: #ff0000;
+}
+.amber{
+  background-color: #ffcc00;
+}
+.lgreen{
+  background-color: #99cc00;
+}
+.fgreen{
+  background-color: #008800;
+}
+</style>
+{% endblock css %}
+
+{% block jquery %}
+<script language="javascript">
+  function allExpanded(){
+    if($('#accordionIntro [aria-expanded="false"]').length==0){
+      return true
+    }
+    else{
+      return false
+    }
+  };
+  function toggleExpandos(){
+    if (allExpanded()==true){
+      $('#accordionIntro .panel-collapse').collapse('hide');
+      $('#accordionUsage .panel-collapse').collapse('hide');
+      $('#accordionGlossary .panel-collapse').collapse('hide');
+      $('#btnExpandAll').text("Expand All");
+    }
+    else{
+        $('#accordionIntro .panel-collapse').collapse('show');
+        $('#accordionUsage .panel-collapse').collapse('show');
+        $('#accordionGlossary .panel-collapse').collapse('show');
+        $('#btnExpandAll').text("Collapse All");
+    };
+  };
+  $('#btnExpandAll').on('click',function(){
+    toggleExpandos();
+  });
+</script>
+{% endblock jquery %}
+
+{% block header %}
+  <h2> Frequently Asked Questions </h2>
+{% endblock header %}
+
+
+
+{% block content %}
+
+<ul class="nav nav-tabs">
+  <li class="active"><a data-toggle="tab" href="#intro">Introduction</a></li>
+  <li><a data-toggle="tab" href="#usage">Using {{settings.SCHOOL_INITIAL}}APAS</a></li>
+  <li><a data-toggle="tab" href="#glossary">Glossary</a></li>
+  <li style="float:right;"><button class="btn btn-primary" style="float:right;" id="btnExpandAll" onclick="toggleExpandos()">Expand All</button></li>
+</ul>
+
+
+<div class="tab-content">
+  <div id="intro" class="tab-pane fade in active">
+    <div class="panel-group" id="accordionIntro">
+      <div class="panel panel-default">
+        <div class="panel-heading">
+          <h4 class="panel-title">
+            <a  data-toggle="collapse" data-parent="#accordionIntro" href="#collapse1">
+              What is {{settings.SCHOOL_INITIAL}}APAS?</a>
+          </h4>
+        </div>
+        <div id="collapse1" class="panel-collapse collapse">
+          <div class="panel-body">
+            Short for {{settings.SCHOOL_NAME}} Assessment and Progress Analysis System, it is a new tool for analysing and breaking down trends in assessment data. It has been built from the ground up with current assessment goals and ideals in mind.
+          </div>
+        </div>
+      </div>
+      <!-- <div class="panel panel-default">
+        <div class="panel-heading">
+          <h4 class="panel-title">
+            <a data-toggle="collapse" data-parent="#accordionIntro" href="#collapse2">
+              What is {{settings.SCHOOL_INITIAL}}APAS for?</a>
+          </h4>
+        </div>
+        <div id="collapse2" class="panel-collapse collapse">
+          <div class="panel-body">
+
+          </div>
+        </div>
+      </div> -->
+      <div class="panel panel-default">
+        <div class="panel-heading">
+          <h4 class="panel-title">
+            <a data-toggle="collapse" data-parent="#accordionIntro" href="#collapse3">
+              Where does {{settings.SCHOOL_INITIAL}}APAS get its data?</a>
+          </h4>
+        </div>
+        <div id="collapse3" class="panel-collapse collapse">
+          <div class="panel-body">
+            {{settings.SCHOOL_INITIAL}}APAS imports student, assessment and subject data from SISRA.
+          </div>
+        </div>
+      </div>
+      <div class="panel panel-default">
+        <div class="panel-heading">
+          <h4 class="panel-title">
+            <a data-toggle="collapse" data-parent="#accordionIntro" href="#collapse4">
+              How does {{settings.SCHOOL_INITIAL}}APAS measure progress?</a>
+          </h4>
+        </div>
+        <div id="collapse4" class="panel-collapse collapse">
+          <div class="panel-body">
+            The progress a student has made in a subject is measured by the difference between the current grade being analysed and the baseline grade for the pupil in that subject. This is then expressed either as raw points or as a rough 9-1 grade equivalent.
+            <br><br>
+            <i><small>Please note that the examples below are based on a specific 9-1 grade method using +=- subgrades - other grade methods can be set up with different points. </small></i>
+            <br><br>
+            For example, a pupil has achieved a grade 5 (worth 51 points), with a baseline grade in that subject of a 4 (worth 42 points). That pupil has then made 51 - 42 = 9 points of progress in that subject, or roughly 1 grade's worth of progress.
+            <br>
+            Similarly, if the same pupil has a baseline of a 4+ (45 points) in a different subject, but has achieved a 4- (39 points) in the datadrop collection being analysed, they will have made 39 - 45 = -6 points of progress, or roughly -0.66 grades worth of progress.
+          </div>
+        </div>
+      </div>
+      <div class="panel panel-default">
+        <div class="panel-heading">
+          <h4 class="panel-title">
+            <a data-toggle="collapse" data-parent="#accordionIntro" href="#collapse5">
+              How does {{settings.SCHOOL_INITIAL}}APAS decide estimated attainment?</a>
+          </h4>
+        </div>
+        <div id="collapse5" class="panel-collapse collapse">
+          <div class="panel-body">
+            The estimated attainment is defined by SISRA's EAP (Estimated Attainment Pathway) system for each student, subject and term. It illustrates roughly the grade the student is expected to achieve during that term, in that subject.
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div id="usage" class="tab-pane fade">
+    <div class="panel-group" id="accordionUsage">
+      <div class="panel panel-default">
+        <div class="panel-heading">
+          <h4 class="panel-title">
+            <a data-toggle="collapse" data-parent="#accordionUsage" href="#collapseA">
+              How do I view my analysis?</a>
+          </h4>
+        </div>
+        <div id="collapseA" class="panel-collapse collapse">
+          <div class="panel-body">
+            There are two main ways to view analysis on {{settings.SCHOOL_INITIAL}}APAS: through <b>Standard Views</b> or using the <b>Interrogator</b>.
+            <br><br>
+            Standard views are fixed sets of generated analysis tables, defined by row type, column type and focus/level. The structure of them cannot be changed, and they are intended to be the basic overview of a subject/classgroup/datadrop.
+            <br><br>
+            The Interrogator also generates analysis tables, but takes a much wider variety of options and filters, allowing a more freeform investigation of the data.
+            <br><br>
+            Both types of analysis can be generated within your browser or exported as an Excel .xlsx file.
+          </div>
+        </div>
+      </div>
+      <div class="panel panel-default">
+        <div class="panel-heading">
+          <h4 class="panel-title">
+            <a data-toggle="collapse" data-parent="#accordionUsage" href="#collapseB">
+              How do I access a standard view for my class/subject/yeargroup?
+            </a>
+          </h4>
+        </div>
+        <div id="collapseB" class="panel-collapse collapse">
+          <div class="panel-body">
+            Standard views are defined by focus (the level of the data), row type (group breakdown), and column type (data source/type). Note that not every combination of options is available.
+            <br><br>
+            First, decide what level of data you will be focusing on: <b>Subjects</b>, <b>Classgroups</b> or <b>Datadrop</b>. Select the appropriate link from the navigation bar at the top of each {{settings.SCHOOL_INITIAL}}APAS page.
+            <br>
+            Secondly, select a row type: <b>Student Groupings</b> (a breakdown by key student demographics), <b>Classgroup</b>, or <b>Yeargroup</b>.
+            <br>
+            Lastly, click the appropriate link for the required column type: <b>Analysis Sheet</b> (a general breakdown of multiple key figures), <b>in Progress Score</b>, <b>in Estimated Attainment</b>, or <b>in Headline Figures</b>.
+            <br><br>
+            You will then be taken to a page of options and filters with "Get Table" and "Export to Excel" buttons at the bottom; enter your settings and click the appropriate button to view your generated analysis.
+          </div>
+        </div>
+      </div>
+      <div class="panel panel-default">
+        <div class="panel-heading">
+          <h4 class="panel-title">
+            <a data-toggle="collapse" data-parent="#accordionUsage" href="#collapseC">
+              How do I use the interrogator to investigate my data?
+            </a>
+          </h4>
+        </div>
+        <div id="collapseC" class="panel-collapse collapse">
+          <div class="panel-body">
+            Click the link for the Interrogator on the navigation bar across the top of each {{settings.SCHOOL_INITIAL}}APAS page.
+            <br>
+            The Interrogator page is split into two portions. The left hand side contains all of the controls and options used to generate the table, with the buttons to show or export the table at the bottom. The right hand side will initially be blank, but generated tables will be shown here.
+            <br><br>
+            <i><small>Note that in the case of a generated table being too wide to fit alongisde the options section, the table section may be pushed beneath the options section.</small></i>
+            <br><br>
+            A short rundown of the options:
+            <ul>
+              <li><b>Row/column groupings</b>(required): Determines the row and column breakdowns for the table.</li>
+              <li><b>Cell Value Type</b>(required): Determines which type of value will be calculated for each row/column combination.</li>
+              <li><b>Calculate Difference by row/col</b>: toggles whether each value is shown as a difference from the average row or column (or the overall average of the table, if both options are enabled).</li>
+              <li><b>Cohort</b>: Set a filter such that each grade or student analysed must belong to a particular cohort.</li>
+              <li><b>Subject</b>: Set a filter such that each grade analysed must belong to a specific subject.</li>
+              <li><b>Class/Form group</b>: Set a filter such that each grade/student analysed must belong to a selected classgroup.</li>
+              <li><b>Datadrop</b>: Set a filter such that each grade analysed is from the chosen datadrop. "Latest Datadrop" corresponds to the most recent datadrop for each yeargroup, even if multiple are selected.</li>
+              <li><b>Match Subject/Datadrop across yeargroups</b>: Instead of filtering by a subject or datadrop for a specific yeargroup, this option allows matching by name only (ignoring the cohort indicated in the brackets). Note that subjects that are more or less the same but are named differently (e.g. English in KS3 v.s. English Language and Literature in KS4) will not match with each other. </li>
+            </ul>
+          </div>
+        </div>
+      </div>
+      <div class="panel panel-default">
+        <div class="panel-heading">
+          <h4 class="panel-title">
+            <a data-toggle="collapse" data-parent="#accordionUsage" href="#collapseD">
+              How is colour coding applied to my analysis?
+            </a>
+          </h4>
+        </div>
+        <div id="collapseD" class="panel-collapse collapse">
+          <div class="panel-body">
+            There are currently four methods of colour coding used on {{settings.SCHOOL_INITIAL}}APAS.
+            <br><br>
+            Most types of values are coloured based on their difference from the overall average in terms of the standard deviation of set of data. The standard deviation is a mathematical measure of the spread of the data, which describes how close to the average the majority of the data is. For a data point to be a standard deviation or more away from the average, it must be significantly above or below most of the rest of the dataset.
+            <br><br>
+            <table>
+              <tr>
+                <th>Value is...</th>
+                <th>Colour coding</th>
+              </tr>
+              <tr>
+                <td>More than one standard deviation below average</td>
+                <td class="red">Red</td>
+              </tr>
+              <tr>
+                <td>Between one and one half of a standard deviation below average</td>
+                <td class="amber">Amber</td>
+              </tr>
+              <tr>
+                <td>Within one half of a standard deviation of the average</td>
+                <td>None</td>
+              </tr>
+              <tr>
+                <td>Between one and one half of a standard deviation above average</td>
+                <td class="lgreen">Light Green</td>
+              </tr>
+              <tr>
+                <td>More than one standard deviation above average</td>
+                <td class="fgreen">Green</td>
+              </tr>
+            </table>
+            <br><br>
+            Values measuring a gap between two groups will similarly use the standard deviation, but will fix the average at zero.
+            <br><br>
+            <table>
+              <tr>
+                <th>Value is...</th>
+                <th>Colour coding</th>
+              </tr>
+              <tr>
+                <td>More than one standard deviation away from zero</td>
+                <td class="red">Red</td>
+              </tr>
+              <tr>
+                <td>Between one and one half of a standard deviation away from zero</td>
+                <td class="amber">Amber</td>
+              </tr>
+              <tr>
+                <td>Between one half and one tenth of a standard deviation away from zero</td>
+                <td>None</td>
+              </tr>
+              <tr>
+                <td>Less than one tenth of a standard deviation away from zero</td>
+                <td class="lgreen">Light Green</td>
+              </tr>
+              <tr>
+                <td>Exactly zero</td>
+                <td class="fgreen">Green</td>
+              </tr>
+            </table>
+            <br><br>
+            Tables featuring percentages meeting a measure of attainment (% Meeting or exceeding EAP, % Achieving Basics, etc.) are colour coded by percentage.
+            <br><br>
+            <table>
+              <tr>
+                <th>Value is...</th>
+                <th>Colour coding</th>
+              </tr>
+              <tr>
+                <td>Less than 80%</td>
+                <td class="red">Red</td>
+              </tr>
+              <tr>
+                <td>Above or equal to 80%, less than 85%</td>
+                <td class="amber">Amber</td>
+              </tr>
+              <tr>
+                <td>Above or equal to 85%, less than 95%</td>
+                <td>None</td>
+              </tr>
+              <tr>
+                <td>Above or equal to 95%, less than 100%</td>
+                <td class="lgreen">Light Green</td>
+              </tr>
+              <tr>
+                <td>100%</td>
+                <td class="fgreen">Green</td>
+              </tr>
+            </table>
+            <br><br>
+            Percentages exceeding a measure of attainment (% Exceeding EAP, etc.) are similarly colour coded by percentage.
+            <br><br>
+            <table>
+              <tr>
+                <th>Value is...</th>
+                <th>Colour coding</th>
+              </tr>
+              <tr>
+                <td>0%</td>
+                <td class="red">Red</td>
+              </tr>
+              <tr>
+                <td>Above 0%, less than 5%</td>
+                <td class="amber">Amber</td>
+              </tr>
+              <tr>
+                <td>Above or equal to 5%, less than 15%</td>
+                <td>None</td>
+              </tr>
+              <tr>
+                <td>Above or equal to 15%, less than 30%</td>
+                <td class="lgreen">Light Green</td>
+              </tr>
+              <tr>
+                <td>Above or equal to 30%</td>
+                <td class="fgreen">Green</td>
+              </tr>
+            </table>
+            <br><br>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div id="glossary" class="tab-pane fade">
+    <div class="panel-group" id="accordionGlossary">
+      <div class="panel panel-default">
+        <div class="panel-heading">
+          <h4 class="panel-title">
+            <a data-toggle="collapse" data-parent="#accordionGlossary" href="#collapseCore">
+              Core Concepts
+            </a>
+          </h4>
+        </div>
+        <div id="collapseCore" class="panel-collapse collapse">
+          <div class="panel-body">
+            <ul>
+              <li><b>{{settings.SCHOOL_INITIAL}}APAS</b>: web portal-based tool for analysis of performance data. Short for {{settings.SCHOOL_NAME}} Attainment and Progress Analysis System.</li>
+              <li><b>Baseline</b>: Starting point for assessment. Taken from "Baseline" collection on SISRA.</li>
+              <li><b>Attainment</b>: Achievement in terms of Attainment 8 points, defined by the Department for Education. Does not acknowledge subgrades, and unapproved subjects will have 0 points for every grade.</li>
+              <li><b>Attainment +=-</b> Achievement in terms of internally-set points.  Accounts for subgrades, but do not have any currency with the DfE.</li>
+              <li><b>Progress</b>: The change in Attainment +=- since Baseline. Measured in points or (9-1 equivalent) grades.</li>
+              <li><b>Estimated Attainment</b>: The level of achievement projected by the student's EAP on SISRA.</li>
+              <li><b>EAP</b>: Estimated Attainment Pathway. Each child is assigned a pathway based on a given grade (nominally KS2 data, though it can use any KS3/4 grade method), which then gives them an expected grade for each term.</li>
+              <li><b>Grade Method</b>: A collecton of grade values that dictates the system of grading for a subject, e.g. 9-1. Each grade value consists of a name/symbol, an Attainment 8 value and a value in internal attainment points.</li>
+              <li><b>Standard deviation</b>: A mathematical measurement of the spread of a set of data from the average. A low standard deviation means that majority of the data is close to the mean, whereas a high value indicates that most of the data is very spread out. If a value is more than a standard deviation from the average, it is a significant outlier.</li>
+          </div>
+        </div>
+      </div>
+      <div class="panel panel-default">
+        <div class="panel-heading">
+          <h4 class="panel-title">
+            <a data-toggle="collapse" data-parent="accordionGlossary" href="#collapseLayout">
+              Formatting and Layout
+            </a>
+          </h4>
+        </div>
+        <div id="collapseLayout" class="panel-collapse collapse">
+          <div class="panel-body">
+            <ul>
+              <li><b>Standard View</b>: a set analysis tables with fixed layouts, defined by the row type, column type, and the focus/level of the data. Should cover most basic analysis needs.</li>
+              <li><b>Student Groupings</b>: set of key student demographics. Students are broken down by:
+                <ul>
+                  <li>Gender,</li>
+                  <li>Pupil Premium status,</li>
+                  <li>English as an Additional Language status,</li>
+                  <li>Looked After Child status,</li>
+                  <li>FSM Ever status,</li>
+                  <li>SEN code,</li>
+                  <li>KS2 banding,</li>
+                  <li>and some combinations of the above.</li>
+                </ul>
+              </li>
+              <li><b>Analysis Sheet</b>: General performance analysis table for a subject/class/datadrop. Shows average Attainment, average Attainment +=- and average Progress for Baseline, Estimated, Previous and Current data (where applicable). Also calculates a per-student residual for each measure. </li>
+              <li><b>Headline Figures</b>: Average Total Attainment 8 and average Progress 8 for pupils in the group being analysed.</li>
+              <li><b>Interrogator</b>: Data investigation tool for deeper, more free-form analysis. Allows options not available in standard views, but requires a good understanding of what it is you are trying to analyse.</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+      <div class="panel panel-default">
+        <div class="panel-heading">
+          <h4 class="panel-title">
+            <a data-toggle="collapse" data-parent="#accordionGlossary" href="#collapseMeasures">
+              Performance measures
+            </a>
+          </h4>
+        </div>
+        <div id="collapseMeasures" class="panel-collapse collapse">
+          <div class="panel-body">
+              <ul>
+                <li><b>Progress Score</b>: The difference in Attainment +=- points between Baseline and the dataset being analysed.</li>
+                <li><b>Progress Grade</b>: The Progress Score, converted to 9-1 grade equivalents.</li>
+                <li><b>Attainment Grade</b>: The average Attainment 8 points for each grade. Roughly equivalent to an average 9-1 grade.</li>
+                <li><b>Attainment Grade +=-</b>: The average Attainment +=- score for each grade, converted to 9-1 grade equivalents. </li>
+                <li><b>(total) Attainment 8</b>: DfE measure of overall achievement. Split into English, Maths, EBacc and Open "buckets".</li>
+                <li><b>Progress 8</b>: DfE measure of progress since KS2. Calculated by the difference between the student's total Attainment 8 score and the average total Attainment 8 score of students witht eh same KS2 fine level.</li>
+                <li><b>Meeting/Exceeding EAP</b>: The percentage of students who are meeting or exceeding the grade set by their EAP in the datadrop/term being analysed.</li>
+                <li><b>Exceeding EAP</b>:The percentage of students exceeding the grade set by their EAP in the datadrop/term being analysed. </li>
+                <li><b>∆ Attainment 8</b>: The difference in Attainment 8 points between Baseline and the dataset being analysed.</li>
+                <li><b>Pupil Premium Gap</b>: The difference in average Progress Score between Non-Pupil Premium students and Pupil Premium students.</li>
+                <li><b>English/Maths/EBacc/Open Att8 bucket</b>: The average total Attainment 8 score in the relevant subject bucket.</li>
+                <li><b>Subjects in EBacc/Open bucket</b>: The average number of filled slots in the relevant Attainment 8 bucket.</li>
+                <li><b>Entered for EBacc</b>: The percentage of students that qualify to enter the English Baccalaureate. To enter, students must be studying an approved qualfiication in English Language, English Literature, Mathematics, the equivalent of 2 Sciences, a humanities subject, and a modern foreign language.</li>
+                <li><b>Achieving EBacc (4+/5+)</b>: The percentage of students achieving a 4/5 or higher in each of their EBacc subjects.</li>
+                <li><b>Basics(4+/5+)</b>: The percentage of students achieving a 4/5 in Maths and English Language or English Literature.</li>
+              </ul>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+{% endblock content %}
