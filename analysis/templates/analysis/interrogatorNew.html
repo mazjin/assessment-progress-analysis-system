@@ -4,8 +4,16 @@
 {% load static from staticfiles %}
 
 {%block jquery%}
-	<script src="{% static 'interrogateScript.js' %}"> </script> 
+	<script src="{% static 'interrogateScript.js' %}"> </script>
 {% endblock jquery%}
+
+{% block css %}
+<style>
+#containerdiv {
+  width:87%;
+}
+</style>
+{% endblock css %}
 
 {% block header %}
 	<h2> Data Interrogator </h2>
