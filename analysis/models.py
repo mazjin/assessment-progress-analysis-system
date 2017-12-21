@@ -153,7 +153,7 @@ def df_measure(function,row_filters,col_filters,**options):
 #///////////////////////////////////
 
 def avg_grade_filter_points(df):
-	new_df=pandas.DataFrame(index=df.index)
+	new_df=pd.DataFrame(index=df.index)
 	if "#" in df:
 		new_df['#']=df['#']
 	for column in df:
@@ -166,22 +166,12 @@ def avg_grade_filter_points(df):
 			new_df[new_column]=df[column].apply(lambda x: round(x/9,2))
 	return new_df
 
-def clean_filters(dict,measure):
-	for innerkey,val in dict.copy().items():
-		if innerkey[0:9]=="yeargroup":
-			dict[innerkey.replace("yeargroup","datadrop__cohort")]=val
-			dict.pop(innerkey,None)
-		if (innerkey[0:7]=="subject" or innerkey[0:10]=="classgroup") and\
-		(measure in avg_headline_measures or measure in \
-		pct_headline_measures):
-			dict['upn__grade__'+innerkey]=val
-			dict['upn__grade__datadrop']=models.F('datadrop')
-			dict.pop(innerkey,None)
-		# if  innerkey[0:10]=="class_code":
-			# dict['upn__grade__classgroup__class_code']=val
-			# dict.pop(innerkey,None)
-
-	return dict
+def clean_filters(dicti):
+	for fld in ['subject','classgroup','subject__name','classgroup__class_code',
+	'subject__cohort']:
+		if fld in dicti:
+			dicti['upn__grade__'+fld]=dicti.pop(fld)
+	return dicti
 
 
 def get_default_filters_dict(class_of_filters,measure,**filters):
