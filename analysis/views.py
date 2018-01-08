@@ -738,6 +738,8 @@ start_dd="",**filters):
 			out["Residual"]=series_measure(residual_measure,
 				row_filters,measure="progress",obj=grade,**filters)
 	elif view_cols=="sheet":
+		out['#']=series_measure(count_measure,row_filters,
+		datadrop=datadrop_list[-1],obj=grade,**filters)
 		out['Avg Baseline Attainment Score']=series_measure(avg_measure,
 			row_filters, datadrop=datadrop_list[0],
 			measure="baseline_grade__att8_value",obj=grade,**filters)

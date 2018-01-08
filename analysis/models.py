@@ -150,6 +150,17 @@ def df_measure(function,row_filters,col_filters,**options):
         joined_options={**options,**col_filter}
         results[col_key]=series_measure(function,row_filters,**joined_options)
     return results
+
+def count_measure(obj,Qfilter=None,**filters):
+	if not Qfilter is None:
+		found_objs=obj.objects.filter(Qfilter,**filters)
+	else:
+		found_objs=obj.objects.filter(**filters)
+	count=found_objs.count()
+	if count is None:
+		return np.nan
+	else:
+		return count
 #///////////////////////////////////
 
 def avg_grade_filter_points(df):
