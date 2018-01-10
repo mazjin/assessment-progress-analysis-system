@@ -40,6 +40,7 @@ INSTALLED_APPS = [
 
 	# my apps
 	"analysis",
+    "users",
 
 	#third party
 	"django_spaghetti",
