@@ -15,9 +15,14 @@ import io
 from django.apps import apps
 import pickle
 import os
+from django.contrib.auth.decorators import login_required, user_passes_test
 
+def admin_check(user):
+	return user.is_staff
+
+def super_check(user):
+	return user.is_superuser
 # Create your views here.
-
 def index(request):
 	"""renders home page for assessment tools"""
 	return render(request, 'analysis/index.html')
@@ -95,6 +100,7 @@ def get_subject_type_info(subj_name):
 		faculty="Arts"
 	return ebacc_bool,option_bool,faculty,bkt
 
+@user_passes_test(super_check,login_url='/login')
 def importPrompt(request):
 	from .forms import importForm
 	"""for none-POST requests, renders input form to start importation, for
@@ -464,6 +470,7 @@ def importPrompt(request):
 	context={'form':form}
 	return render(request,'analysis/importPrompt.html',context)
 
+@login_required(login_url='/login')
 def interrogate(request):
 	from .forms import interrogatorForm
 	"""if not POST, renders blank interrogator page, if POST, retrieve and show
@@ -858,6 +865,7 @@ def stdTable_gen_getsession(request,focus,row_type,col_type):
 
 	return HttpResponseRedirect('/view/'+focus+'/')
 
+@login_required(login_url='/login')
 def stdTable_gen(request,focus):
 	from .forms import standardTableForm_subject,standardTableForm_classgroup,\
 		standardTableForm_datadrop
