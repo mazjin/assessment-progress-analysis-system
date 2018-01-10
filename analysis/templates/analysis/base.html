@@ -26,7 +26,7 @@
 					</button>
 					<a class="navbar-brand anim-text-flow-hover" href="{% url 'analysis:index' %}">{% bootstrap_icon "education" %} {{settings.SCHOOL_INITIAL}}APAS</a>
 				</div>
-
+				{% if user.is_authenticated %}
 				<div id="navbar" class="navbar-collapse collapse">
 					<ul class="nav navbar-nav">
 						<!-- <li><a href="{% url 'analysis:yeargroups' %}" >{% bootstrap_icon "user" %} Cohorts</a></li> -->
@@ -194,12 +194,20 @@
 							</div>
 						</li>
 						<li><a href="{% url 'analysis:interrogate' %}">{% bootstrap_icon "stats" %} Interrogator</a></li>
-						{% if user.is_authenticated %}
+						{% if user.is_staff %}
 						<li><a href="{% url 'analysis:importPrompt' %}">{% bootstrap_icon "cloud-download" %} Import</a></li>
 						{% endif %}
+						{%if user.is_staff %}
 						<li><a href="{% url 'admin:index' %}">{% bootstrap_icon "wrench" %} Admin</a></li>
+						{% endif %}
 					</ul>
+					{% endif %}
 					<ul class="nav navbar-nav navbar-right">
+						{% if user.is_authenticated %}
+						<li><a href="{% url 'users:logout' %}">{% bootstrap_icon "log-out" %} Log Out</a></li>
+						{% else %}
+						<li><a href="{% url 'users:login' %}">{% bootstrap_icon "log-in" %} Log In</a></li>
+						{% endif %}
 						<li>
 							<div class="dropdown dropdown-accordion" data-accordion="#accordionDdp">
 								<a class="dropdown-toggle" href="#" data-toggle="dropdown">
