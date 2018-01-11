@@ -362,7 +362,7 @@ def get_default_filters_dict(class_of_filters,measure,**filters):
 					returnDict[q.__str__()]={class_of_filters:q}
 	if measure in avg_headline_measures or measure in pct_headline_measures:
 		for outerkey,dict in returnDict.items():
-			dict=clean_filters(dict,measure)
+			dict=clean_filters(dict)
 	return returnDict
 
 class studentGrouping(models.Model):
