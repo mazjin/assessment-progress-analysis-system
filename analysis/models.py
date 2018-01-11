@@ -163,23 +163,35 @@ def count_measure(obj,Qfilter=None,**filters):
 		return count
 #///////////////////////////////////
 
-def avg_grade_filter_points(df):
-	new_df=pd.DataFrame(index=df.index)
-	if "#" in df:
-		new_df['#']=df['#']
-	for column in df:
-		new_column=column.replace("Score","Grade")
-		if "Attainment" in column and "+=-" in column:
-			new_df[new_column]=df[column].apply(lambda x: round((x-3)/9,2))
-		elif "Attainment" in column:
-			new_df[new_column]=df[column]
-		elif "Progress" in column:
-			new_df[new_column]=df[column].apply(lambda x: round(x/9,2))
-	return new_df
+# def avg_grade_filter_points(df):
+# 	new_df=pd.DataFrame(index=df.index)
+# 	if "#" in df:
+# 		new_df['#']=df['#']
+# 	for column in df:
+# 		new_column=column.replace("Score","Grade")
+# 		if "Attainment" in column and "+=-" in column:
+# 			new_df[new_column]=df[column].apply(lambda x: round((x-3)/9,2))
+# 		elif "Attainment" in column:
+# 			new_df[new_column]=df[column]
+# 		elif "Progress" in column:
+# 			new_df[new_column]=df[column].apply(lambda x: round(x/9,2))
+# 	return new_df
 
-def avg_grade_filter_points(df,measure):
+def avg_grade_filter_points(df,measure=None):
 	new_df=pd.DataFrame(index=df.index)
-	if measure=="progress":
+	if measure==None:
+		if "#" in df:
+			new_df['#']=df['#']
+		for column in df:
+			new_column=column.replace("Score","Grade")
+			if "Attainment" in column and "+=-" in column:
+				new_df[new_column]=df[column].apply(lambda x: round((x-3)/9,2))
+			elif "Attainment" in column:
+				new_df[new_column]=df[column]
+			elif "Progress" in column:
+				new_df[new_column]=df[column].apply(lambda x: round(x/9,2))
+		return new_df
+	elif measure=="progress":
 		def func(x):
 			return round((x-3)/9,3)
 	elif measure=="value__progress_value":
