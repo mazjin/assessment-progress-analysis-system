@@ -550,7 +550,7 @@ def getInterrogatorOutput(form):
 	if "cohort" in filters:
 		filters['datadrop__cohort']=filters['cohort']
 		filters.pop('cohort')
-	filters=clean_filters(filters,measure)
+	filters=clean_filters(filters)
 
 	#get dataframe of values matching every combination of filters
 	# if measure in ['attainment8','progress8',
@@ -673,6 +673,8 @@ def getInterrogatorOutput(form):
 		for c in outputTable.index.values:
 			residual_mask.loc[c]=outputTable.loc['All']
 		outputTable=outputTable-residual_mask
+	if form.cleaned_data.get("grade_filter"):
+		outputTable=avg_grade_filter_points(outputTable,measure)
 	return outputTable
 
 def get_formatted_output_table(form):

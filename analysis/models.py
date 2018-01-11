@@ -177,6 +177,24 @@ def avg_grade_filter_points(df):
 			new_df[new_column]=df[column].apply(lambda x: round(x/9,2))
 	return new_df
 
+def avg_grade_filter_points(df,measure):
+	new_df=pd.DataFrame(index=df.index)
+	if measure=="progress":
+		def func(x):
+			return round((x-3)/9,3)
+	elif measure=="value__progress_value":
+		def func(x):
+			return round(x/9,3)
+	else:
+		def func(x):
+			return x
+	for column in df:
+		if column=="#":
+			new_df['#']=df['#']
+		else:
+			new_df[column]=df[column].apply(func)
+	return new_df
+
 def clean_filters(dicti):
 	for fld in ['subject','classgroup','subject__name','classgroup__class_code',
 	'subject__cohort']:
