@@ -1041,6 +1041,27 @@ class student(models.Model):
 	fsm_ever=models.BooleanField(help_text="Whether the student has ever been \
 		eligible for Free School Meals.")
 
+	guest_status=models.BooleanField(help_text="Whether the student is a guest \
+	pupil at the school", default=False)
+
+	home_types=(
+		("N","N/A"),
+		("T","Traveller"),
+	)
+	home_status=models.CharField(help_text="The home grouping the student\
+	 belongs to", max_length=1,default="N",choices=home_types)
+
+	attendance_bands=(
+		("PA","Persistent Absence"),
+		("AC","Attendance Concern"),
+		("EA","Expected Attendance"),
+		("FA","Full Attendance"),
+	)
+	attendance=models.CharField(help_text="The level of attendance the \
+	student has attained so far this school year",max_length=2,default="EA",
+	choices=attendance_bands)
+
+
 	def __str__(self):
 		return self.forename+ " " + self.surname + " ("+self.upn+")"
 
