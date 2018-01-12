@@ -180,6 +180,22 @@ def importPrompt(request):
 						band="M"
 					else:
 						band="N"
+					if stu['attendance']=="Expected":
+						attendance="EA"
+					elif stu['attendance']=="Persistent Absence":
+						attendance="PA"
+					elif stu['attendance']=="Full":
+						attendance="FA"
+					elif stu['attendance']=="Concern":
+						attendance="AC"
+					else:
+						attendance="NA"
+
+					if stu['homestatus']=="Traveller":
+						homestatus="T"
+					else:
+						homestatus="N"
+
 					#determining appropriate reg group
 					reggroup,reg_created=classgroup.objects.get_or_create(
 						class_code="CLS"+stu['reg'].strip(),defaults={
@@ -189,6 +205,7 @@ def importPrompt(request):
 						surname=stu['surname'],
 						reg=reggroup,
 						gender=stu['gender'][0].upper(),
+						guest_status=stu['guest'],
 						cohort=stu['cohort'],
 						ks2_reading=stu['ks2_reading'],
 						ks2_maths=stu['ks2_maths'],
@@ -198,7 +215,9 @@ def importPrompt(request):
 						pp=stu['pp']=="Yes",
 						sen=stu['sen'][0],
 						lac=stu['lac']=="Yes",
-						fsm_ever=stu['fsm_ever']=="Yes")
+						fsm_ever=stu['fsm_ever']=="Yes",
+						home_status=homestatus,
+						attendance=attendance)
 					created_student.save()
 
 					if reg_created:#add to output
