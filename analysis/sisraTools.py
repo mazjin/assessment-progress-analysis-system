@@ -415,14 +415,23 @@ def getStudentData(browser,year,dd):
 		#print(student_namestring)
 		split_namestring=student_namestring.split(" ")
 		upn=split_namestring[-1]
-		if split_namestring[-3]=="(Guest)":
-			forename=split_namestring[-4]
-			surname=" ".join(split_namestring[0:-4])
-			guest=True
+		guest=(split_namestring[-3]=="(Guest)")
+		if guest:
+			split_namestring=split_namestring[:-3]
 		else:
-			forename=split_namestring[-3]
-			surname=" ".join(split_namestring[0:-3])
-			guest=False
+			split_namestring=split_namestring[:-2]
+		name_break=split_namestring.index(";")
+		surname=" ".join(split_namestring[:name_break])
+		forename=" ".join(split_namestring[name_break+1:])
+
+		# if split_namestring[-3]=="(Guest)":
+		# 	forename=split_namestring[-4]
+		# 	surname=" ".join(split_namestring[0:-4])
+		# 	guest=True
+		# else:
+		# 	forename=split_namestring[-3]
+		# 	surname=" ".join(split_namestring[0:-3])
+		# 	guest=False
 		#go to relevant student profile
 		wbdsel(browser.find_element_by_css_selector('#ReportOptions_Stu_ID'))\
 			.select_by_value(str(key))
