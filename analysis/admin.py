@@ -1,7 +1,8 @@
 from django.contrib import admin
 
 # Register your models here.
-from analysis.models import gradeValue,gradeMethod,yeargroup,datadrop,subject,classgroup,student,grade,headline
+from analysis.models import gradeValue,gradeMethod,yeargroup,datadrop,subject,\
+classgroup,student,grade,headline,subjectTag
 
 admin.site.register(gradeValue)
 admin.site.register(gradeMethod)
@@ -12,3 +13,4 @@ admin.site.register(classgroup)
 admin.site.register(student)
 admin.site.register(grade)
 admin.site.register(headline)
+admin.site.register(subjectTag)

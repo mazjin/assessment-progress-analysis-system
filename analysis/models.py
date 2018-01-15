@@ -803,6 +803,13 @@ class studentGrouping(models.Model):
 	# 	print("Finished!")
 
 
+class subjectTag(models.Model):
+	"""A tag to identify similar subjects across yeargroups"""
+	name=models.CharField(max_length=100,help_text="The string identifying the \
+	tag")
+
+	def __str__(self):
+		return self.name
 
 class gradeValue(models.Model):
 	"""A definition of a grade for use in a grade method (NOT an instance of a
@@ -885,7 +892,8 @@ class subject(studentGrouping):
 	("op","Open")
 	)
 
-	name=models.CharField(max_length=100,help_text="The subject's name.")
+	name=models.CharField(max_length=100,help_text="The subject's name, as \
+	timetabled.")
 	method=models.ForeignKey(gradeMethod,
 		help_text="The grade method used by the subject.")
 	attainment8bucket=models.CharField(max_length=2,choices=buckets,
@@ -900,6 +908,9 @@ class subject(studentGrouping):
 	English Baccalaureate"""
 	option_subject=models.BooleanField(default=True)
 	ebacc_subject=models.BooleanField(default=False)
+
+	tags=models.ManyToManyField(subjectTag,help_text="Set of tags linking subject to other \
+	subjects across yeargroups")
 
 	def staff_list(self):
 		"""returns set of staff codes for teachers of the subject"""
