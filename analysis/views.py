@@ -753,7 +753,7 @@ start_dd="",**filters):
 	out=pd.DataFrame()
 	if cohort and view_cols!="analysis":
 		datadrop_list=datadrop.objects.filter(cohort=cohort)\
-			.order_by('-date')[:3][::-1]
+			.order_by('-date')[:3][::-1][::-1]
 	elif view_cols=="analysis":
 		datadrop_list=datadrop.objects.filter(cohort=cohort)\
 			.order_by('-date')[:2]
