@@ -232,10 +232,10 @@ def get_default_filters_dict(class_of_filters,measure,**filters):
 			'NSEN':{'upn__sen':"N"},
 			'KSEN':{'upn__sen':"K"},
 			'EHCP':{'upn__sen':"E"},
-			'Lower':{'upn__banding':"L"},
-			'Middle':{'upn__banding':"M"},
-			'Higher':{'upn__banding':"H"},
-			'No Band':{'upn__banding':"N"}
+			'All Lower':{'upn__wide_banding':"L"},
+			'All Middle':{'upn__wide_banding':"M"},
+			'All Higher':{'upn__wide_banding':"H"},
+			'No Band':{'upn__wide_banding':"N"}
 			}
 	elif class_of_filters=="student":
 		returnDict= {'All':{},
@@ -249,22 +249,27 @@ def get_default_filters_dict(class_of_filters,measure,**filters):
 			'NSEN':{'upn__sen':"N"},
 			'KSEN':{'upn__sen':"K"},
 			'EHCP':{'upn__sen':"E"},
-			'Lower':{'upn__banding':"L"},
-			'Middle':{'upn__banding':"M"},
-			'Higher':{'upn__banding':"H"},
-			'No Band':{'upn__banding':"N"},
-			'Low Boys':{'upn__banding':"L",'upn__gender':"M"},
-			'Middle Boys':{'upn__banding':"M",'upn__gender':"M"},
-			'High Boys':{'upn__banding':"H",'upn__gender':"M"},
-			'Low Girls':{'upn__banding':"L",'upn__gender':"F"},
-			'Middle Girls':{'upn__banding':"M",'upn__gender':"F"},
-			'High Girls':{'upn__banding':"H",'upn__gender':"F"},
-			'Low PP Boys':{'upn__banding':"L",'upn__gender':"M",'upn__pp':True},
-			'Middle PP Boys':{'upn__banding':"M",'upn__gender':"M",'upn__pp':True},
-			'High PP Boys':{'upn__banding':"H",'upn__gender':"M",'upn__pp':True},
-			'Low PP Girls':{'upn__banding':"L",'upn__gender':"F",'upn__pp':True},
-			'Middle PP Girls':{'upn__banding':"M",'upn__gender':"F",'upn__pp':True},
-			'High PP Girls':{'upn__banding':"H",'upn__gender':"F",'upn__pp':True},
+			'Lower Extreme':{'upn__narrow_banding':"L"},
+			'Lower':{'upn__narrow_banding':"L"},
+			'Middle':{'upn__narrow_banding':"M"},
+			'Middle (Lower)':{'upn__narrow_banding':"Ml"},
+			'Middle (Higher)':{'upn__narrow_banding':"Mh"},
+			'Higher':{'upn__narrow_banding':"H"},
+			'Higher Extreme':{'upn__narrow_banding':"Hx"},
+			'No Band':{'upn__wide_banding':"N"},
+			'Low Boys':{'upn__wide_banding':"L",'upn__gender':"M"},
+			'Middle Boys':{'upn__wide_banding':"M",'upn__gender':"M"},
+			'High Boys':{'upn__wide_banding':"H",'upn__gender':"M"},
+			'Low Girls':{'upn__wide_banding':"L",'upn__gender':"F"},
+			'Middle Girls':{'upn__wide_banding':"M",'upn__gender':"F"},
+			'High Girls':{'upn__wide_banding':"H",'upn__gender':"F"},
+			'High Girls':{'upn__wide_banding':"H",'upn__gender':"F"},
+			'Low PP Boys':{'upn__wide_banding':"L",'upn__gender':"M",'upn__pp':True},
+			'Middle PP Boys':{'upn__wide_banding':"M",'upn__gender':"M",'upn__pp':True},
+			'High PP Boys':{'upn__wide_banding':"H",'upn__gender':"M",'upn__pp':True},
+			'Low PP Girls':{'upn__wide_banding':"L",'upn__gender':"F",'upn__pp':True},
+			'Middle PP Girls':{'upn__wide_banding':"M",'upn__gender':"F",'upn__pp':True},
+			'High PP Girls':{'upn__wide_banding':"H",'upn__gender':"F",'upn__pp':True},
 			}
 	elif class_of_filters=="att8bucket":
 		returnDict= {'All':{},
@@ -275,10 +280,16 @@ def get_default_filters_dict(class_of_filters,measure,**filters):
 			}
 	elif class_of_filters=="banding":
 		returnDict= {'All':{},
-			'Lower':{'upn__banding':'L'},
-			'Middle':{'upn__banding':'M'},
-			'Upper/High':{'upn__banding':'H'},
-			'No Banding':{'upn__banding':'N'},
+			'All Lower':{'upn__wide_banding':'L'},
+			'Lower Extreme':{'upn__narrow_banding':'Lx'},
+			'Lower':{'upn__narrow_banding':'L'},
+			'All Middle':{'upn__wide_banding':'M'},
+			'Middle (Lower)':{'upn__narrow_banding':'Ml'},
+			'Middle (Higher)':{'upn__narrow_banding':'Mh'},
+			'All Higher':{'upn__wide_banding':'H'},
+			'Higher':{'upn__narrow_banding':'H'},
+			'Higher Extreme':{'upn__narrow_banding':'Hx'},
+			'No Banding':{'upn__wide_banding':'N'},
 			}
 	elif class_of_filters=="subject_blocks":
 		returnDict= {'All':{},
@@ -1026,13 +1037,26 @@ class student(models.Model):
 		help_text= "The student's average reading and maths score at the end of\
 			 KS2")
 
-	bands=(
+	wide_bands=(
 	("H","Upper/High Ability"),
 	("M","Middle Ability"),
 	("L","Lower Ability"),
 	("N","No data"))
-	banding=models.CharField(max_length=1,choices=bands, help_text="The ability\
-		 grouping the student belongs to.")
+
+	narrow_bands=(
+	("Hx","Extremely High Ability"),
+	("H","Upper/High Ability"),
+	("Mh","Middle Ability, Higher division"),
+	("M","Middle Ability"),
+	("Ml","Middle Ability, Lower division"),
+	("L","Lower Ability"),
+	("Lx","Extremely Low Ability"),
+	("N","No data"))
+
+	wide_banding=models.CharField(max_length=1,choices=wide_bands,
+	 help_text="The wider ability grouping the student belongs to.",default="N")
+	narrow_banding=models.CharField(max_length=2,choices=narrow_bands,
+	 help_text="The finer ability grouping the student belongs to.",default="N")
 
 	eal=models.BooleanField(help_text="Whether the student has a native \
 		language other than English.")

@@ -173,13 +173,29 @@ def importPrompt(request):
 				try:
 					#formatting banding
 					if stu['banding']=="Lower":
-						band="L"
-					elif stu['banding']=="Upper/High":
-						band="H"
+						narrow_band="L"
+						wide_band="L"
+					elif stu['banding']=="Lower (extreme)":
+						narrow_band="Lx"
+						wide_band="L"
+					elif stu['banding']=="Higher (extreme)":
+						narrow_band="Hx"
+						wide_band="H"
+					elif stu['banding']=="Higher":
+						narrow_band="H"
+						wide_band="H"
 					elif stu['banding']=="Middle":
-						band="M"
+						narrow_band="M"
+						wide_band="M"
+					elif stu['banding']=="Middle (Higher)":
+						narrow_band="Mh"
+						wide_band="M"
+					elif stu['banding']=="Middle (Lower)":
+						narrow_band="Ml"
+						wide_band="M"
 					else:
-						band="N"
+						narrow_band="N"
+						wide_band="N"
 					if stu['attendance']=="Expected":
 						attendance="EA"
 					elif stu['attendance']=="Persistent Absence":
@@ -210,7 +226,8 @@ def importPrompt(request):
 						ks2_reading=stu['ks2_reading'],
 						ks2_maths=stu['ks2_maths'],
 						ks2_average=stu['ks2_average'],
-						banding=band,
+						narrow_banding=narrow_band,
+						wide_banding=wide_band,
 						eal=stu['eal']=="Yes",
 						pp=stu['pp']=="Yes",
 						sen=stu['sen'][0],
