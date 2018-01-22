@@ -741,22 +741,35 @@ def get_standard_table(view_focus,view_rows,view_cols,cohort="",
 start_dd="",**filters):
 	if "name" in filters:
 		filters[view_focus+"__name"]=filters.pop("name")
-
 	#get row filters
 	if cohort:
 		row_filters=get_default_filters_dict(view_rows,"progress",cohort=cohort,
 			**filters)
+		if "datadrop" in filters:
+			last_dd=filters.pop("datadrop")
+		elif "datadrop__name" in filters:
+			last_dd=filters.pop("datadrop__name")
+			last_dd=datadrop.objects.get(name=last_dd,cohort=cohort)
+		else:
+			last_dd=datadrop.objects.filter(cohort=cohort).latest('date')
 	else:
 		row_filters=get_default_filters_dict(view_rows,"progress",**filters)
+		if "datadrop" in filters:
+			last_dd=filters.pop("datadrop")
+		elif "datadrop__name" in filters:
+			last_dd=filters.pop("datadrop__name")
+			last_dd=datadrop.objects.get(name=last_dd)
+		else:
+			last_dd=datadrop.objects.all().latest('date')
 
 	#create output dataframe and list of filter sets for columns
 	out=pd.DataFrame()
 	if cohort and view_cols!="analysis":
-		datadrop_list=datadrop.objects.filter(cohort=cohort)\
-			.order_by('-date')[:3][::-1][::-1]
+		datadrop_list=datadrop.objects.filter(cohort=cohort,\
+			date__lte=last_dd.date).order_by('date')[:3][::-1]
 	elif view_cols=="analysis":
-		datadrop_list=datadrop.objects.filter(cohort=cohort)\
-			.order_by('-date')[:2]
+		datadrop_list=datadrop.objects.filter(cohort=cohort,\
+			date__lte=last_dd.date).order_by('date')[:2]
 	else:
 		datadrop_list=None
 

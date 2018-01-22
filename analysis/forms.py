@@ -192,7 +192,8 @@ class standardTableForm_datadrop(forms.Form):
 			else:
 				dclasses[clsgp.cohort.__str__()+","+sub.name]=[clsgp.class_code]
 		list_classes.append((clsgp.class_code,clsgp.class_code))
-	yeargroup_selected=forms.ChoiceField(choices=([(year,year) for year in years]))
+	yeargroup_selected=forms.ChoiceField(
+		choices=([(year,year) for year in years]),required=False)
 	datadrop_selected=forms.ChoiceField(choices=(list_drops))
 	subject_selected=forms.ChoiceField(choices=(list_subs),required=False)
 	classgroup_selected=forms.ChoiceField(choices=(list_classes),required=False)
