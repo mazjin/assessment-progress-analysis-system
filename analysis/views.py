@@ -8,8 +8,8 @@ import sqlite3
 import time
 import pandas as pd
 import numpy as np
-from .colourCodingRules import colour_progress,colour_pp_gap,colour_pp_gap_df,\
-	colour_progress_df,colour_mx_EAP
+from .colourCodingRules import *#colour_eap,colour_progress,colour_pp_gap,colour_pp_gap_df,\
+	#colour_progress_df,colour_mx_EAP
 import seaborn as sns
 import io
 from django.apps import apps
@@ -716,23 +716,26 @@ def getInterrogatorOutput(form):
 def get_formatted_output_table(form):
 	from .forms import interrogatorForm
 	outputTable=getInterrogatorOutput(form)
-	if form.cleaned_data.get("val_choice")!="ppGap":
-		if (form.cleaned_data.get('residual_toggle_row') and form.cleaned_data.get('residual_toggle_col')) or (not form.cleaned_data.get('residual_toggle_row') and not form.cleaned_data.get('residual_toggle_col')):
-			outputTable=outputTable.style.apply(colour_progress_df,axis=None)
-			#outputTable=outputTable.style.bar(align='mid',color=['red','green'])
 
-		elif form.cleaned_data.get('residual_toggle_row'):
-			outputTable=outputTable.style.apply(colour_progress,axis=0)
-		else:
-			outputTable=outputTable.style.apply(colour_progress,axis=1)
-
+	if (form.cleaned_data.get('residual_toggle_row') and \
+	(form.cleaned_data.get('residual_toggle_col'))):
+		ax=None
+	elif (form.cleaned_data.get('residual_toggle_row')):
+		ax=0
 	else:
-		if (form.cleaned_data.get('residual_toggle_row') and form.cleaned_data.get('residual_toggle_col')) or (not form.cleaned_data.get('residual_toggle_row') and not form.cleaned_data.get('residual_toggle_col')):
-			outputTable=outputTable.style.apply(colour_pp_gap_df,axis=None)
-		elif form.cleaned_data.get('residual_toggle_row'):
-			outputTable=outputTable.style.apply(colour_pp_gap,axis=0)
-		else:
-			outputTable=outputTable.style.apply(colour_pp_gap,axis=1)
+		ax=1
+
+	if form.cleaned_data.get("calc_gap") and not \
+	(form.cleaned_data.get('residual_toggle_row') or \
+	form.cleaned_data.get('residual_toggle_col')):
+		outputTable=outputTable.style.apply(colour_gap,axis=ax)
+	elif form.cleaned_data.get("val_choice")=="ach_eap" and not \
+	(form.cleaned_data.get('residual_toggle_row') or \
+	form.cleaned_data.get('residual_toggle_col')):
+		outputTable=outputTable.style.apply(colour_eap,axis=ax,\
+		exc=form.cleaned_data.get("only_exceeding"))
+	else:
+		outputTable=outputTable.style.apply(colour_progress,axis=ax)
 
 	outputTable=outputTable.highlight_null(null_color="grey")
 	return outputTable
@@ -1008,7 +1011,7 @@ def get_formatted_standard_view_table(request,focus):
 	if request.session['col_type']=="attainment":
 		outputTableSt=outputTable.style.apply(colour_mx_EAP,axis=0)
 	elif request.session['col_type']=="sheet":
-		outputTableSt=outputTable.style.apply(colour_progress,axis=0)
+		outputTableSt=outputTable.style.apply(colour_mixed,axis=None)
 	else:
 		outputTableSt=outputTable.style.apply(colour_progress,axis=0)
 	outputTableSt.set_table_attributes('class="table table-striped\
