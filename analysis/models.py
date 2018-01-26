@@ -251,7 +251,7 @@ def get_default_filters_dict(class_of_filters,measure,**filters):
 			'NSEN':{'upn__sen':"N"},
 			'KSEN':{'upn__sen':"K"},
 			'EHCP':{'upn__sen':"E"},
-			'Lower Extreme':{'upn__narrow_banding':"L"},
+			'Lower Extreme':{'upn__narrow_banding':"Lx"},
 			'Lower':{'upn__narrow_banding':"L"},
 			'Middle':{'upn__narrow_banding':"M"},
 			'Middle (Lower)':{'upn__narrow_banding':"Ml"},
