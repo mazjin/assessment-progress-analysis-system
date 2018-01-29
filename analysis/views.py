@@ -2,28 +2,32 @@ from django.shortcuts import render
 from .models import *
 from .sisraTools import *
 from selenium import webdriver
-#from .forms import importForm,interrogatorForm,standardTableForm_subject,\
-	#standardTableForm_classgroup,standardTableForm_datadrop
 from django.http import HttpResponseRedirect,HttpResponse
 from assessment import settings
 import sqlite3
 import time
 import pandas as pd
 import numpy as np
-from .colourCodingRules import colour_progress,colour_pp_gap,colour_pp_gap_df,colour_progress_df,colour_mx_EAP
+from .colourCodingRules import *#colour_eap,colour_progress,colour_pp_gap,colour_pp_gap_df,\
+	#colour_progress_df,colour_mx_EAP
 import seaborn as sns
 import io
 from django.apps import apps
 import pickle
 import os
-#from data_interrogator import views
 from xvfbwrapper import Xvfb
+from django.contrib.auth.decorators import login_required, user_passes_test
 
+def admin_check(user):
+	return user.is_staff
+
+def super_check(user):
+	return user.is_superuser
 # Create your views here.
-
 def index(request):
 	"""renders home page for assessment tools"""
 	return render(request, 'analysis/index.html')
+
 def faq(request):
 	"""renders faq page"""
 	return render(request,'analysis/faq.html')
@@ -97,6 +101,7 @@ def get_subject_type_info(subj_name):
 		faculty="Arts"
 	return ebacc_bool,option_bool,faculty,bkt
 
+@user_passes_test(super_check,login_url='/users/login/')
 def importPrompt(request):
 	from .forms import importForm
 	"""for none-POST requests, renders input form to start importation, for
@@ -176,13 +181,45 @@ def importPrompt(request):
 				try:
 					#formatting banding
 					if stu['banding']=="Lower":
-						band="L"
-					elif stu['banding']=="Upper/High":
-						band="H"
+						narrow_band="L"
+						wide_band="L"
+					elif stu['banding']=="Lower (extreme)":
+						narrow_band="Lx"
+						wide_band="L"
+					elif stu['banding']=="Higher (extreme)":
+						narrow_band="Hx"
+						wide_band="H"
+					elif stu['banding']=="Higher":
+						narrow_band="H"
+						wide_band="H"
 					elif stu['banding']=="Middle":
-						band="M"
+						narrow_band="M"
+						wide_band="M"
+					elif stu['banding']=="Middle (Higher)":
+						narrow_band="Mh"
+						wide_band="M"
+					elif stu['banding']=="Middle (Lower)":
+						narrow_band="Ml"
+						wide_band="M"
 					else:
-						band="N"
+						narrow_band="N"
+						wide_band="N"
+					if stu['attendance']=="Expected":
+						attendance="EA"
+					elif stu['attendance']=="Persistent Absence":
+						attendance="PA"
+					elif stu['attendance']=="Full":
+						attendance="FA"
+					elif stu['attendance']=="Concern":
+						attendance="AC"
+					else:
+						attendance="NA"
+
+					if stu['homestatus']=="Traveller":
+						homestatus="T"
+					else:
+						homestatus="N"
+
 					#determining appropriate reg group
 					reggroup,reg_created=classgroup.objects.get_or_create(
 						class_code="CLS"+stu['reg'].strip(),defaults={
@@ -192,16 +229,20 @@ def importPrompt(request):
 						surname=stu['surname'],
 						reg=reggroup,
 						gender=stu['gender'][0].upper(),
+						guest_status=stu['guest'],
 						cohort=stu['cohort'],
 						ks2_reading=stu['ks2_reading'],
 						ks2_maths=stu['ks2_maths'],
 						ks2_average=stu['ks2_average'],
-						banding=band,
+						narrow_banding=narrow_band,
+						wide_banding=wide_band,
 						eal=stu['eal']=="Yes",
 						pp=stu['pp']=="Yes",
 						sen=stu['sen'][0],
 						lac=stu['lac']=="Yes",
-						fsm_ever=stu['fsm_ever']=="Yes")
+						fsm_ever=stu['fsm_ever']=="Yes",
+						home_status=homestatus,
+						attendance=attendance)
 					created_student.save()
 
 					if reg_created:#add to output
@@ -473,6 +514,7 @@ def importPrompt(request):
 	context={'form':form}
 	return render(request,'analysis/importPrompt.html',context)
 
+@login_required(login_url='/users/login/')
 def interrogate(request):
 	from .forms import interrogatorForm
 	"""if not POST, renders blank interrogator page, if POST, retrieve and show
@@ -552,36 +594,113 @@ def getInterrogatorOutput(form):
 	if "cohort" in filters:
 		filters['datadrop__cohort']=filters['cohort']
 		filters.pop('cohort')
-	filters=clean_filters(filters,measure)
+	filters=clean_filters(filters)
 
 	#get dataframe of values matching every combination of filters
-	if measure in ['attainment8','progress8',
-		'en_att8','ma_att8','eb_att8','op_att8','eb_filled','op_filled','att8_progress']:
-		outputTable=datadrop.objects.all()[0].avg_headline_df(
-			cfilters,rfilters,filters,measure)
-	elif measure in ['meeting','exceeding']:
-		if measure=="exceeding":
-			outputTable=datadrop.objects.all()[0].pct_EAP_df(True,
-				cfilters,rfilters,filters)
-		else:
-			outputTable=datadrop.objects.all()[0].pct_EAP_df(False,
-				cfilters,rfilters,filters)
-	elif measure=="ppGap":
-		for g in ["PP","NPP"]:
-			for f in [cfilters,rfilters]:
-				if g in f:
-					f.pop(g,None)
-		outputTable=datadrop.objects.all()[0].avg_progress_df_filters_col(
-			cfilters,rfilters,**filters,upn__pp=False).replace(to_replace="-",
-			value=np.nan)-datadrop.objects.all()[0].\
-			avg_progress_df_filters_col(cfilters,rfilters,**filters,
-			upn__pp=True).replace(to_replace="-",value=np.nan)
-	elif measure in ['ebacc_entered','ebacc_achieved_std','ebacc_achieved_stg','basics_9to4','basics_9to5']:
-		outputTable=datadrop.objects.all()[0].pct_headline_df(
-			cfilters,rfilters,filters,measure)
+	# if measure in ['attainment8','progress8',
+	# 	'en_att8','ma_att8','eb_att8','op_att8','eb_filled','op_filled','att8_progress']:
+	# 	outputTable=df_measure(avg_measure,rfilters,cfilters,measure=measure,obj=headline,**filters)
+	# elif measure in ['meeting','exceeding']:
+	# 	if measure=="exceeding":
+	# 		outputTable=datadrop.objects.all()[0].pct_EAP_df(True,
+	# 			cfilters,rfilters,filters)
+	# 	else:
+	# 		outputTable=datadrop.objects.all()[0].pct_EAP_df(False,
+	# 			cfilters,rfilters,filters)
+	# elif measure=="ppGap":
+	# 	for g in ["PP","NPP"]:
+	# 		for f in [cfilters,rfilters]:
+	# 			if g in f:
+	# 				f.pop(g,None)
+	# 	outputTable=datadrop.objects.all()[0].avg_progress_df_filters_col(
+	# 		cfilters,rfilters,**filters,upn__pp=False).replace(to_replace="-",
+	# 		value=np.nan)-datadrop.objects.all()[0].\
+	# 		avg_progress_df_filters_col(cfilters,rfilters,**filters,
+	# 		upn__pp=True).replace(to_replace="-",value=np.nan)
+	# elif measure in ['ebacc_entered','ebacc_achieved_std','ebacc_achieved_stg','basics_9to4','basics_9to5']:
+	# 	outputTable=datadrop.objects.all()[0].pct_headline_df(
+	# 		cfilters,rfilters,filters,measure)
+	# else:
+	# 	outputTable=datadrop.objects.all()[0].avg_progress_df_filters_col(
+	# 		cfilters,rfilters,**filters)
+
+	gap_types={
+	    "pp":{
+	        "grp_type":"upn__pp",
+	        "grpA_values":False,
+	        "grpB_values":True,
+	    },
+	    "sen":{
+	        "grp_type":"upn__sen",
+	        "grpA_values":"N",
+	        "grpB_values":["E","K"],
+	    },
+	    "fsm_ever":{
+	        "grp_type":"upn__fsm_ever",
+	        "grpA_values":False,
+	        "grpB_values":True,
+	    },
+	    "gen":{
+	        "grp_type":"upn__gender",
+	        "grpA_values":"M",
+	        "grpB_values":"F",
+	    },
+	    "eal":{
+	        "grp_type":"upn__eal",
+	        "grpA_values":False,
+	        "grpB_values":True,
+	    },
+	    "lac":{
+	        "grp_type":"upn__lac",
+	        "grpA_values":False,
+	        "grpB_values":True,
+	    },
+	    "hst":{},
+	}
+
+	#set comparison and alter measure for measures that don't directly correspond to
+	#filter quantities
+	comparison=None
+	if measure =="ach_eap":
+	    measure="value__progress_value"
+	    comparison="EAPgrade__progress_value"
+	elif measure=="passing":
+	    measure="value__progress_value"
+	    comparison="method__pass_grade__progress_value"
+	elif measure=="ach_progress":
+	    measure="progress"
+	    comparison=0.001
+	elif measure in ['ebacc_entered','ebacc_achieved_std','ebacc_achieved_stg',
+	'basics_9to4','basics_9to5']:
+	    comparison=True
+
+	filters['obj']=get_measure_obj(measure)
+	filters['measure']=measure
+	if comparison:
+	    filters['comparison']=comparison
+
+	student_residual=form.cleaned_data.get('student_residual')
+	if form.cleaned_data.get('only_exceeding'):
+		filters['only_exceeding']=form.cleaned_data.get('only_exceeding')
+
+	#set base function
+	if not comparison is None:
+	    function=pct_measure
+	elif student_residual:
+	    function=residual_measure
 	else:
-		outputTable=datadrop.objects.all()[0].avg_progress_df_filters_col(
-			cfilters,rfilters,**filters)
+	    function=avg_measure
+
+
+
+	# if gap, set function as gap_measure and calc function as base function
+	if form.cleaned_data.get('calc_gap'):
+	    filters={**filters,**gap_types[form.cleaned_data.get('gap_type')]}
+	    filters['calc_function']=function
+	    function=gap_measure
+
+	outputTable=df_measure(function,rfilters,cfilters,**filters)
+
 	#format & apply colour coding
 	outputTable.replace(to_replace="-",value=np.nan,inplace=True)
 	if form.cleaned_data.get('residual_toggle_col'):
@@ -598,182 +717,198 @@ def getInterrogatorOutput(form):
 		for c in outputTable.index.values:
 			residual_mask.loc[c]=outputTable.loc['All']
 		outputTable=outputTable-residual_mask
+	if form.cleaned_data.get("grade_filter"):
+		outputTable=avg_grade_filter_points(outputTable,measure)
 	return outputTable
 
 def get_formatted_output_table(form):
 	from .forms import interrogatorForm
 	outputTable=getInterrogatorOutput(form)
-	if form.cleaned_data.get("val_choice")!="ppGap":
-		if (form.cleaned_data.get('residual_toggle_row') and form.cleaned_data.get('residual_toggle_col')) or (not form.cleaned_data.get('residual_toggle_row') and not form.cleaned_data.get('residual_toggle_col')):
-			outputTable=outputTable.style.apply(colour_progress_df,axis=None)
-			#outputTable=outputTable.style.bar(align='mid',color=['red','green'])
 
-		elif form.cleaned_data.get('residual_toggle_row'):
-			outputTable=outputTable.style.apply(colour_progress,axis=0)
-		else:
-			outputTable=outputTable.style.apply(colour_progress,axis=1)
-
+	if (form.cleaned_data.get('residual_toggle_row') and \
+	(form.cleaned_data.get('residual_toggle_col'))):
+		ax=None
+	elif (form.cleaned_data.get('residual_toggle_row')):
+		ax=0
 	else:
-		if (form.cleaned_data.get('residual_toggle_row') and form.cleaned_data.get('residual_toggle_col')) or (not form.cleaned_data.get('residual_toggle_row') and not form.cleaned_data.get('residual_toggle_col')):
-			outputTable=outputTable.style.apply(colour_pp_gap_df,axis=None)
-		elif form.cleaned_data.get('residual_toggle_row'):
-			outputTable=outputTable.style.apply(colour_pp_gap,axis=0)
-		else:
-			outputTable=outputTable.style.apply(colour_pp_gap,axis=1)
+		ax=1
+
+	if form.cleaned_data.get("calc_gap") and not \
+	(form.cleaned_data.get('residual_toggle_row') or \
+	form.cleaned_data.get('residual_toggle_col')):
+		outputTable=outputTable.style.apply(colour_gap,axis=ax)
+	elif form.cleaned_data.get("val_choice")=="ach_eap" and not \
+	(form.cleaned_data.get('residual_toggle_row') or \
+	form.cleaned_data.get('residual_toggle_col')):
+		outputTable=outputTable.style.apply(colour_eap,axis=ax,\
+		exc=form.cleaned_data.get("only_exceeding"))
+	else:
+		outputTable=outputTable.style.apply(colour_progress,axis=ax)
 
 	outputTable=outputTable.highlight_null(null_color="grey")
 	return outputTable
 
 def get_standard_table(view_focus,view_rows,view_cols,cohort="",
 start_dd="",**filters):
-	"""view focus can be "classgroup", "subject" or "datadrop".
-	rows can be "student" (VGs),"classgroup","yeargroup", "datadrop",
-	or "subject".
-	columns can be "progress","attainment" (EAP), "headline" (A8/P8) or
-	(for datadrops) "all" ."""
-
-	extra_filters={}
-
-	if view_rows!="yeargroup" and cohort!="":
-		filters['cohort']=cohort
-	if view_focus=="datadrop":
-		if "subject__name" in filters:
-			extra_filters['subject__name']=filters.pop('subject__name')
-		if "classgroup__class_code" in filters:
-			extra_filters['classgroup__class_code']=filters.pop('classgroup__class_code')
-
-
-	#get focus object and datadrop (if applicable)
-
-	focus_model=apps.get_model(model_name=view_focus,app_label="analysis")
-	focus_object=focus_model.objects.filter(**filters)[0]
-	filters={**filters,**extra_filters}
-	if view_focus=="classgroup":
-		focus_label=focus_object.class_code
-	elif view_focus=="datadrop" and view_rows=="yeargroup":
-		focus_label="Latest Ddp"
+	if "name" in filters:
+		filters[view_focus+"__name"]=filters.pop("name")
+	#get row filters
+	if cohort:
+		row_filters=get_default_filters_dict(view_rows,"progress",cohort=cohort,
+			**filters)
+		if "datadrop" in filters:
+			last_dd=filters.pop("datadrop")
+		elif "datadrop__name" in filters:
+			last_dd=filters.pop("datadrop__name")
+			last_dd=datadrop.objects.get(name=last_dd,cohort=cohort)
+		else:
+			last_dd=datadrop.objects.filter(cohort=cohort).latest('date')
 	else:
-		focus_label=focus_object.name
+		row_filters=get_default_filters_dict(view_rows,"progress",**filters)
+		if "datadrop" in filters:
+			last_dd=filters.pop("datadrop")
+		elif "datadrop__name" in filters:
+			last_dd=filters.pop("datadrop__name")
+			last_dd=datadrop.objects.get(name=last_dd)
+		else:
+			last_dd=datadrop.objects.all().latest('date')
 
-	if "name" in filters.keys(): #and view_focus=="subject":
-		filters[view_focus + "__name"]=filters.pop('name')
-	#elif "name" in filters.keys() and view_focus=="datadrop":
-		#filters.pop('name')
-	if "class_code" in filters.keys():
-		filters[view_focus]=filters.pop('class_code')
-	if view_cols=="headline" and view_focus=="subject" and view_rows!="yeargroup":
-		filters['upn__grade__' + view_focus]=focus_object
-	elif view_rows!="yeargroup":
-		filters[view_focus]=focus_object
-	if view_rows=="student" and "cohort" in filters.keys():
-		filters["upn__cohort"]=cohort
-		filters.pop("cohort")
-	if view_cols=="sheet":
-		output_df=datadrop.objects.all()[0].analysis_sheet_df(view_rows,**filters)
-		return output_df
-
-	output_df=pd.DataFrame()
-
-	#get row filter conditions
-	if view_cols == "headline":
-		measure="progress8"
+	#create output dataframe and list of filter sets for columns
+	out=pd.DataFrame()
+	if cohort and view_cols!="analysis":
+		datadrop_list=datadrop.objects.filter(cohort=cohort,\
+			date__lte=last_dd.date).order_by('date')[:3][::-1]
+	elif view_cols=="analysis":
+		datadrop_list=datadrop.objects.filter(cohort=cohort,\
+			date__lte=last_dd.date).order_by('date')[:2]
 	else:
-		measure=view_cols
-	if view_rows=="yeargroup" and view_focus=="datadrop":
-		row_filters=getLatestDatadropPerYeargroup()
-	else:
-		row_filters=get_default_filters_dict(view_rows,measure,**filters)
-	if view_cols=="headline" and view_focus!="datadrop":
-		filters['upn__grade__' + view_focus]=focus_object
-		filters.pop(view_focus)
+		datadrop_list=None
 
-	if "upn__cohort" not in filters.keys() and "cohort" in filters.keys():
-		filters["upn__cohort"]=cohort
-		filters.pop("cohort")
+	if "class_code" in filters :
+		filters["classgroup__class_code"]=filters.pop("class_code")
 
-	#set columns
-	if view_focus=="datadrop" or view_rows=="yeargroup":
-		if view_rows=="yeargroup" and view_focus!='datadrop':
-			new_rf={"All":{}}
-			for y,inner_dict in row_filters.items():
-				for val in inner_dict.values():
-					new_rf[y]={'datadrop':datadrop.objects.filter(cohort=val).order_by("date")[0]}
-			row_filters=new_rf
-		if view_cols=="progress" or view_cols=="all":
-			output_df[focus_label + " Avg Progress"] =\
-				focus_object.avg_progress_series(group_filters_dict=row_filters,filters=filters)
-			#avg=output_df[focus_object.name +" Avg Progress"].mean()
-			#output_df[focus_object.name +" Residual"] = \
-				#output_df[focus_object.name+" Avg Progress"] - output_df.loc["All",focus_object.name+" Avg Progress"]
-			for i in output_df.index:
-				try:
-					output_df.loc[i,focus_label +" Difference"]=\
-					output_df.loc[i,focus_label +" Avg Progress"] -\
-					output_df.loc["All",focus_label +" Avg Progress"]
-				except:
-					output_df.loc[i,focus_label +" Difference"]=""
-		if view_cols=="attainment" or view_cols=="all":
-			output_df[focus_label+" >=EAP"]=\
-				focus_object.pct_EAP_series(False,row_filters,filters)
-			output_df[focus_label+" >EAP"]=\
-				focus_object.pct_EAP_series(True,row_filters,filters)
+	#for each entry in column filter list, calculate and insert column series
+	#	into output df
 
-		if view_cols=="headline" or view_cols=="all":
-			output_df[focus_label+" Att8"]=\
-				focus_object.avg_headline_series(row_filters,filters,"attainment8")
-			output_df[focus_label+" P8"]=\
-				focus_object.avg_headline_series(row_filters,filters,"progress8")
-	else:
-		# get starting datadrop & get list of datadrops to use
-		if start_dd=="":
-			start_dd="Y7 DD2"
-		start_dd=datadrop.objects.filter(cohort=cohort,
-			name=start_dd).first()
-		if start_dd is None:
-			start_dd=datadrop.objects.filter(cohort=cohort).order_by('date')[0]
-		datadrops=datadrop.objects.filter(date__gte=start_dd.date,cohort=cohort).order_by('date')
-		if len(datadrops)>=3:
-			datadrops=list(datadrops)[-3:]
-		#populate dataframe
-		if view_cols=="progress":
-			for d in datadrops:
-				filters['datadrop']=d
-				output_df[d.name + " Avg Progress"] =\
-					focus_object.avg_progress_series(group_filters_dict=row_filters,filters=filters)
-				#avg=output_df[d.name +" Avg Progress"].mean()
-				# output_df[d.name +" Residual"] = \
-					# output_df[d.name+" Avg Progress"] - output_df.loc["All",d.name+" Avg Progress"]
-				for i in output_df.index:
-					try:
-						output_df.loc[i,d.name +" Difference"]=\
-						output_df.loc[i,d.name +" Avg Progress"] -\
-						output_df.loc["All",d.name +" Avg Progress"]
-					except:
-						output_df.loc[i,d.name +" Difference"]="-"
-
-		elif view_cols=="attainment":
-			for d in datadrops:
-				filters['datadrop']=d
-				output_df[d.name+" >=EAP"]=\
-					focus_object.pct_EAP_series(False,row_filters,filters)
-				output_df[d.name+" >EAP"]=\
-					focus_object.pct_EAP_series(True,row_filters,filters)
-
-		elif view_cols=="headline":
-			if "subject" in filters:
-				filters.pop('subject')
-			if "subject__name" in filters:
-				filters.pop('subject__name')
-			for d in datadrops:
-				filters['datadrop']=d
-				output_df[d.name+" Att8"]=\
-					focus_object.avg_headline_series(row_filters,filters,"attainment8")
-				output_df[d.name+" P8"]=\
-					focus_object.avg_headline_series(row_filters,filters,"progress8")
-	output_df=output_df.reindex(index=row_filters.keys())
-	return output_df
-
-
+	if view_cols=="progress":
+		if datadrop_list:
+			for dd in datadrop_list:
+				out[dd.name+" Avg Progress"]=series_measure(avg_measure,row_filters,
+					datadrop=dd,measure="progress",obj=grade,**filters)
+				out[dd.name+" Group Diff."]=out[dd.name +" Avg Progress"]-out.\
+					loc["All",dd.name +" Avg Progress"]
+				out[dd.name +" Residual"]=series_measure(residual_measure,
+					row_filters,datadrop=dd,measure="progress",obj=grade,**filters)
+		else:
+			out["Avg Progress"]=series_measure(avg_measure,row_filters,
+				measure="progress",obj=grade,**filters)
+			out["Group Diff."]=out["Avg Progress"]-out.\
+				loc["All","Avg Progress"]
+			out["Residual"]=series_measure(residual_measure,
+				row_filters,measure="progress",obj=grade,**filters)
+	elif view_cols=="sheet":
+		out['#']=series_measure(count_measure,row_filters,
+		datadrop=datadrop_list[-1],obj=grade,**filters)
+		out['Avg Baseline Attainment Score']=series_measure(avg_measure,
+			row_filters, datadrop=datadrop_list[0],
+			measure="baseline_grade__att8_value",obj=grade,**filters)
+		if len(datadrop_list)>1:
+			out['Avg '+datadrop_list[1].name + ' Attainment Score']=\
+				series_measure(avg_measure,row_filters,
+				datadrop=datadrop_list[1],obj=grade,
+				measure="value__att8_value",**filters)
+		out['Avg '+datadrop_list[0].name + ' Attainment Score']=series_measure(
+			avg_measure,row_filters, datadrop=datadrop_list[0],
+			measure="value__att8_value",obj=grade,**filters)
+		out['Avg Estimated Attainment Score']=series_measure(avg_measure,
+			row_filters, datadrop=datadrop_list[0],
+			measure="EAPgrade__att8_value",obj=grade,**filters)
+		out['Residual Attainment Score']=series_measure(residual_measure,
+			row_filters, datadrop=datadrop_list[0],
+			measure="value__att8_value",obj=grade,**filters)
+		out['Avg Baseline Attainment +=- Score']=series_measure(avg_measure,
+			row_filters, datadrop=datadrop_list[0],
+			measure="baseline_grade__progress_value",obj=grade,**filters)
+		if len(datadrop_list)>1:
+			out['Avg '+datadrop_list[1].name + ' Attainment +=- Score']=\
+				series_measure(avg_measure,row_filters,
+				datadrop=datadrop_list[1],obj=grade,
+				measure="value__progress_value",**filters)
+		out['Avg '+datadrop_list[0].name + ' Attainment +=- Score']=\
+			series_measure(avg_measure,row_filters, datadrop=datadrop_list[0],
+			measure="baseline_grade__progress_value",obj=grade,**filters)
+		out['Avg Estimated Attainment +=- Score']=series_measure(avg_measure,
+			row_filters, datadrop=datadrop_list[0],
+			measure="EAPgrade__progress_value",obj=grade,**filters)
+		out['Residual Attainment +=- Score']=series_measure(residual_measure,
+			row_filters, datadrop=datadrop_list[0],
+			measure="value__progress_value",obj=grade,**filters)
+		if len(datadrop_list)>1:
+			out['Avg '+datadrop_list[1].name + ' Attainment +=- Score']=\
+				series_measure(avg_measure,row_filters,
+				datadrop=datadrop_list[1],obj=grade,
+				measure="value__progress_value",**filters)
+		out['Avg '+datadrop_list[0].name + ' Attainment +=- Score']=\
+			series_measure(avg_measure,row_filters, datadrop=datadrop_list[0],
+			measure="value__progress_value",obj=grade,**filters)
+		out['Avg Estimate Attainment +=- Score']=series_measure(avg_measure,
+			row_filters, datadrop=datadrop_list[0],
+			measure="EAPgrade__progress_value",obj=grade,**filters)
+		if len(datadrop_list)>1:
+			out['Avg '+datadrop_list[1].name + ' Progress Score']=\
+				series_measure(avg_measure,row_filters,
+				datadrop=datadrop_list[1],obj=grade,
+				measure="progress",**filters)
+		out['Avg '+datadrop_list[0].name + ' Progress Score']=\
+			series_measure(avg_measure,row_filters,
+			datadrop=datadrop_list[0],obj=grade,
+			measure="progress",**filters)
+		out['Residual Progress']=\
+			series_measure(residual_measure,row_filters,
+			datadrop=datadrop_list[0],measure="progress",obj=grade,**filters)
+		out=avg_grade_filter_points(out)
+	elif view_cols=="attainment":
+		if datadrop_list:
+			for dd in datadrop_list:
+				out['% >= Estimates '+ dd.name]=series_measure(pct_measure,
+					row_filters,datadrop=dd, measure="value__progress_value",
+					comparison="EAPgrade__progress_value",obj=grade,**filters)
+				out['% > Estimates '+ dd.name]=series_measure(pct_measure,
+					row_filters,datadrop=dd, measure="value__progress_value",
+					comparison="EAPgrade__progress_value",obj=grade,
+					only_exceeding=True,**filters)
+		else:
+			out['% >= Estimates']=series_measure(pct_measure,
+				row_filters, measure="value__progress_value",
+				comparison="EAPgrade__progress_value",obj=grade,**filters)
+			out['% > Estimates']=series_measure(pct_measure,
+				row_filters, measure="value__progress_value",
+				comparison="EAPgrade__progress_value",obj=grade,
+				only_exceeding=True,**filters)
+	elif view_cols=="headline":
+		filters=clean_filters(filters)
+		for row in row_filters:
+			row_filters[row]=clean_filters(row_filters[row])
+		if datadrop_list:
+			for dd in datadrop_list:
+				out[dd.name+" Avg. Total Attainment 8"]=series_measure(
+					avg_measure, row_filters,measure="attainment8",obj=headline,
+					datadrop=dd,**filters
+				)
+				out[dd.name+" Avg. Progress 8"]=series_measure(
+					avg_measure,row_filters,measure="progress8",obj=headline,
+					datadrop=dd,**filters
+				)
+		else:
+			out["Avg. Total Attainment 8"]=series_measure(
+				avg_measure, row_filters,measure="attainment8",obj=headline,
+				**filters
+			)
+			out["Avg. Progress 8"]=series_measure(
+				avg_measure,row_filters,measure="progress8",obj=headline,
+				**filters
+			)
+	return out
 
 def stdTable_gen_getsession(request,focus,row_type,col_type):
 	request.session['row_type']=row_type
@@ -792,6 +927,7 @@ def stdTable_gen_getsession(request,focus,row_type,col_type):
 
 	return HttpResponseRedirect('/view/'+focus+'/')
 
+@login_required(login_url='/users/login/')
 def stdTable_gen(request,focus):
 	from .forms import standardTableForm_subject,standardTableForm_classgroup,\
 		standardTableForm_datadrop
@@ -883,7 +1019,7 @@ def get_formatted_standard_view_table(request,focus):
 	if request.session['col_type']=="attainment":
 		outputTableSt=outputTable.style.apply(colour_mx_EAP,axis=0)
 	elif request.session['col_type']=="sheet":
-		outputTableSt=outputTable.style.apply(colour_progress,axis=0)
+		outputTableSt=outputTable.style.apply(colour_mixed,axis=None)
 	else:
 		outputTableSt=outputTable.style.apply(colour_progress,axis=0)
 	outputTableSt.set_table_attributes('class="table table-striped\
@@ -891,12 +1027,13 @@ def get_formatted_standard_view_table(request,focus):
 	return outputTable,outputTableSt
 
 def getLatestDatadropPerYeargroup():
-	row_filter={'All':{},}
+	row_filter=[]
 	for y in yeargroup.objects.all().order_by('-current_year'):
 		dd=datadrop.objects.filter(cohort=y)
 		if dd.count()>0:
 			dd=dd.order_by('-date')[0]
-			row_filter[y.__str__()+", "+dd.name]={'upn__cohort':y,'datadrop':dd}
+			row_filter.append(dd)
+			#row_filter[y.__str__()+", "+dd.name]={'upn__cohort':y,'datadrop':dd}
 	return row_filter
 
 def export_excel(output_data,filename):

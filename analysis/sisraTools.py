@@ -391,7 +391,7 @@ def getStudentData(browser,year,dd):
 			studentDict[stu.get_attribute('value')]=stu.text
 
 	#initialising dataframes to be returned
-	student_df=pd.DataFrame(columns=['upn','forename','surname','gender','reg',
+	student_df=pd.DataFrame(columns=['upn','forename','surname','gender','reg','guest',
 		'banding','pp','eal','fsm_ever','lac','sen','homestatus','attendance',
 		'ks2_reading','ks2_maths'])
 	grades_df=pd.DataFrame(columns=['upn','Qualification Name','Basket',
@@ -418,12 +418,23 @@ def getStudentData(browser,year,dd):
 		#print(student_namestring)
 		split_namestring=student_namestring.split(" ")
 		upn=split_namestring[-1]
-		if split_namestring[-3]=="(Guest)":
-			forename=split_namestring[-4]
-			surname=" ".join(split_namestring[0:-4])
+		guest=(split_namestring[-3]=="(Guest)")
+		if guest:
+			split_namestring=split_namestring[:-3]
 		else:
-			forename=split_namestring[-3]
-			surname=" ".join(split_namestring[0:-3])
+			split_namestring=split_namestring[:-2]
+		name_break=split_namestring.index(";")
+		surname=" ".join(split_namestring[:name_break])
+		forename=" ".join(split_namestring[name_break+1:])
+
+		# if split_namestring[-3]=="(Guest)":
+		# 	forename=split_namestring[-4]
+		# 	surname=" ".join(split_namestring[0:-4])
+		# 	guest=True
+		# else:
+		# 	forename=split_namestring[-3]
+		# 	surname=" ".join(split_namestring[0:-3])
+		# 	guest=False
 		#go to relevant student profile
 		wbdsel(browser.find_element_by_css_selector('#ReportOptions_Stu_ID'))\
 			.select_by_value(str(key))
@@ -451,6 +462,7 @@ def getStudentData(browser,year,dd):
 		studentEntry=pd.Series({'upn':upn,'forename':forename,'surname':surname,
 			'gender':vgFilters['Gender'],
 			'reg':vgFilters['Reg Group'],
+			'guest':guest,
 			'banding':vgFilters['Banding'],
 			'pp':vgFilters['PP'],
 			'eal':vgFilters['EAL'],
@@ -519,8 +531,8 @@ def getStudentData(browser,year,dd):
 	# grades_df['Compare Grade'].fillna("X",inplace=True)
 
 	#may reimplement these, but remove for now
-	del student_df['attendance']
-	del student_df['homestatus']
+	# del student_df['attendance']
+	# del student_df['homestatus']
 	#calculate average ks2 for students
 	student_df['ks2_average']=round((student_df['ks2_maths']+\
 		student_df['ks2_reading'])*10/2.0)/10.0

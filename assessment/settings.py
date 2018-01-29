@@ -40,6 +40,7 @@ INSTALLED_APPS = [
 
 	# my apps
 	"analysis",
+    "users",
 
 	#third party
 	"django_spaghetti",
@@ -107,7 +108,10 @@ AUTH_PASSWORD_VALIDATORS = [
         'NAME': 'django.contrib.auth.password_validation.NumericPasswordValidator',
     },
 ]
-
+AUTHENTICATION_BACKENDS=[
+    'django_auth_ldap.backend.LDAPBackend',
+    'django.contrib.auth.backends.ModelBackend'
+]
 
 # Internationalization
 # https://docs.djangoproject.com/en/1.11/topics/i18n/

@@ -21,5 +21,6 @@ from django.contrib import admin
 urlpatterns = [
     url(r'^admin/', admin.site.urls),
 	url(r'^plate/',include('django_spaghetti.urls')),
+    url(r'^users/',include('users.urls',namespace='users')),
 	url(r'',include('analysis.urls',namespace='analysis')),
 ]#+ static(settings.STATIC_URL, document_root=settings.STATIC_ROOT)

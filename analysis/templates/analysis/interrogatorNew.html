@@ -4,15 +4,45 @@
 {% load static from staticfiles %}
 
 {%block jquery%}
-	<script src="{% static 'interrogateScript.js' %}"> </script> 
+	<script src="{% static 'interrogateScript.js' %}"> </script>
 {% endblock jquery%}
+
+{% block css %}
+<style>
+#containerdiv {
+  width:87%;
+}
+#optionsBar{
+	float:left;
+	min-width: 100px;
+	max-width: 20%;
+}
+.checkbox>label{
+	border-radius: 6px;
+	padding:0px 20px;
+}
+select.form-control.disabled-exclusive{
+	background-color: #f2dede;
+	border-color:#a94442;
+	color:#a94442;
+}
+label.checkbox-exclusive{
+	/* border:1px solid #a94442; */
+	color:#ccc;
+	text-decoration: line-through;
+}
+
+
+</style>
+{% endblock css %}
 
 {% block header %}
 	<h2> Data Interrogator </h2>
 {% endblock header %}
 
 {% block content %}
-<div style="float: left;">
+<div id="optionsBar">
+	<div id="rowcolalert" class="alert alert-danger" role="alert" style="display:None;" >Selected row and column interfere!</div>
 	<form action="{% url 'analysis:interrogate'%}" method="post" class="form">
 		{% csrf_token %}
 		{% bootstrap_form form %}

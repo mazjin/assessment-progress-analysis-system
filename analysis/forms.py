@@ -29,25 +29,38 @@ class interrogatorForm(forms.Form):
 		)
 
 	VALUES=(#possible cell value queries
-		('progress','Progress Score'),
-		('meeting','Meeting/Exceeding EAP'),
-		('exceeding','Exceeding EAP'),
-		('attainment8','Attainment 8'),
-		('progress8','Progress 8'),
-		('att8_progress','Δ Attainment 8'),
-		('ppGap','Pupil Premium Gap'),
-		('en_att8','English Att8 Bucket'),
-		('ma_att8','Maths Att8 Bucket'),
-		('eb_att8','EBacc Att8 Bucket'),
-		('op_att8','Open Att8 Bucket'),
-		('eb_filled','Subjects in EBacc Bucket'),
-		('op_filled','Subjects in Open Bucket'),
-		('ebacc_entered','Entered for EBacc'),
-		('ebacc_achieved_std','Achieving EBacc (4+)'),
-		('ebacc_achieved_stg','Achieving EBacc (5+)'),
-		('basics_9to4','Basics 4+'),
-		('basics_9to5','Basics 5+'),
+		('progress','Progress (Avg)'),
+		('value__att8_value','Attainment (Avg)'),
+		('value__progress_value','Attainment +=- (Avg)'),
+		('ach_eap','EAP Achievement (%)'),
+		('attainment8','Attainment 8 (Avg)'),
+		('progress8','Progress 8 (Avg)'),
+		('att8_progress','Δ Attainment 8 (Avg)'),
+		('en_att8','English Att8 Bucket (Avg)'),
+		('ma_att8','Maths Att8 Bucket (Avg)'),
+		('eb_att8','EBacc Att8 Bucket (Avg)'),
+		('op_att8','Open Att8 Bucket (Avg)'),
+		('eb_filled','Subjects in EBacc Bucket (%)'),
+		('op_filled','Subjects in Open Bucket (%)'),
+		('ebacc_entered','Entered for EBacc (%)'),
+		('ebacc_achieved_std','Achieving EBacc (4+) (%)'),
+		('ebacc_achieved_stg','Achieving EBacc (5+) (%)'),
+		('basics_9to4','Basics 4+ (%)'),
+		('basics_9to5','Basics 5+ (%)'),
+		('passing','Achieving passes (%)'),
+		('ach_progress','+ Progress (%)'),
+
 		)
+	GAPS=(
+		('',"-------"),
+		('pp',"Pupil Premium (Non PP - PP)"),
+		('sen',"SEN (NSEN - KSEN and EHCP)"),
+		('fsm_ever','FSM Ever (Non FSM Ever - FSM Ever)'),
+		('gen',"Gender (Male-Female)"),
+		('eal',"EAL (Non EAL-EAL)"),
+		('lac',"Looked After (Non-LAC - LAC)"),
+
+	)
 
 
 	row_choice=forms.ChoiceField(label="Row Grouping",
@@ -59,10 +72,20 @@ class interrogatorForm(forms.Form):
 	val_choice=forms.ChoiceField(label="Cell Value Type",
 		choices=VALUES,required=True)
 
-	#returns table values as a residual from the "All" column/row
-	residual_toggle_col=forms.BooleanField(label="Calculate difference by col",
+	student_residual=forms.BooleanField(label="Calculate the student residual \
+		of the above value? (WARNING:SLOW)",required=False)
+
+	only_exceeding=forms.BooleanField(label="Only count students/grades\
+	 exceeding comparison value?",required=False)
+
+	calc_gap=forms.BooleanField(label="Calculate gap in measure?",
 		required=False)
-	residual_toggle_row=forms.BooleanField(label="Calculate difference by row",
+	gap_type=forms.ChoiceField(label="Gap Type",
+		required=False,choices=GAPS)
+	#returns table values as a residual from the "All" column/row
+	residual_toggle_col=forms.BooleanField(label="Calculate difference by col?",
+		required=False)
+	residual_toggle_row=forms.BooleanField(label="Calculate difference by row?",
 		required=False)
 
 	"""below options limit query to specific objects/groups"""
@@ -83,6 +106,9 @@ class interrogatorForm(forms.Form):
 		yeargroups",required=False)
 	match_datadrop_by_name=forms.BooleanField(label="Match Datadrop across \
 		yeargroups",required=False)
+
+	grade_filter=forms.BooleanField(label="Convert points to 9-1 grade\
+	 equivalents",required=False)
 
 class standardTableForm_subject(forms.Form):
 	dsubs={}
@@ -166,7 +192,8 @@ class standardTableForm_datadrop(forms.Form):
 			else:
 				dclasses[clsgp.cohort.__str__()+","+sub.name]=[clsgp.class_code]
 		list_classes.append((clsgp.class_code,clsgp.class_code))
-	yeargroup_selected=forms.ChoiceField(choices=([(year,year) for year in years]))
+	yeargroup_selected=forms.ChoiceField(
+		choices=([(year,year) for year in years]),required=False)
 	datadrop_selected=forms.ChoiceField(choices=(list_drops))
 	subject_selected=forms.ChoiceField(choices=(list_subs),required=False)
 	classgroup_selected=forms.ChoiceField(choices=(list_classes),required=False)

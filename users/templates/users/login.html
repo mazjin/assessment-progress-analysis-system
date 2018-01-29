@@ -1,0 +1,17 @@
+{% extends "analysis/base.html" %}
+
+{% block content %}
+  <p>Please log in with the username and password you use for accessing school systems. 
+  {%if form.errors %}
+  <p>There was an issue with your authorisation. Please check that your username and password are correct.</p>
+  {% endif %}
+
+  <form method="post" action="{% url 'users:login' %}">
+  {% csrf_token %}
+  {{form.as_p}}
+
+  <button name="submit">Log In</button>
+  <input type="hidden" name="next" value="{% url 'analysis:index' %}" />
+  </form>
+
+{% endblock content %}

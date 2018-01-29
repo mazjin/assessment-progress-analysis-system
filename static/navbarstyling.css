@@ -42,3 +42,7 @@
 	font-size:24px;
 	padding-top:9px;
 }
+
+.navbar a:hover{
+	cursor: pointer;
+}
