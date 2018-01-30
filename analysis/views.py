@@ -103,7 +103,7 @@ def get_subject_type_info(subj_name):
 @user_passes_test(super_check,login_url='/users/login/')
 def importPrompt(request):
 	from .forms import importForm
-	"""for none-POST requests, renders input form to start importation, for
+	"""for non-POST requests, renders input form to start importation, for
 	POST requests, imports data from SISRA using entered values"""
 	if request.method !="POST":
 		form=importForm()
@@ -534,9 +534,9 @@ def interrogate(request):
 	return render(request,'analysis/interrogatorNew.html',context)
 
 def getInterrogatorOutput(form):
-	from .forms import interrogatorForm
-	"""given valid form from interrogator template, retrieves and formats
+	"""given valid form from interrogator template, constructs and populates
 	output dataframe"""
+	from .forms import interrogatorForm
 	filters={}
 	#get individual object filters
 	for grp in [('yeargroup','cohort',""),('subject','subject',"name"),\
@@ -588,34 +588,6 @@ def getInterrogatorOutput(form):
 		filters.pop('cohort')
 	filters=clean_filters(filters)
 
-	#get dataframe of values matching every combination of filters
-	# if measure in ['attainment8','progress8',
-	# 	'en_att8','ma_att8','eb_att8','op_att8','eb_filled','op_filled','att8_progress']:
-	# 	outputTable=df_measure(avg_measure,rfilters,cfilters,measure=measure,obj=headline,**filters)
-	# elif measure in ['meeting','exceeding']:
-	# 	if measure=="exceeding":
-	# 		outputTable=datadrop.objects.all()[0].pct_EAP_df(True,
-	# 			cfilters,rfilters,filters)
-	# 	else:
-	# 		outputTable=datadrop.objects.all()[0].pct_EAP_df(False,
-	# 			cfilters,rfilters,filters)
-	# elif measure=="ppGap":
-	# 	for g in ["PP","NPP"]:
-	# 		for f in [cfilters,rfilters]:
-	# 			if g in f:
-	# 				f.pop(g,None)
-	# 	outputTable=datadrop.objects.all()[0].avg_progress_df_filters_col(
-	# 		cfilters,rfilters,**filters,upn__pp=False).replace(to_replace="-",
-	# 		value=np.nan)-datadrop.objects.all()[0].\
-	# 		avg_progress_df_filters_col(cfilters,rfilters,**filters,
-	# 		upn__pp=True).replace(to_replace="-",value=np.nan)
-	# elif measure in ['ebacc_entered','ebacc_achieved_std','ebacc_achieved_stg','basics_9to4','basics_9to5']:
-	# 	outputTable=datadrop.objects.all()[0].pct_headline_df(
-	# 		cfilters,rfilters,filters,measure)
-	# else:
-	# 	outputTable=datadrop.objects.all()[0].avg_progress_df_filters_col(
-	# 		cfilters,rfilters,**filters)
-
 	gap_types={
 	    "pp":{
 	        "grp_type":"upn__pp",
@@ -650,8 +622,8 @@ def getInterrogatorOutput(form):
 	    "hst":{},
 	}
 
-	#set comparison and alter measure for measures that don't directly correspond to
-	#filter quantities
+	"""set comparison and alter measure for measures that don't directly
+	correspond to filter quantities"""
 	comparison=None
 	if measure =="ach_eap":
 	    measure="value__progress_value"
@@ -691,9 +663,10 @@ def getInterrogatorOutput(form):
 	    filters['calc_function']=function
 	    function=gap_measure
 
+	#constructs output table using df_measure and set parameters
 	outputTable=df_measure(function,rfilters,cfilters,**filters)
 
-	#format & apply colour coding
+	#apply post-construction calculations and adjustments
 	outputTable.replace(to_replace="-",value=np.nan,inplace=True)
 	if form.cleaned_data.get('residual_toggle_col'):
 		#for residual, create mask of "All" values and subtract from df
@@ -714,6 +687,8 @@ def getInterrogatorOutput(form):
 	return outputTable
 
 def get_formatted_output_table(form):
+	"""calls getInterrogatorOutput to create output table, then applies colour
+	coding and formatting schemes"""
 	from .forms import interrogatorForm
 	outputTable=getInterrogatorOutput(form)
 
@@ -742,6 +717,7 @@ def get_formatted_output_table(form):
 
 def get_standard_table(view_focus,view_rows,view_cols,cohort="",
 start_dd="",**filters):
+	"""constructs and populates standard table dataframes"""
 	if "name" in filters:
 		filters[view_focus+"__name"]=filters.pop("name")
 	#get row filters
@@ -903,6 +879,7 @@ start_dd="",**filters):
 	return out
 
 def stdTable_gen_getsession(request,focus,row_type,col_type):
+	"""retrieves/sets variables from/in session data"""
 	request.session['row_type']=row_type
 	request.session['col_type']=col_type
 	if "subject_selected" not in request.session:
@@ -921,6 +898,7 @@ def stdTable_gen_getsession(request,focus,row_type,col_type):
 
 @login_required(login_url='/users/login/')
 def stdTable_gen(request,focus):
+	"""handles form requests/returns for std view generation"""
 	from .forms import standardTableForm_subject,standardTableForm_classgroup,\
 		standardTableForm_datadrop
 	form=""
@@ -986,6 +964,8 @@ def stdTable_gen(request,focus):
 	return render(request,template,context)
 
 def get_formatted_standard_view_table(request,focus):
+	"""retrieves variables from form, calls get_standard_table to construct
+	dataframe of std view, applies formatting and colour coding schemes"""
 	if request.session['row_type']=="yeargroup":
 		year=""
 	else:
@@ -1019,16 +999,18 @@ def get_formatted_standard_view_table(request,focus):
 	return outputTable,outputTableSt
 
 def getLatestDatadropPerYeargroup():
+	"""returns the most recent datadrop for each year group as a dictionary of
+	filters"""
 	row_filter=[]
 	for y in yeargroup.objects.all().order_by('-current_year'):
 		dd=datadrop.objects.filter(cohort=y)
 		if dd.count()>0:
 			dd=dd.order_by('-date')[0]
 			row_filter.append(dd)
-			#row_filter[y.__str__()+", "+dd.name]={'upn__cohort':y,'datadrop':dd}
 	return row_filter
 
 def export_excel(output_data,filename):
+	"""serves a dataframe to user as an excel file"""
 	sio=io.BytesIO()
 	writer=pd.ExcelWriter(sio,engine='openpyxl')
 
