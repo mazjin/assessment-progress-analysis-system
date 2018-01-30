@@ -8,15 +8,19 @@ set_colours={"red":"#FF0000",
 	}
 
 def colour_progress(obj):
+	"""colours series or DataFrame based on std dev of whole object and distance
+	 from mean of object by calling cc_rules_hilo_avg - general default"""
 	if isinstance(obj,pd.DataFrame):
 		odev=obj.stack().std()
 		oavg=obj.stack().mean()
 	else:
 		odev=obj.std()
 		oavg=obj.mean()
-
 	return obj.apply(cc_rules_hilo_avg,dev=odev,avg=oavg)
+
 def colour_gap(obj):
+	"""colours series or DataFrame based on std dev of whole object and distance
+	 from zero by calling cc_rules_centre_zero - used on gap data"""
 	if isinstance(obj,pd.DataFrame):
 		odev=obj.stack().std()
 	else:
@@ -24,6 +28,9 @@ def colour_gap(obj):
 	return obj.apply(cc_rules_centre_zero,dev=odev)
 
 def colour_mixed(obj):
+	"""colours DataFrame with mixed types of data using cc_rules_hilo_avg, std
+	dev of each column and distance from mean of each column - used for
+	attainment sheets"""
 	out=pd.DataFrame(columns=obj.columns,index=obj.index)
 	for colname,colseries in obj.iteritems():
 		if "#" in colname:
@@ -38,6 +45,8 @@ def colour_mixed(obj):
 def cc_rules_centre_zero(val,**kwargs):
 	"""decision making for colour coding centered around 0"""
 	sdev=kwargs['dev']
+
+	#if passed series instead of values, applies recursively to series values
 	if isinstance(val,pd.Series):
 		return val.apply(cc_rules_centre_zero,dev=sdev)
 	else:
@@ -65,6 +74,8 @@ def cc_rules_hilo_avg(val,**kwargs):
 		average"""
 	sdev=kwargs['dev']
 	savg=kwargs['avg']
+
+	#if passed series instead of values, applies recursively to series values
 	if isinstance(val,pd.Series):
 		return val.apply(cc_rules_hilo_avg,dev=sdev,avg=savg)
 	else:

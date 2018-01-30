@@ -51,7 +51,7 @@ class interrogatorForm(forms.Form):
 		('ach_progress','+ Progress (%)'),
 
 		)
-	GAPS=(
+	GAPS=(#sets of groups to calculate gap values between
 		('',"-------"),
 		('pp',"Pupil Premium (Non PP - PP)"),
 		('sen',"SEN (NSEN - KSEN and EHCP)"),
@@ -78,11 +78,13 @@ class interrogatorForm(forms.Form):
 	only_exceeding=forms.BooleanField(label="Only count students/grades\
 	 exceeding comparison value?",required=False)
 
+	#whether to calculate gap in measure and by which group
 	calc_gap=forms.BooleanField(label="Calculate gap in measure?",
 		required=False)
 	gap_type=forms.ChoiceField(label="Gap Type",
 		required=False,choices=GAPS)
-	#returns table values as a residual from the "All" column/row
+
+	#returns table values as a residual from the "All" column/row (or both)
 	residual_toggle_col=forms.BooleanField(label="Calculate difference by col?",
 		required=False)
 	residual_toggle_row=forms.BooleanField(label="Calculate difference by row?",

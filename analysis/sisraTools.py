@@ -415,7 +415,6 @@ def getStudentData(browser,year,dd):
 				str(student_number) + " students...")
 		#get upn, forename,surname from text in dropdown
 		student_namestring=studentDict[key]
-		#print(student_namestring)
 		split_namestring=student_namestring.split(" ")
 		upn=split_namestring[-1]
 		guest=(split_namestring[-3]=="(Guest)")
@@ -530,9 +529,7 @@ def getStudentData(browser,year,dd):
 	# grades_df['EAP Grade'].fillna("X",inplace=True)
 	# grades_df['Compare Grade'].fillna("X",inplace=True)
 
-	#may reimplement these, but remove for now
-	# del student_df['attendance']
-	# del student_df['homestatus']
+
 	#calculate average ks2 for students
 	student_df['ks2_average']=round((student_df['ks2_maths']+\
 		student_df['ks2_reading'])*10/2.0)/10.0
