@@ -26,6 +26,8 @@ class interrogatorForm(forms.Form):
 		('faculty','Faculties'),
 		('att8bucket','Attainment 8 Bucket'),
 		('subject_blocks','Subject Blocks'),
+		('short_staff','Teaching Staff'),
+		('staff','Teaching Staff by Class'),
 		)
 
 	VALUES=(#possible cell value queries

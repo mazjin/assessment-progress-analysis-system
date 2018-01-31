@@ -586,7 +586,7 @@ def getInterrogatorOutput(form):
 	if "cohort" in filters:
 		filters['datadrop__cohort']=filters['cohort']
 		filters.pop('cohort')
-	filters=clean_filters(filters)
+	# filters=clean_filters(filters) #disabled for now
 
 	gap_types={
 	    "pp":{
