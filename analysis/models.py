@@ -121,20 +121,32 @@ def get_Qfilters(grp_type, values):
         filters=models.Q(**{grp_type:values})
     return filters
 
-def gap_measure(calc_function,grp_type,grpA_values,grpB_values,**options):
+def gap_measure(gap_function,grp_type,grpA_values,grpB_values,**options):
     """finds the gap between two calculated avg/pct/residual measures for groups
      A and B, specified by given filters"""
 
     grpA_filters=get_Qfilters(grp_type,grpA_values)
     grpB_filters=get_Qfilters(grp_type,grpB_values)
 
-    grpA_measure=calc_function(Qfilter=grpA_filters,**options)
-    grpB_measure=calc_function(Qfilter=grpB_filters,**options)
+    grpA_measure=gap_function(Qfilter=grpA_filters,**options)
+    grpB_measure=gap_function(Qfilter=grpB_filters,**options)
     try:
         gap=grpA_measure-grpB_measure
     except:
         gap=np.nan
     return gap
+
+def diff_measure(diff_function,measureA,measureB,obj,Qfilter=None,**options):
+	"""Finds the difference between two measures or sets of measures by
+	subtracting B from A. Measures must belong to the same object and return a
+	numerical value."""
+	resultA=diff_function(measure=measureA,obj=obj,Qfilter=Qfilter,**options)
+	resultB=diff_function(measure=measureB,obj=obj,Qfilter=Qfilter,**options)
+	try:
+		result=resultA-resultB
+	except:
+		result=np.nan
+	return result
 
 def series_measure(function,group_filters,**options):
 	"""return a series of measure calculations for given groups and filters"""
