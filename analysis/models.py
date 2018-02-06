@@ -316,7 +316,7 @@ def get_default_filters_dict(class_of_filters,measure,**filters):
 				staff_list.append(s)
 		staff_list.sort()
 		for code in staff_list:
-			classes=classgroup.objects.filter(staff=code).distinct()
+			classes=classgroup.objects.filter(staff=code,**filters).distinct()
 			if "short" not in class_of_filters:
 				for cl in classes:
 					returnDict[code+" "+cl.class_code]={"classgroup":cl}
