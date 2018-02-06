@@ -594,7 +594,7 @@ def getInterrogatorOutput(form):
 	if "cohort" in filters:
 		filters['datadrop__cohort']=filters['cohort']
 		filters.pop('cohort')
-	filters=clean_filters(filters)
+	# filters=clean_filters(filters) #disabled for now
 
 	gap_types={
 	    "pp":{
@@ -668,7 +668,7 @@ def getInterrogatorOutput(form):
 	# if gap, set function as gap_measure and calc function as base function
 	if form.cleaned_data.get('calc_gap'):
 	    filters={**filters,**gap_types[form.cleaned_data.get('gap_type')]}
-	    filters['calc_function']=function
+	    filters['gap_function']=function
 	    function=gap_measure
 
 	#constructs output table using df_measure and set parameters

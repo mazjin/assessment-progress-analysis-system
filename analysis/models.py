@@ -19,20 +19,20 @@ def get_measure_obj(measure):
 	raise KeyError('measure not found in models')
 
 def avg_measure(measure,obj,Qfilter=None,**filters):
-    """finds the average value of the measure of a type of object for given
-    filters. E.G. for the average progress per grade in Maths Y11, the measure
-    is "progress", the object type is the grade, and the filters are the Maths
-    subject and Y11 cohort"""
-
-    if not Qfilter is None:
-        found_objs=obj.objects.filter(Qfilter,**filters)
-    else:
-        found_objs=obj.objects.filter(**filters)
-    avg=found_objs.aggregate(models.Avg(measure))[measure+'__avg']
-    if avg is None:
-        return np.nan
-    else:
-        return round(avg,3)
+	"""finds the average value of the measure of a type of object for given
+	filters. E.G. for the average progress per grade in Maths Y11, the measure
+	is "progress", the object type is the grade, and the filters are the Maths
+	subject and Y11 cohort"""
+	if not Qfilter is None:
+		found_objs=obj.objects.filter(Qfilter,**filters)
+	else:
+		found_objs=obj.objects.filter(**filters)
+	# print(filters)
+	avg=found_objs.aggregate(models.Avg(measure))[measure+'__avg']
+	if avg is None:
+		return np.nan
+	else:
+		return round(avg,3)
 
 def pct_measure(measure,comparison,obj,only_exceeding=False,Qfilter=None,
     **filters):
@@ -121,20 +121,32 @@ def get_Qfilters(grp_type, values):
         filters=models.Q(**{grp_type:values})
     return filters
 
-def gap_measure(calc_function,grp_type,grpA_values,grpB_values,**options):
+def gap_measure(gap_function,grp_type,grpA_values,grpB_values,**options):
     """finds the gap between two calculated avg/pct/residual measures for groups
      A and B, specified by given filters"""
 
     grpA_filters=get_Qfilters(grp_type,grpA_values)
     grpB_filters=get_Qfilters(grp_type,grpB_values)
 
-    grpA_measure=calc_function(Qfilter=grpA_filters,**options)
-    grpB_measure=calc_function(Qfilter=grpB_filters,**options)
+    grpA_measure=gap_function(Qfilter=grpA_filters,**options)
+    grpB_measure=gap_function(Qfilter=grpB_filters,**options)
     try:
         gap=grpA_measure-grpB_measure
     except:
         gap=np.nan
     return gap
+
+def diff_measure(diff_function,measureA,measureB,obj,Qfilter=None,**options):
+	"""Finds the difference between two measures or sets of measures by
+	subtracting B from A. Measures must belong to the same object and return a
+	numerical value."""
+	resultA=diff_function(measure=measureA,obj=obj,Qfilter=Qfilter,**options)
+	resultB=diff_function(measure=measureB,obj=obj,Qfilter=Qfilter,**options)
+	try:
+		result=resultA-resultB
+	except:
+		result=np.nan
+	return result
 
 def series_measure(function,group_filters,**options):
 	"""return a series of measure calculations for given groups and filters"""
@@ -198,6 +210,7 @@ def avg_grade_filter_points(df,measure=None):
 	return new_df
 
 def clean_filters(dicti):
+	print("tock")
 	for fld in ['subject','classgroup','subject__name','classgroup__class_code',
 	'subject__cohort']:
 		if fld in dicti:
@@ -288,6 +301,26 @@ def get_default_filters_dict(class_of_filters,measure,**filters):
 			'EBacc':{'subject__ebacc_subject':True},
 			'Non-EBacc':{'subject__ebacc_subject':False},
 			}
+	elif "staff" in class_of_filters:
+		filters.pop('datadrop',None)
+		filters.pop('datadrop__name',None)
+		if "classgroup" in filters:
+			filters['class_code']=filters['classgroup'].class_code
+			filters.pop('classgroup',None)
+		returnDict={'All':{}}
+		staff_set=set(classgroup.objects.filter(**filters).exclude(staff="---")
+			.values_list('staff').distinct())
+		staff_list=[]
+		for st in staff_set:
+			for s in st:
+				staff_list.append(s)
+		staff_list.sort()
+		for code in staff_list:
+			classes=classgroup.objects.filter(staff=code,**filters).distinct()
+			if "short" not in class_of_filters:
+				for cl in classes:
+					returnDict[code+" "+cl.class_code]={"classgroup":cl}
+			returnDict['All ' +code]={"classgroup__in":classes}
 	else:
 		"""if not a fixed set of filters, populate from objects in db based on
 		class, code specific to each class removes invalid filters and replaces
@@ -376,6 +409,7 @@ def get_default_filters_dict(class_of_filters,measure,**filters):
 	if measure in avg_headline_measures or measure in pct_headline_measures:
 		for outerkey,dict in returnDict.items():
 			dict=clean_filters(dict)
+			print("tick")
 	return returnDict
 
 class studentGrouping(models.Model):
