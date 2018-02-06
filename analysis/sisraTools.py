@@ -4,7 +4,7 @@ import sys,getopt,getpass
 from selenium import webdriver
 from selenium.webdriver.support.ui import Select as wbdsel
 import time,datetime,pandas as pd
-
+import numpy as np
 
 def logIntoSISRA(uname,pword,browser):
 	"""given a username, password and webdriver object, navigates webdriver
@@ -390,7 +390,7 @@ def getStudentData(browser,year,dd):
 	#initialising dataframes to be returned
 	student_df=pd.DataFrame(columns=['upn','forename','surname','gender','reg','guest',
 		'banding','pp','eal','fsm_ever','lac','sen','homestatus','attendance',
-		'ks2_reading','ks2_maths'])
+		'ks2_reading','ks2_maths','ks2_average'])
 	grades_df=pd.DataFrame(columns=['upn','Qualification Name','Basket',
 		'Class','Type','Grade''Att8 Points','EAP Grade','staff',
 		'Compare Grade','progress'])
@@ -468,7 +468,10 @@ def getStudentData(browser,year,dd):
 			'homestatus':vgFilters['Home Status'],
 			'attendance':vgFilters['Attendance'],
 			'ks2_reading':ks2Table['KS2'].loc['English'],
-			'ks2_maths':ks2Table['KS2'].loc['Maths']})
+			'ks2_maths':ks2Table['KS2'].loc['Maths'],
+			'ks2_average':avg_ks2(re=ks2Table['KS2'].loc['English'],
+				ma=ks2Table['KS2'].loc['Maths'])
+			})
 		student_df.loc[upn]=studentEntry
 
 		#get grades table from page, clean columns and add to grades dataframe
@@ -527,13 +530,24 @@ def getStudentData(browser,year,dd):
 	# grades_df['Compare Grade'].fillna("X",inplace=True)
 
 
-	#calculate average ks2 for students
-	student_df['ks2_average']=round((student_df['ks2_maths']+\
-		student_df['ks2_reading'])*10/2.0)/10.0
-		#dividing & multiplying by 10s needed to get decimal values from round
 	for colname in ['ebacc_entered','ebacc_achieved_std','ebacc_achieved_stg',
 	'basics_9to4','basics_9to5']:
 		headlines_df[colname]=headlines_df[colname]=="Y"
 	headlines_df['att8_progress']=headlines_df['attainment8']-\
 		headlines_df['att8_progress']
 	return student_df,grades_df,headlines_df
+
+def avg_ks2(**ks2_levels):
+	eff_ks2=[]
+	for area,level in ks2_levels.items():
+		try:
+			num=float(level)
+		except:
+			num=np.nan
+		if not np.isnan(num):
+			eff_ks2.append(num)
+	try:
+		avg=sum(eff_ks2)/len(eff_ks2)
+		return round(avg,1)
+	except:
+		return np.nan
