@@ -371,7 +371,8 @@ def importPrompt(request):
 						gr['EAPgrade']=gradeValue.objects.get(
 							name=str(gr['EAP Grade'])[0])
 
-					elif gr['Qualification Name']=='Combined Science' and \
+					elif gr['Qualification Name'] in \
+					['Combined Science','Science'] and \
 					str(gr['EAP Grade'][:-1]).isnumeric() and \
 					"0" not in str(gr['EAP Grade']):
 						gr['EAPgrade']=gradeValue.objects.get(
