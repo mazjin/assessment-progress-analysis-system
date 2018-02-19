@@ -210,7 +210,6 @@ def avg_grade_filter_points(df,measure=None):
 	return new_df
 
 def clean_filters(dicti):
-	print("tock")
 	for fld in ['subject','classgroup','subject__name','classgroup__class_code',
 	'subject__cohort']:
 		if fld in dicti:
@@ -409,7 +408,6 @@ def get_default_filters_dict(class_of_filters,measure,**filters):
 	if measure in avg_headline_measures or measure in pct_headline_measures:
 		for outerkey,dict in returnDict.items():
 			dict=clean_filters(dict)
-			print("tick")
 	return returnDict
 
 class studentGrouping(models.Model):
