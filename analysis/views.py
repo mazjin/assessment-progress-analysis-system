@@ -139,6 +139,8 @@ def importPrompt(request):
 				if "Proj" in dd_name:
 					dd_name=" ".join(dd_name.split()[:-1])
 					dd_opt="HasSBP"
+				else:
+					dd_opt=None
 				#open browser for SISRA access
 				browser=webdriver.Chrome()
 				"""use routines from sisraTools module to navigate to and retrieve

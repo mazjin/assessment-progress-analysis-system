@@ -192,6 +192,8 @@ def avg_grade_filter_points(df,measure=None):
 			elif "Progress" in column or ("Attainment" in column and \
 			"+=-" in column and "Residual" in column):
 				new_df[new_column]=df[column].apply(lambda x: round(x/9,2))
+			else:
+				new_df[new_column]=df[column]
 		return new_df
 	elif measure=="progress":
 		def func(x):
