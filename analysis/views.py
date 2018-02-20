@@ -672,6 +672,16 @@ def getInterrogatorOutput(form):
 	elif measure in ['ebacc_entered','ebacc_achieved_std','ebacc_achieved_stg',
 	'basics_9to4','basics_9to5']:
 	    comparison=True
+	elif measure == "fourplus":
+		measure="value__att8_value"
+		comparison=4
+	elif measure == "fiveplus":
+		measure="value__att8_value"
+		comparison=5
+	elif measure == "sevenplus":
+		measure="value__att8_value"
+		comparison=7
+
 
 	filters['obj']=get_measure_obj(measure)
 	filters['measure']=measure
