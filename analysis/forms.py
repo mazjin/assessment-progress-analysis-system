@@ -50,6 +50,9 @@ class interrogatorForm(forms.Form):
 		('basics_9to4','Basics 4+ (%)'),
 		('basics_9to5','Basics 5+ (%)'),
 		('passing','Achieving passes (%)'),
+		('fourplus','Achieving 4+ (%)'),
+		('fiveplus','Achieving 5+ (%)'),
+		('sevenplus','Achieving 7+ (%)'),
 		('ach_progress','+ Progress (%)'),
 
 		)

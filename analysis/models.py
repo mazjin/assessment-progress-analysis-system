@@ -187,11 +187,13 @@ def avg_grade_filter_points(df,measure=None):
 			if "Attainment" in column and "+=-" in column and \
 			not "Residual" in column:
 				new_df[new_column]=df[column].apply(lambda x: round((x-3)/9,2))
-			elif "Attainment" in column:
+			elif "Attainment" in column and not "+=-" in column:
 				new_df[new_column]=df[column]
 			elif "Progress" in column or ("Attainment" in column and \
 			"+=-" in column and "Residual" in column):
 				new_df[new_column]=df[column].apply(lambda x: round(x/9,2))
+			else:
+				new_df[new_column]=df[column]
 		return new_df
 	elif measure=="progress":
 		def func(x):
@@ -210,7 +212,6 @@ def avg_grade_filter_points(df,measure=None):
 	return new_df
 
 def clean_filters(dicti):
-	print("tock")
 	for fld in ['subject','classgroup','subject__name','classgroup__class_code',
 	'subject__cohort']:
 		if fld in dicti:
@@ -409,7 +410,6 @@ def get_default_filters_dict(class_of_filters,measure,**filters):
 	if measure in avg_headline_measures or measure in pct_headline_measures:
 		for outerkey,dict in returnDict.items():
 			dict=clean_filters(dict)
-			print("tick")
 	return returnDict
 
 class studentGrouping(models.Model):

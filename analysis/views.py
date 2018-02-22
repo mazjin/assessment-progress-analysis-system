@@ -114,7 +114,7 @@ def importPrompt(request):
 			username=form.cleaned_data.get('username')
 			pw=form.cleaned_data.get('pw')
 			cohort=form.cleaned_data.get('cohort').current_year
-			dd_name=form.cleaned_data.get('dd_name').strip().upper()
+			dd_name=form.cleaned_data.get('dd_name').strip()
 			dd_obj,dd_created=datadrop.objects.get_or_create(name=dd_name,
 				cohort=form.cleaned_data.get('cohort'),defaults={
 					'date':form.cleaned_data.get('dd_date')})
@@ -139,6 +139,13 @@ def importPrompt(request):
 				print('No unfinished imports found, importing from SISRA...')
 				virtual_display=Xvfb(width=1280,height=720)
 				virtual_display.start()
+
+				#set collection options from name
+				if "Proj" in dd_name:
+					dd_name=" ".join(dd_name.split()[:-1])
+					dd_opt="HasSBP"
+				else:
+					dd_opt=None
 				#open browser for SISRA access
 				browse_options=webdriver.ChromeOptions()
 				browse_options.add_argument('--headless')
@@ -147,10 +154,16 @@ def importPrompt(request):
 				"""use routines from sisraTools module to navigate to and retrieve
 				student data"""
 				logIntoSISRA(username,pw,browser)
-				openStudentReports(browser,cohort,dd_name)
-				students_df,grades_df,headlines_df=getStudentData(browser,cohort,dd_name)
-				impDict={'students':students_df,'grades':grades_df,'headlines':headlines_df}
-				with open("lastUnfinishedImportCuY" + cohort + dd_name +".p","wb") as fp:
+				openStudentReports(browser,cohort,dd_name,dd_opt)
+				students_df,grades_df,headlines_df=getStudentData(
+					browser,cohort,dd_name,dd_opt)
+				impDict={
+					'students':students_df,
+					'grades':grades_df,
+					'headlines':headlines_df,
+					}
+				with open("lastUnfinishedImportCuY"+cohort+dd_name+".p","wb")\
+				as fp:
 					pickle.dump(impDict,fp)
 				#close browser
 				browser.close()
@@ -272,6 +285,9 @@ def importPrompt(request):
 						"...")
 				gr['datadrop']=dd_obj
 				gr['upn']=student.objects.get(upn=gr['upn'])
+				if "(" in gr['Qualification Name']:
+					gr['Qualification Name']=" ".join(
+						gr['Qualification Name'].split()[:-1])
 				try:
 					gr['subject']=subject.objects.get(
 						name=gr['Qualification Name'],
@@ -345,14 +361,35 @@ def importPrompt(request):
 						class_subject=[gr['subject']]
 				#retrieve grade value
 				try:
-					gr_value=gr['Grade']
-					if isinstance(gr_value,float):
-						gr_value=str(int(gr_value))
+					if isinstance(gr['Grade'],float) or\
+					isinstance(gr['Grade'],int):
+						gr['value']=gradeValue.objects.get(
+							name=str(gr['Grade'])[0])
+
+					elif gr['Qualification Name'] in \
+					['Combined Science','Science'] and \
+					str(gr['Grade'][:-1]).isnumeric() and \
+					"0" not in str(gr['Grade']):
+						gr['value']=gradeValue.objects.get(
+							name=str(gr['Grade'])[1:].replace("=",""))
 					else:
-						gr_value=str(gr_value)
-					if "=" in gr_value:
-						gr_value.replace("=","")
-					gr['value']=gr['method'].vals.get(name=gr_value)
+						try:
+							gr['value']=gradeValue.objects.get(
+								name=gr['Grade'].replace("=",""))
+						except:
+							gr['value']=gr['method'].vals.get(
+									name=gr['Grade'].replace("=",""))
+				# except:
+				# 	pass
+				# try:
+				# 	gr_value=gr['Grade']
+				# 	if isinstance(gr_value,float):
+				# 		gr_value=str(int(gr_value))
+				# 	else:
+				# 		gr_value=str(gr_value)
+				# 	if "=" in gr_value:
+				# 		gr_value.replace("=","")
+				# 	gr['value']=gr['method'].vals.get(name=gr_value)
 				except:
 					print("<"+str(datetime.datetime.now()).split('.')[0]+">: "+\
 						str(type(gr['Grade'])))
@@ -447,7 +484,7 @@ def importPrompt(request):
 				if type(gr['EAPgrade'])!=gradeValue:
 					gr['EAPgrade']=None
 				selected_grade,grade_created=grade.objects.update_or_create(upn=gr['upn'],
-				datadrop=gr['datadrop'],subject=gr['subject'],defaults=gr.to_dict())
+				datadrop=dd_obj,subject=gr['subject'],defaults=gr.to_dict())
 				selected_grade.save()
 
 			for i,hd in headlines_df.iterrows():
@@ -646,6 +683,16 @@ def getInterrogatorOutput(form):
 	elif measure in ['ebacc_entered','ebacc_achieved_std','ebacc_achieved_stg',
 	'basics_9to4','basics_9to5']:
 	    comparison=True
+	elif measure == "fourplus":
+		measure="value__att8_value"
+		comparison=4
+	elif measure == "fiveplus":
+		measure="value__att8_value"
+		comparison=5
+	elif measure == "sevenplus":
+		measure="value__att8_value"
+		comparison=7
+
 
 	filters['obj']=get_measure_obj(measure)
 	filters['measure']=measure
@@ -752,12 +799,13 @@ start_dd="",**filters):
 
 	#create output dataframe and list of filter sets for columns
 	out=pd.DataFrame()
-	if cohort and view_cols!="analysis":
-		datadrop_list=datadrop.objects.filter(cohort=cohort,\
-			date__lte=last_dd.date).order_by('date')[:3][::-1]
-	elif view_cols=="analysis":
-		datadrop_list=datadrop.objects.filter(cohort=cohort,\
-			date__lte=last_dd.date).order_by('date')[:2]
+	if cohort and view_cols!="sheet":
+		datadrop_list=list(datadrop.objects.filter(cohort=cohort,\
+			date__lte=last_dd.date).order_by('-date'))[:3][::-1]
+	elif view_cols=="sheet":
+		datadrop_list=list(datadrop.objects.filter(cohort=cohort,\
+			date__lte=last_dd.date).order_by('date'))[-2:][::-1]
+		print(datadrop_list)
 	else:
 		datadrop_list=None
 

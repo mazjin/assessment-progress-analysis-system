@@ -271,7 +271,7 @@ def main():
 	return df
 if __name__=="__main__":main()
 
-def openStudentReports(browser,year,dd):
+def openStudentReports(browser,year,dd,dd_option=None):
 	"""navigates browser webdriver to individual student SISRA reports for given
 	data drop and year"""
 	print("<"+str(datetime.datetime.now()).split('.')[0]+">: "+\
@@ -341,6 +341,12 @@ def openStudentReports(browser,year,dd):
 		raise
 	time.sleep(0.5)
 
+	if dd_option:
+		option_button=browser.find_element_by_css_selector(".vtp .avail.HasSBP")
+		option_button.click()
+		time.sleep(0.5)
+
+
 	#open relevant comparison dataset
 	comparison_dd="Baseline"
 	comp_select=browser.find_element_by_css_selector(
@@ -353,8 +359,8 @@ def openStudentReports(browser,year,dd):
 		if comparison_dd in comp_dd.text:
 			comp_dd.click()
 			break
-	found_dd=browser.find_element_by_css_selector(".flyOut .cdsItemBtn")
-	found_dd.click()
+	found_comp=browser.find_element_by_css_selector(".flyOut .dsIcon.canView")
+	found_comp.click()
 	time.sleep(0.5)
 
 	#open student details area of reports
@@ -376,10 +382,16 @@ def openStudentReports(browser,year,dd):
 	open_stu_det_button.click()
 	time.sleep(1.0)
 
-def getStudentData(browser,year,dd):
+def getStudentData(browser,year,dd, dd_opt=None):
 	"""loops through all students in a year, retrieves student and grade data
 	and returns dataframe"""
 	comparison_dd="Baseline"
+	if dd_opt:
+		dd_name=dd+" Proj"
+		dd_label="SBP from "+dd
+	else:
+		dd_name=dd
+		dd_label=dd
 	#getting dictionary of student names & upns to value in dropdown selector
 	studentList=browser.find_element_by_css_selector('#ReportOptions_Stu_ID')\
 		.find_elements_by_css_selector('*')
@@ -506,25 +518,25 @@ def getStudentData(browser,year,dd):
 		basicsTable.index.str.strip()
 		ebaccTable.columns.str.strip()
 		ebaccTable.index.str.strip()
-		hd_entry=pd.Series({'upn':upn,'datadrop':dd,
-			'progress8':a8p8Table.loc[dd+" Progress 8","Overall"],
-			'attainment8':a8p8Table.loc[dd+" Attainment 8","Overall"],
-			'en_att8':a8p8Table.loc[dd+" Attainment 8","English"],
-			'ma_att8':a8p8Table.loc[dd+" Attainment 8","Maths"],
-			'eb_att8':a8p8Table.loc[dd+" Attainment 8","EBacc"],
-			'op_att8':a8p8Table.loc[dd+" Attainment 8","Open"],
-			'eb_filled':a8p8Table.loc[dd+" Slots Filled","EBacc"],
-			'op_filled':a8p8Table.loc[dd+" Slots Filled","Open"],
-			'ebacc_entered':ebaccTable.loc[dd+" Entered","Overall"],
-			'ebacc_achieved_std':ebaccTable.loc[dd+" Achieving (Standard)",
+		hd_entry=pd.Series({'upn':upn,'datadrop':dd_name,
+			'progress8':a8p8Table.loc[dd_label+" Progress 8","Overall"],
+			'attainment8':a8p8Table.loc[dd_label+" Attainment 8","Overall"],
+			'en_att8':a8p8Table.loc[dd_label+" Attainment 8","English"],
+			'ma_att8':a8p8Table.loc[dd_label+" Attainment 8","Maths"],
+			'eb_att8':a8p8Table.loc[dd_label+" Attainment 8","EBacc"],
+			'op_att8':a8p8Table.loc[dd_label+" Attainment 8","Open"],
+			'eb_filled':a8p8Table.loc[dd_label+" Slots Filled","EBacc"],
+			'op_filled':a8p8Table.loc[dd_label+" Slots Filled","Open"],
+			'ebacc_entered':ebaccTable.loc[dd_label+" Entered","Overall"],
+			'ebacc_achieved_std':ebaccTable.loc[dd_label+" Achieving (Standard)",
 				"Overall"],
-			'ebacc_achieved_stg':ebaccTable.loc[dd+" Achieving (Strong)",
+			'ebacc_achieved_stg':ebaccTable.loc[dd_label+" Achieving (Strong)",
 				"Overall"],
-			'basics_9to4':basicsTable.loc[dd+" - Overall","Passed 9-4"],
-			'basics_9to5':basicsTable.loc[dd+" - Overall","Passed 9-5"],
+			'basics_9to4':basicsTable.loc[dd_label+" - Overall","Passed 9-4"],
+			'basics_9to5':basicsTable.loc[dd_label+" - Overall","Passed 9-5"],
 			'att8_progress':a8p8Table.loc[comparison_dd+" Attainment 8 >",
 				"Overall"]})
-		headlines_df.loc[dd+"-"+upn]=hd_entry
+		headlines_df.loc[dd_name+"-"+upn]=hd_entry
 	#clean and parse grades dataframe
 	grades_df['staff']=grades_df['Class'].str.split().str[1:]
 	grades_df['Class']=grades_df['Class'].str.split().str[0]
