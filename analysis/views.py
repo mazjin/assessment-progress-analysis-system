@@ -790,12 +790,13 @@ start_dd="",**filters):
 
 	#create output dataframe and list of filter sets for columns
 	out=pd.DataFrame()
-	if cohort and view_cols!="analysis":
-		datadrop_list=datadrop.objects.filter(cohort=cohort,\
-			date__lte=last_dd.date).order_by('date')[:3][::-1]
-	elif view_cols=="analysis":
-		datadrop_list=datadrop.objects.filter(cohort=cohort,\
-			date__lte=last_dd.date).order_by('date')[:2]
+	if cohort and view_cols!="sheet":
+		datadrop_list=list(datadrop.objects.filter(cohort=cohort,\
+			date__lte=last_dd.date).order_by('-date'))[:3][::-1]
+	elif view_cols=="sheet":
+		datadrop_list=list(datadrop.objects.filter(cohort=cohort,\
+			date__lte=last_dd.date).order_by('date'))[-2:][::-1]
+		print(datadrop_list)
 	else:
 		datadrop_list=None
 
