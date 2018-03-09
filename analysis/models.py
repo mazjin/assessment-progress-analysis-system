@@ -35,7 +35,7 @@ def avg_measure(measure,obj,Qfilter=None,**filters):
 		return round(avg,3)
 
 def pct_measure(measure,comparison,obj,only_exceeding=False,Qfilter=None,
-    **filters):
+    comparison_offset=0,**filters):
     """finds the percentage of a set of objects that meet or exceed (or only
     exceed, if the flag is set) a given value for comparison, for the given
     filters."""
@@ -53,7 +53,7 @@ def pct_measure(measure,comparison,obj,only_exceeding=False,Qfilter=None,
     else:
         filter_string=measure+'__gte'
     if not isinstance(comparison,bool)and not isinstance(comparison,Number):
-        comparison=models.F(comparison)
+        comparison=models.F(comparison)+comparison_offset
     num_counted=found_objs.filter(**{filter_string:comparison}).count()
     if num_total==0:
         return np.nan
@@ -153,7 +153,15 @@ def series_measure(function,group_filters,**options):
 	results=pd.Series()
 	for group_key, group_filter in group_filters.items():
 		joined_options={**options,**group_filter}
-		results[group_key]=function(**joined_options)
+		if not callable(function):
+			if "func" in joined_options.keys():
+				func=joined_options.pop('func')
+				results[group_key]=func(**joined_options)
+			else:
+				raise TypeError('function passed is not callable and no functions\
+				 referenced in filters!')
+		else:
+			results[group_key]=function(**joined_options)
 	return results
 
 def df_measure(function,row_filters,col_filters,**options):
@@ -205,8 +213,8 @@ def avg_grade_filter_points(df,measure=None):
 		def func(x):
 			return x
 	for column in df:
-		if column=="#":
-			new_df['#']=df['#']
+		if "#" in column:
+			new_df[column]=df[column]
 		else:
 			new_df[column]=df[column].apply(func)
 	return new_df
