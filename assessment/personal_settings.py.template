@@ -1,6 +1,10 @@
 #hostnames that the server will allow connections on
 ALLOWED_HOSTS = [
     ]
+
+# SECURITY WARNING: keep the secret key used in production secret!
+SECRET_KEY = ')9di26o6jj(iob5)367rrtdm5w0isr&i6hf)q)&#p@xcef5045'
+
 #the school's identifying name (does not need to be a full name)
 SCHOOL_NAME="Xavier Yotsky Secondary"
 
