@@ -444,7 +444,9 @@ class gradeValue(models.Model):
 	internal progress system.")
 	att8_value=models.DecimalField(decimal_places=1,max_digits=4,
 		help_text="The value of the grade towards Attainment 8.",blank=True)
-
+	whole_grade=models.ForeignKey('gradeValue',
+		help_text="The whole grade this subgrade refers to. Can be self.",
+		null=True)
 	def __str__(self):
 		return self.name + "(P"+str(self.progress_value) +", A"+str(self.att8_value)+")"
 
