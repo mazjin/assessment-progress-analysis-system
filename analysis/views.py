@@ -796,7 +796,6 @@ start_dd="",**filters):
 	elif view_cols=="sheet":
 		datadrop_list=list(datadrop.objects.filter(cohort=cohort,\
 			date__lte=last_dd.date).order_by('date'))[-2:][::-1]
-		print(datadrop_list)
 	else:
 		datadrop_list=None
 
