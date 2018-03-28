@@ -30,246 +30,6 @@ def logIntoSISRA(uname,pword,browser):
 		pass
 	time.sleep(1)
 
-def setMegDD(year):
-	"""used to identify MEG targets for a given year group"""
-		#decide & select relevant target data set for comparison
-	if year in '1109':
-		meg_dd='KS4'
-	elif year in '78':
-		meg_dd='KS3'
-	return meg_dd
-
-def openDDReport(browser,year, dd):
-	"""navigates browser webdriver to the correct SISRA report for populating
-	the SLT overview table"""
-	#navigate to reports from home screen, if error then quit
-	print("<"+str(datetime.datetime.now()).split('.')[0]+">: "+\
-		"Opening filter reports...")
-	try:
-		browser.find_element_by_css_selector('a span img[alt="Reports"]')\
-			.click()
-	except:
-		print("<"+str(datetime.datetime.now()).split('.')[0]+">: "+  ":(")
-		time.sleep(5)
-		sys.exit(2)
-	time.sleep(0.5)
-
-	#open EAP area if not already open, else do nothing
-	try:
-		browser.find_element_by_link_text('KS 3/4').click()
-	except:
-		pass
-	time.sleep(0.5)
-
-
-	# check & select year group tab based on variables
-	try:
-		#loops through available yeargroups to find correct one
-		yeartabs=browser.find_element_by_css_selector('.yearTabs')\
-			.find_elements_by_css_selector('.year a')
-		for yeartab in yeartabs:
-			if ('Yr ' + year) in yeartab.text:
-				yeartab.click()
-				break
-
-		selectedDD=browser.find_element_by_css_selector(
-			'.eapPub.active .eapInfo .line')
-		time.sleep(0.5)
-		if dd not in selectedDD.text and dd!=selectedDD.text:
-			ddList=browser.find_elements_by_css_selector(
-				'.eapPub .eapInfo .line')
-			for ddbox in ddList:
-				if dd in ddbox.text or dd==ddbox.text:
-					ddbox.click()
-	except:
-		raise
-	time.sleep(0.5)
-
-	#open relevant data drop dataset
-	try:
-		browser.find_element_by_css_selector(
-			'.eapPub.active .EAPRptBtn .button').click()
-	except:
-		print ("can't find report button")
-	time.sleep(.5)
-
-	#identify meg name,use it to select comparison dataset
-	meg_dd=setMegDD(str(year).strip())
-	try:
-		compareSelect=browser.find_element_by_id('compareSelect')
-		compareOpts=compareSelect.find_elements_by_css_selector('*')
-		for opt in compareOpts:
-			if meg_dd.lower() in opt.text.lower():
-				opt.click()
-				break
-
-	except:
-		print("<"+str(datetime.datetime.now()).split('.')[0]+">: "+\
-			"couldn't select megs!")
-		raise
-	time.sleep(0.5)
-
-	#select correct report type
-	navButtons=browser.find_elements_by_css_selector('#reportNavWrapper .rept')
-	navGrids=browser.find_elements_by_css_selector(
-		'#reportNavWrapper .list-grid')
-	if len(navButtons)!=len(navGrids):
-		print ('more grids than buttons, exiting')
-		sys.exit(2)
-
-	for i in range(len(navButtons)):
-		#print(navButtons[i].text)
-		if "grades" in navButtons[i].text.lower():
-			gradesButton=navButtons[i]
-			gradesGrid=navGrids[i]
-			break
-	gradesButton.click()
-	#click correct button in gradesGrid
-	time.sleep(0.5)
-	repTypes=gradesGrid.find_elements_by_css_selector('.title-y')
-	for reptype in repTypes:
-		if "totals" in reptype.text.lower():
-			filtersRow=reptype.find_element_by_xpath('..')
-
-	filtersButtons=filtersRow.find_elements_by_link_text('Go!')
-	filtersButtons[0].click()
-	time.sleep(1.0)
-
-def sltOverview(browser,year,dd):
-	"""generates table populated with percentage of each student group
-	(boys, girls, disadvantaged, EAL,etc.) meeting and exceeding MEG targets for
-	each subject"""
-	print("<"+str(datetime.datetime.now()).split('.')[0]+">: "+\
-		"Collecting performance data for subjects...")
-	meg_dd=setMegDD(str(year).strip())
-	"""set report for correct values, get dictionaries of subjects and students
-	and their selection values"""
-	repQualBox=browser.find_element_by_id('ReportOptions_Qual_ID')
-	subjOptions=repQualBox.find_elements_by_css_selector('*')
-	subjDict={}
-	for subop in subjOptions:
-		if subop.text!="":
-			subjDict[subop.get_attribute('value')]=subop.text
-	browser.find_element_by_css_selector('.percentage').click()
-	resultsDict={}
-	#loop through subjects in dropdown menu
-	for key in subjDict.keys():
-		#select subject in dropdown
-		subj=subjDict[key]
-		print (str(subj) + "," + str(key))
-		wbdsel(browser.find_element_by_id('ReportOptions_Qual_ID'))\
-			.select_by_value(str(key))
-		time.sleep(.5)
-
-		#read table into pandas DataFrame
-		subject_df=pd.read_html(browser.find_element_by_tag_name('html')\
-			.get_attribute('innerHTML'),header=0,index_col=1)[8]
-
-		"""clean strings in column and index names - need to rewrite this to use
-			pandas object.str accessor!"""
-		newnames=[]
-		newcols=[]
-		for n in subject_df.columns:
-			n=str(n)
-			n=n.replace("\n","")
-			n=n.replace("%","")
-			n=n.strip()
-			newcols.append(n)
-		subject_df.columns=newcols
-		for n in subject_df['Name']:
-			n=n.replace("\n","")
-			n=n.replace("%","")
-			n=n.strip()
-			newnames.append(n)
-		subject_df['Name']=newnames
-
-		"""discard entries in dataframe containing irrelevant comparison data,
-		attach subject name to index names, add to results dictionary"""
-		subject_df=subject_df[subject_df['Name'] != 'Difference >']
-		subject_df=subject_df[subject_df['Name'] != meg_dd+ ' MEGs >']
-		subject_df.index=subject_df['Name'] + "_" + subject_df.index
-		resultsDict[subj]=subject_df.iloc[:,11:15]
-
-	#populate new dataframe with collated results
-	results_df=pd.DataFrame()
-	for sub in resultsDict.keys():
-		results_df[sub+' >=']=resultsDict[sub]['>= '+meg_dd+' MEGs']
-		results_df[sub+' >']=resultsDict[sub]['> '+meg_dd+' MEGs']
-	results_df.fillna('N/A',inplace=True) #replaces "NaN" values
-	#output to file, return collated dataframe
-	results_df.to_csv(dd + '.csv')
-	print("<"+str(datetime.datetime.now()).split('.')[0]+">: "+\
-		'Done! Results collated and output to ' + dd + '.csv')
-	return results_df
-
-def main():
-	"""takes username, password, selected webdriver method, datadrop name and
-	relevant yeargroup and returns/exports an SLT overview table """
-
-	helpMessage="Usage: sisraTools -u/--user <username> -p/-pass <password> \
-	-b/--browser <browser> -y/--year <cohort year> -d/--datadrop \
-	<data drop name>"
-
-	try:
-		opts,args=getopt.getopt(sys.argv[1:],'u:p:b:y:d:dd:',
-			['user=','username=','pass=','password=','browser=','year=',
-			'dataset=','datadrop=','dd='])
-	except getopt.GetoptError:
-		print("<"+str(datetime.datetime.now()).split('.')[0]+">: "+helpMessage)
-		sys.exit(2)
-
-	uname=""
-	pword=""
-	brwsr=''
-	year=""
-	dd=""
-
-	for opt,arg in opts:
-		if opt in ('-u','--username','--user'):
-			uname=arg
-		elif opt in ('-p','--pass','--password'):
-			pword=arg
-		elif opt in ('-b','--browser'):
-			brwsr=arg
-		elif opt in ('-d','--dataset','--datadrop','--dd','-dd'):
-			dd=arg
-		elif opt in ('-y','--year'):
-			year=arg
-
-	if uname=="":
-		print("<"+str(datetime.datetime.now()).split('.')[0]+">: "+\
-			'Please enter your SISRA username.')
-		uname=input()
-
-	if year=="":
-		print("<"+str(datetime.datetime.now()).split('.')[0]+">: "+\
-			"Please enter the current year group for the cohort, e.g. if \
-			accessing info for the current Year 8, enter 8.")
-		year=input()
-
-	if dd=="":
-		print("<"+str(datetime.datetime.now()).split('.')[0]+">: "+\
-			"Please enter the name of the data drop to access, e.g. Y7 DD3, \
-			Y11 DD2, PPEs, Exams")
-		dd=input()
-
-	if pword=="":
-		pword=getpass.getpass('Please enter your SISRA password.\n')
-
-	if brwsr=='' or brwsr.lower()=='chrome':
-		browser=webdriver.Chrome()
-	elif brwsr.lower()=='ff' or brwsr.lower()=='firefox':
-		browser=webdriver.Firefox()
-	else:
-		print("<"+str(datetime.datetime.now()).split('.')[0]+">: "+helpMessage)
-		sys.exit(2)
-
-
-	logIntoSISRA(uname,pword,browser)
-	openDDReport(browser,year,dd)
-	sltOverview(browser,year,dd)
-	return df
-if __name__=="__main__":main()
 
 def openStudentReports(browser,year,dd,dd_option=None):
 	"""navigates browser webdriver to individual student SISRA reports for given
@@ -402,7 +162,7 @@ def getStudentData(browser,year,dd, dd_opt=None):
 	#initialising dataframes to be returned
 	student_df=pd.DataFrame(columns=['upn','forename','surname','gender','reg','guest',
 		'banding','pp','eal','fsm_ever','lac','sen','homestatus','attendance',
-		'ks2_reading','ks2_maths','ks2_average'])
+		'ks2_reading','ks2_maths','ks2_average','focus_groups'])
 	grades_df=pd.DataFrame(columns=['upn','Qualification Name','Basket',
 		'Class','Type','Grade''Att8 Points','EAP Grade','staff',
 		'Compare Grade','progress'])
@@ -435,15 +195,6 @@ def getStudentData(browser,year,dd, dd_opt=None):
 		surname=" ".join(split_namestring[:name_break])
 		forename=" ".join(split_namestring[name_break+1:])
 
-		# if split_namestring[-3]=="(Guest)":
-		# 	forename=split_namestring[-4]
-		# 	surname=" ".join(split_namestring[0:-4])
-		# 	guest=True
-		# else:
-		# 	forename=split_namestring[-3]
-		# 	surname=" ".join(split_namestring[0:-3])
-		# 	guest=False
-		#go to relevant student profile
 		wbdsel(browser.find_element_by_css_selector('#ReportOptions_Stu_ID'))\
 			.select_by_value(str(key))
 		#get vulnerable grouping info from table on profile
@@ -451,10 +202,18 @@ def getStudentData(browser,year,dd, dd_opt=None):
 		"""rearrange info from dataframe as series - table is irregularly
 		organised so must be reconstructed"""
 		vgFilters=pd.Series()
-		for c in range(1,8,2):
-			for r in range(0,3):
-				vgFilters[filterTable.iloc[r,c-1]]=filterTable.iloc[r,c]
+		for c in range(1,len(filterTable.columns),2):
+			for r in range(0,len(filterTable.index)):
+				if filterTable.iloc[r,c-1] == "Focus Group":
+					if "Focus Groups" not in vgFilters.index:
+						vgFilters['Focus Groups']=[filterTable.iloc[r,c]]
+					else:
+						vgFilters["Focus Groups"].append(filterTable.iloc[r,c])
+				else:
+					vgFilters[filterTable.iloc[r,c-1]]=filterTable.iloc[r,c]
 
+		if 'Focus Groups' not in vgFilters:
+			vgFilters['Focus Groups']=[]
 		#get KS2 and basics data table, clean up column names and indexing
 		ks2Table=pd.read_html(browser\
 			.find_element_by_css_selector("#page.closed")\
@@ -482,7 +241,8 @@ def getStudentData(browser,year,dd, dd_opt=None):
 			'ks2_reading':ks2Table['KS2'].loc['English'],
 			'ks2_maths':ks2Table['KS2'].loc['Maths'],
 			'ks2_average':avg_ks2(re=ks2Table['KS2'].loc['English'],
-				ma=ks2Table['KS2'].loc['Maths'])
+				ma=ks2Table['KS2'].loc['Maths']),
+			'focus_groups':vgFilters['Focus Groups']
 			})
 		student_df.loc[upn]=studentEntry
 
@@ -537,9 +297,6 @@ def getStudentData(browser,year,dd, dd_opt=None):
 	#clean and parse grades dataframe
 	grades_df['staff']=grades_df['Class'].str.split().str[1:]
 	grades_df['Class']=grades_df['Class'].str.split().str[0]
-	# grades_df['Grade'].fillna("X",inplace=True)
-	# grades_df['EAP Grade'].fillna("X",inplace=True)
-	# grades_df['Compare Grade'].fillna("X",inplace=True)
 
 
 	for colname in ['ebacc_entered','ebacc_achieved_std','ebacc_achieved_stg',
