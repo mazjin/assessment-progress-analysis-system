@@ -248,11 +248,19 @@ def importPrompt(request):
 						home_status=homestatus,
 						attendance=attendance)
 					created_student.save()
+					for fg in stu["focus_groups"]:
+						try:
+							fg_obj,fg_created=focusGroup.objects.get_or_create(name=fg)
+							fg_obj.save()
+							print(fg_obj)
+							created_student.focus_groups.add(fg_obj)
+						except:
+							raise
 
 					if reg_created:#add to output
 						created_classes.append(created_student.reg.class_code)
 					student_position+=1
-				except:#add to output
+				except Exception as e:#add to output
 					failed_upns.append(u)
 
 			#instantiate formatted grades dataframe
