@@ -27,7 +27,6 @@ def avg_measure(measure,obj,Qfilter=None,**filters):
 		found_objs=obj.objects.filter(Qfilter,**filters)
 	else:
 		found_objs=obj.objects.filter(**filters)
-	# print(filters)
 	avg=found_objs.aggregate(models.Avg(measure))[measure+'__avg']
 	if avg is None:
 		return np.nan
@@ -426,6 +425,13 @@ class studentGrouping(models.Model):
 	class Meta:
 		abstract = True
 
+class focusGroup(models.Model):
+	"""a flag for membership of various focus groups, e.g. subject intervention,
+	reading groups, etc."""
+	name=models.CharField(max_length=50,
+		help_text="The name of the focus group.")
+	def __str__(self):
+		return self.name
 
 class subjectTag(models.Model):
 	"""A tag to identify similar subjects across yeargroups"""
@@ -714,6 +720,8 @@ class student(models.Model):
 	student has attained so far this school year",max_length=2,default="EA",
 	choices=attendance_bands)
 
+	focus_groups=models.ManyToManyField(focusGroup,
+		help_text="The focus groups the student belongs to.")
 
 	def __str__(self):
 		return self.forename+ " " + self.surname + " ("+self.upn+")"
